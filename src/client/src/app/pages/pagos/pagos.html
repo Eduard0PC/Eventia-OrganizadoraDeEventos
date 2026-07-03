@@ -1,0 +1,165 @@
+<div class="min-h-screen bg-linear-to-br from-gray-100 via-gray-50 to-gray-200">
+
+  <app-navbar></app-navbar>
+
+  <main class="max-w-7xl mx-auto px-6 py-10">
+
+    <div class="mb-10">
+      <h2 class="text-5xl font-bold text-gray-900">Mis pagos</h2>
+      <p class="text-gray-500 mt-2">
+        Consulta tu historial de pagos y las cuotas pendientes de tus contratos.
+      </p>
+    </div>
+
+    <div class="grid gap-6 md:grid-cols-3 mb-10">
+      <div class="bg-white rounded-3xl shadow-lg p-6">
+        <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Total pagado</span>
+        <p class="text-4xl font-extrabold text-green-600 mt-2">${{ totalPagado | number:'1.0-0' }}</p>
+      </div>
+      <div class="bg-white rounded-3xl shadow-lg p-6">
+        <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Saldo pendiente</span>
+        <p class="text-4xl font-extrabold text-red-500 mt-2">${{ totalPendiente | number:'1.0-0' }}</p>
+      </div>
+      <div class="bg-white rounded-3xl shadow-lg p-6" *ngIf="proximoPago">
+        <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Próximo pago</span>
+        <p class="text-2xl font-extrabold text-gray-900 mt-2">${{ proximoPago.monto | number:'1.0-0' }}</p>
+        <p class="text-sm text-gray-500 mt-1">{{ formatearFecha(proximoPago.fechaVencimiento) }} · {{ proximoPago.evento }}</p>
+      </div>
+    </div>
+
+    <div class="flex gap-2 mb-8">
+      <button
+        (click)="tabActiva = 'historial'"
+        class="px-6 py-3 rounded-xl font-semibold transition cursor-pointer"
+        [ngClass]="tabActiva === 'historial' ? 'bg-red-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50 shadow-lg'"
+      >
+        Historial de pagos
+      </button>
+      <button
+        (click)="tabActiva = 'pendientes'"
+        class="px-6 py-3 rounded-xl font-semibold transition cursor-pointer"
+        [ngClass]="tabActiva === 'pendientes' ? 'bg-red-500 text-white' : 'bg-white text-gray-700 hover:bg-gray-50 shadow-lg'"
+      >
+        Cuotas pendientes
+        <span
+          *ngIf="cuotasPendientes.length > 0"
+          class="ml-2 bg-white/20 text-xs px-2 py-0.5 rounded-full"
+        >
+          {{ cuotasPendientes.length }}
+        </span>
+      </button>
+    </div>
+
+    <!-- Historial -->
+    <ng-container *ngIf="tabActiva === 'historial'">
+      <div class="flex flex-col md:flex-row gap-4 mb-8">
+        <div class="relative flex-1">
+          <input
+            type="text"
+            placeholder="Buscar por contrato, evento o referencia..."
+            [(ngModel)]="busqueda"
+            class="w-full bg-white shadow-lg rounded-2xl pl-14 pr-4 py-4 text-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500"
+          />
+          <svg
+            class="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+        </div>
+
+        <select
+          [(ngModel)]="filtroEstatus"
+          class="bg-white shadow-lg rounded-2xl px-5 py-4 text-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer"
+        >
+          <option value="todos">Todos los estatus</option>
+          <option value="procesado">Procesado</option>
+          <option value="pendiente">Pendiente</option>
+          <option value="cancelado">Cancelado</option>
+          <option value="reembolsado">Reembolsado</option>
+        </select>
+      </div>
+
+      <div *ngIf="pagosFiltrados.length === 0" class="bg-white rounded-3xl shadow-lg p-12 text-center">
+        <p class="text-gray-500 text-lg">No se encontraron pagos con los filtros seleccionados.</p>
+      </div>
+
+      <div class="space-y-4">
+        <div
+          *ngFor="let pago of pagosFiltrados"
+          class="bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-300 p-6 md:p-8"
+        >
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="flex-1">
+              <div class="flex flex-wrap items-center gap-3 mb-2">
+                <span class="text-sm font-bold text-gray-400">{{ pago.folioContrato }}</span>
+                <span class="text-sm font-semibold bg-gray-100 text-gray-600 px-3 py-1 rounded-full">
+                  Pago {{ pago.numeroPago }}
+                </span>
+                <span
+                  class="text-sm font-semibold px-3 py-1 rounded-full"
+                  [ngClass]="getEstatusPagoClasses(pago.estatus)"
+                >
+                  {{ getEstatusPagoLabel(pago.estatus) }}
+                </span>
+              </div>
+              <h3 class="text-xl font-bold text-gray-900">{{ pago.evento }}</h3>
+              <div class="flex flex-wrap gap-x-6 gap-y-1 mt-2 text-gray-500 text-sm">
+                <span>{{ formatearFecha(pago.fechaPago) }}</span>
+                <span>{{ getMetodoLabel(pago.metodoPago) }}</span>
+                <span>Ref: {{ pago.referencia }}</span>
+              </div>
+            </div>
+            <div class="text-right">
+              <span class="text-3xl font-extrabold text-green-600">${{ pago.monto | number:'1.0-2' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- Cuotas pendientes -->
+    <ng-container *ngIf="tabActiva === 'pendientes'">
+      <div class="space-y-4">
+        <div
+          *ngFor="let cuota of cuotasPendientes"
+          class="bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-300 p-6 md:p-8"
+          [ngClass]="cuota.estatus === 'vencido' ? 'border-l-4 border-red-500' : ''"
+        >
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="flex-1">
+              <div class="flex flex-wrap items-center gap-3 mb-2">
+                <span class="text-sm font-bold text-gray-400">{{ cuota.folioContrato }}</span>
+                <span class="text-sm font-semibold bg-gray-100 text-gray-600 px-3 py-1 rounded-full">
+                  Cuota {{ cuota.numeroPago }}
+                </span>
+                <span
+                  class="text-sm font-semibold px-3 py-1 rounded-full"
+                  [ngClass]="getEstatusCuotaClasses(cuota.estatus)"
+                >
+                  {{ getEstatusCuotaLabel(cuota.estatus) }}
+                </span>
+              </div>
+              <h3 class="text-xl font-bold text-gray-900">{{ cuota.evento }}</h3>
+              <p class="text-gray-500 text-sm mt-1">
+                Vence: {{ formatearFecha(cuota.fechaVencimiento) }}
+              </p>
+            </div>
+            <div class="flex items-center gap-4">
+              <span class="text-3xl font-extrabold text-red-500">${{ cuota.monto | number:'1.0-2' }}</span>
+              <button
+                class="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl font-semibold transition cursor-pointer shrink-0"
+              >
+                Pagar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+  </main>
+
+</div>

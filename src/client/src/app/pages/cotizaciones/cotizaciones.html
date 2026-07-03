@@ -1,0 +1,195 @@
+<div class="min-h-screen bg-linear-to-br from-gray-100 via-gray-50 to-gray-200">
+
+  <app-navbar></app-navbar>
+
+  <main class="max-w-7xl mx-auto px-6 py-10">
+
+    <div class="mb-10">
+      <h2 class="text-5xl font-bold text-gray-900">Cotizaciones</h2>
+      <p class="text-gray-500 mt-2">
+        Revisa el historial y el estado de tus presupuestos solicitados.
+      </p>
+    </div>
+
+    <div class="grid gap-6 md:grid-cols-3 mb-10">
+      <div class="bg-white rounded-3xl shadow-lg p-6">
+        <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Total cotizaciones</span>
+        <p class="text-4xl font-extrabold text-gray-900 mt-2">{{ cotizaciones.length }}</p>
+      </div>
+      <div class="bg-white rounded-3xl shadow-lg p-6">
+        <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Pendientes</span>
+        <p class="text-4xl font-extrabold text-blue-600 mt-2">{{ totalPendientes }}</p>
+      </div>
+      <div class="bg-white rounded-3xl shadow-lg p-6">
+        <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Monto aceptado</span>
+        <p class="text-4xl font-extrabold text-red-500 mt-2">${{ montoTotalAceptado | number:'1.0-0' }}</p>
+      </div>
+    </div>
+
+    <div class="flex flex-col md:flex-row gap-4 mb-8">
+      <div class="relative flex-1">
+        <input
+          type="text"
+          placeholder="Buscar por folio o evento..."
+          [(ngModel)]="busqueda"
+          class="w-full bg-white shadow-lg rounded-2xl pl-14 pr-4 py-4 text-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500"
+        />
+        <svg
+          class="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+      </div>
+
+      <select
+        [(ngModel)]="filtroEstatus"
+        class="bg-white shadow-lg rounded-2xl px-5 py-4 text-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer"
+      >
+        <option value="todos">Todos los estatus</option>
+        <option value="borrador">Borrador</option>
+        <option value="enviada">Enviada</option>
+        <option value="aceptada">Aceptada</option>
+        <option value="rechazada">Rechazada</option>
+        <option value="vencida">Vencida</option>
+      </select>
+    </div>
+
+    <div *ngIf="cotizacionesFiltradas.length === 0" class="bg-white rounded-3xl shadow-lg p-12 text-center">
+      <p class="text-gray-500 text-lg">No se encontraron cotizaciones con los filtros seleccionados.</p>
+    </div>
+
+    <div class="space-y-4">
+      <div
+        *ngFor="let cot of cotizacionesFiltradas"
+        class="bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-300 p-6 md:p-8"
+      >
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div class="flex-1">
+            <div class="flex flex-wrap items-center gap-3 mb-2">
+              <span class="text-sm font-bold text-gray-400">{{ cot.folio }}</span>
+              <span
+                class="text-sm font-semibold px-3 py-1 rounded-full"
+                [ngClass]="getEstatusClasses(cot.estatus)"
+              >
+                {{ getEstatusLabel(cot.estatus) }}
+              </span>
+            </div>
+            <h3 class="text-2xl font-bold text-gray-900">{{ cot.evento }}</h3>
+            <div class="flex flex-wrap gap-x-6 gap-y-1 mt-2 text-gray-500 text-sm">
+              <span>Evento: {{ formatearFecha(cot.fechaEvento) }}</span>
+              <span>{{ cot.invitados }} invitados</span>
+              <span>Vigencia: {{ formatearFecha(cot.fechaVigencia) }}</span>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-6">
+            <div class="text-right">
+              <span class="text-xs text-gray-400 font-semibold uppercase tracking-wider block">Total</span>
+              <span class="text-3xl font-extrabold text-red-500">${{ cot.totalFinal | number:'1.0-2' }}</span>
+              <span *ngIf="cot.descuento > 0" class="text-sm text-green-600 block">
+                Descuento: -${{ cot.descuento | number:'1.0-2' }}
+              </span>
+            </div>
+            <button
+              (click)="abrirDetalle(cot)"
+              class="bg-gray-900 hover:bg-black text-white px-6 py-3 rounded-xl font-semibold transition cursor-pointer shrink-0"
+            >
+              Ver detalle
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <div
+    *ngIf="cotizacionSeleccionada"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+  >
+    <div class="relative bg-white rounded-3xl overflow-hidden shadow-2xl max-w-xl w-full max-h-[90vh] flex flex-col">
+      <div class="p-6 border-b border-gray-100 flex items-center justify-between shrink-0">
+        <div>
+          <span class="text-xs text-red-500 font-bold uppercase tracking-wider">Detalle de cotización</span>
+          <h3 class="text-2xl font-extrabold text-gray-900 mt-1">{{ cotizacionSeleccionada.folio }}</h3>
+        </div>
+        <button
+          (click)="cerrarDetalle()"
+          class="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition cursor-pointer"
+        >
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="grow overflow-y-auto p-6 space-y-6">
+        <div class="flex items-center justify-between">
+          <h4 class="text-xl font-bold text-gray-900">{{ cotizacionSeleccionada.evento }}</h4>
+          <span
+            class="text-sm font-semibold px-3 py-1 rounded-full"
+            [ngClass]="getEstatusClasses(cotizacionSeleccionada.estatus)"
+          >
+            {{ getEstatusLabel(cotizacionSeleccionada.estatus) }}
+          </span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+            <span class="text-xs text-gray-400 font-semibold uppercase tracking-wider">Fecha del evento</span>
+            <span class="block font-bold text-gray-800 mt-1">{{ formatearFecha(cotizacionSeleccionada.fechaEvento) }}</span>
+          </div>
+          <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+            <span class="text-xs text-gray-400 font-semibold uppercase tracking-wider">Invitados</span>
+            <span class="block font-bold text-gray-800 mt-1">{{ cotizacionSeleccionada.invitados }} personas</span>
+          </div>
+        </div>
+
+        <div class="bg-gray-50 rounded-2xl p-5 border border-gray-100 space-y-3">
+          <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Desglose</h4>
+          <div *ngFor="let item of cotizacionSeleccionada.items" class="flex justify-between text-sm text-gray-600">
+            <span>{{ item.descripcion }}</span>
+            <span class="font-semibold text-gray-800">${{ item.monto | number:'1.0-2' }}</span>
+          </div>
+          <div class="border-t border-gray-200 pt-3 space-y-2">
+            <div class="flex justify-between text-sm text-gray-600">
+              <span>Subtotal:</span>
+              <span class="font-semibold">${{ cotizacionSeleccionada.total | number:'1.0-2' }}</span>
+            </div>
+            <div *ngIf="cotizacionSeleccionada.descuento > 0" class="flex justify-between text-sm text-green-600">
+              <span>Descuento:</span>
+              <span class="font-semibold">-${{ cotizacionSeleccionada.descuento | number:'1.0-2' }}</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-base font-bold text-gray-900">Total final:</span>
+              <span class="text-2xl font-extrabold text-red-500">${{ cotizacionSeleccionada.totalFinal | number:'1.0-2' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="cotizacionSeleccionada.notas" class="bg-red-50/50 border border-red-100 rounded-2xl p-4">
+          <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Notas</span>
+          <p class="text-gray-600 mt-1 text-sm">{{ cotizacionSeleccionada.notas }}</p>
+        </div>
+
+        <div class="flex justify-between text-sm text-gray-500">
+          <span>Creada: {{ formatearFecha(cotizacionSeleccionada.fechaCreacion) }}</span>
+          <span>Vigencia: {{ formatearFecha(cotizacionSeleccionada.fechaVigencia) }}</span>
+        </div>
+      </div>
+
+      <div class="border-t border-gray-100 p-6 bg-gray-50/50 shrink-0">
+        <button
+          (click)="cerrarDetalle()"
+          class="w-full py-3.5 px-4 bg-gray-900 hover:bg-black text-white rounded-xl font-semibold transition cursor-pointer"
+        >
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>

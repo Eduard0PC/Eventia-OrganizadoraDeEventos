@@ -1,0 +1,65 @@
+<header class="bg-gray-900/95 backdrop-blur-md shadow-lg sticky top-0 z-50">
+  <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+
+    <h1
+      class="text-3xl font-extrabold text-white cursor-pointer"
+      routerLink="/home"
+    >
+      EventPlanner
+    </h1>
+
+    <nav class="hidden md:flex items-center gap-8 text-lg">
+
+      <a
+        routerLink="/home"
+        routerLinkActive="text-red-500 border-b-2 border-red-500"
+        [routerLinkActiveOptions]="{ exact: true }"
+        class="text-gray-300 hover:text-white pb-1 transition"
+      >
+        Catálogo
+      </a>
+
+      <a
+        routerLink="/mis-eventos"
+        routerLinkActive="text-red-500 border-b-2 border-red-500"
+        class="text-gray-300 hover:text-white pb-1 transition"
+      >
+        Mis eventos
+      </a>
+
+      <a
+        routerLink="/cotizaciones"
+        routerLinkActive="text-red-500 border-b-2 border-red-500"
+        class="text-gray-300 hover:text-white pb-1 transition"
+      >
+        Cotizaciones
+      </a>
+
+      <a
+        routerLink="/pagos"
+        routerLinkActive="text-red-500 border-b-2 border-red-500"
+        class="text-gray-300 hover:text-white pb-1 transition"
+      >
+        Mis pagos
+      </a>
+
+    </nav>
+
+    <!-- Usuario -->
+    <div class="flex items-center gap-4">
+
+      <span class="text-white font-medium">
+        Hola, {{ nombreUsuario }}
+      </span>
+
+      <button
+        (click)="logout()"
+        class="bg-red-500 hover:bg-red-600 px-5 py-2 rounded-xl text-white font-medium transition"
+      >
+        Salir
+      </button>
+
+    </div>
+
+  </div>
+</header>

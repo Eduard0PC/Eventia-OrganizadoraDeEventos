@@ -1,0 +1,421 @@
+<div class="min-h-screen bg-linear-to-br from-gray-100 via-gray-50 to-gray-200">
+
+  <app-navbar></app-navbar>
+
+  <main class="max-w-7xl mx-auto px-6 py-10">
+
+    <div class="relative mb-12">
+
+      <input
+        type="text"
+        placeholder="Buscar eventos..."
+        class="w-full bg-white shadow-lg rounded-2xl pl-14 pr-4 py-4 text-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500"
+      />
+
+      <svg
+        class="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z"
+        />
+      </svg>
+
+    </div>
+    <div class="flex items-center justify-between mb-8">
+
+      <div>
+        <h2 class="text-5xl font-bold text-gray-900">
+          Eventos destacados
+        </h2>
+
+        <p class="text-gray-500 mt-2">
+          Encuentra el evento perfecto para tu próxima celebración.
+        </p>
+      </div>
+
+      <button
+        class="hidden md:block bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl font-semibold transition"
+      >
+        Ver todos
+      </button>
+
+    </div>
+
+    <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+
+      <div
+        *ngFor="let evento of eventos"
+        class="group bg-white rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2"
+      >
+
+        <div class="h-64 overflow-hidden">
+
+          <img
+            [src]="evento.imagen"
+            [alt]="evento.nombre"
+            class="w-full h-full object-cover group-hover:scale-110 transition duration-500"
+          />
+
+        </div>
+
+        <div class="p-6">
+
+          <div class="flex justify-between items-center mb-3">
+
+            <span
+              class="bg-red-100 text-red-600 text-sm font-semibold px-3 py-1 rounded-full"
+            >
+              Destacado
+            </span>
+
+            <span class="font-bold text-red-500">
+              ${{ evento.precioBase | number:'1.0-2' }}
+            </span>
+
+          </div>
+
+          <h3 class="text-2xl font-bold text-gray-900 mb-2">
+            {{ evento.nombre }}
+          </h3>
+
+          <p class="text-gray-500 mb-5">
+            {{ evento.descripcion }}
+          </p>
+
+          <button
+            (click)="openDetails(evento)"
+            class="w-full bg-gray-900 hover:bg-black text-white py-3 rounded-xl font-semibold transition cursor-pointer"
+          >
+            Ver detalles
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <div
+    *ngIf="showDetailsModal && selectedEvento"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs transition-opacity duration-300"
+  >
+    <div
+      class="relative bg-white rounded-3xl overflow-hidden shadow-2xl max-w-2xl w-full transform transition-all duration-300 scale-100 max-h-[90vh] flex flex-col"
+    >
+      <div class="relative h-64 md:h-80 w-full shrink-0">
+        <img
+          [src]="selectedEvento.imagen"
+          [alt]="selectedEvento.nombre"
+          class="w-full h-full object-cover"
+        />
+        <div class="absolute inset-0 bg-linear-to-t from-black/85 via-black/40 to-transparent"></div>
+        
+        <button
+          (click)="closeDetails()"
+          class="absolute top-4 right-4 bg-white/20 hover:bg-white/40 text-white p-2 rounded-full transition-colors backdrop-blur-md cursor-pointer"
+        >
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+
+        <div class="absolute bottom-6 left-6 right-6 text-white">
+          <span class="bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+            Detalles del Evento
+          </span>
+          <h2 class="text-3xl md:text-4xl font-extrabold mt-2 tracking-tight">
+            {{ selectedEvento.nombre }}
+          </h2>
+        </div>
+      </div>
+      <div class="p-6 md:p-8 space-y-6 overflow-y-auto grow">
+        <div class="grid grid-cols-2 gap-4">
+          <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100 flex flex-col justify-between">
+            <span class="text-xs text-gray-400 font-semibold uppercase tracking-wider">Precio Base</span>
+            <span class="text-2xl font-bold text-red-500 mt-1">
+              ${{ selectedEvento.precioBase | number:'1.0-2' }}
+            </span>
+          </div>
+          <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100 flex flex-col justify-between">
+            <span class="text-xs text-gray-400 font-semibold uppercase tracking-wider">Duración Estándar</span>
+            <span class="text-2xl font-bold text-gray-800 mt-1">
+              {{ selectedEvento.duracionHoras }} horas
+            </span>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <h4 class="text-lg font-bold text-gray-900">Descripción del Evento</h4>
+          <p class="text-gray-600 leading-relaxed">
+            {{ selectedEvento.descripcion || 'No hay descripción disponible para este evento en este momento.' }}
+          </p>
+        </div>
+
+        <div class="bg-red-50/50 border border-red-100 rounded-2xl p-4 flex items-start space-x-3">
+          <svg class="w-6 h-6 text-red-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <div class="text-sm text-gray-600">
+            <strong class="text-gray-900">¿Deseas personalizar tu evento?</strong> Puedes cotizar servicios adicionales, agregar invitados u horas extra haciendo clic en el botón de cotizar.
+          </div>
+        </div>
+      </div>
+
+      <div class="border-t border-gray-100 p-6 bg-gray-50/50 flex space-x-4 shrink-0">
+        <button
+          (click)="closeDetails()"
+          class="flex-1 py-3.5 px-4 border border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-100 transition cursor-pointer"
+        >
+          Cancelar
+        </button>
+        <button
+          (click)="openQuote()"
+          class="flex-1 py-3.5 px-4 bg-red-500 hover:bg-red-600 text-white rounded-xl font-semibold transition shadow-md hover:shadow-lg cursor-pointer"
+        >
+          Cotizar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div
+    *ngIf="showQuoteModal && selectedEvento"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs transition-opacity duration-300"
+  >
+    <div
+      class="relative bg-white rounded-3xl overflow-hidden shadow-2xl max-w-xl w-full transform transition-all duration-300 scale-100 max-h-[90vh] flex flex-col"
+    >
+      <div class="p-6 border-b border-gray-100 flex items-center justify-between shrink-0">
+        <div>
+          <span class="text-xs text-red-500 font-bold uppercase tracking-wider">Generar Presupuesto</span>
+          <h3 class="text-2xl font-extrabold text-gray-900 mt-1">
+            Cotizar: {{ selectedEvento.nombre }}
+          </h3>
+        </div>
+        <button
+          (click)="closeQuote()"
+          class="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition cursor-pointer"
+        >
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="grow overflow-y-auto p-6 space-y-6">
+        
+        <ng-container *ngIf="!cotizacionEnviada; else successTemplate">
+          <div class="space-y-2">
+            <label class="block text-sm font-semibold text-gray-700">Fecha del Evento *</label>
+            <div class="relative">
+              <input
+                type="date"
+                [(ngModel)]="fechaEvento"
+                class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 transition"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="space-y-2">
+              <label class="block text-sm font-semibold text-gray-700">Cantidad de Invitados *</label>
+              <input
+                type="number"
+                min="1"
+                placeholder="Ej. 100"
+                [(ngModel)]="cantidadInvitados"
+                class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 transition"
+                required
+              />
+            </div>
+
+            <div class="space-y-2">
+              <label class="block text-sm font-semibold text-gray-700">Horas Adicionales</label>
+              <input
+                type="number"
+                min="0"
+                placeholder="0"
+                [(ngModel)]="horasAdicionales"
+                class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 transition"
+              />
+            </div>
+          </div>
+
+          <div class="space-y-3">
+            <label class="block text-sm font-semibold text-gray-700">Servicios Extra Recomendados</label>
+            
+            <div class="grid grid-cols-1 gap-3">
+              <label
+                class="flex items-center justify-between p-4 border rounded-2xl cursor-pointer transition select-none"
+                [ngClass]="cateringSelected ? 'border-red-500 bg-red-50/30' : 'border-gray-200 hover:bg-gray-50/50'"
+              >
+                <div class="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    [(ngModel)]="cateringSelected"
+                    class="w-5 h-5 text-red-500 border-gray-300 rounded focus:ring-red-500 cursor-pointer"
+                  />
+                  <div>
+                    <span class="block font-bold text-gray-800">Servicio de Banquete/Catering</span>
+                    <span class="text-xs text-gray-500">Deliciosa comida preparada por chefs ($250 por invitado)</span>
+                  </div>
+                </div>
+              </label>
+
+              <label
+                class="flex items-center justify-between p-4 border rounded-2xl cursor-pointer transition select-none"
+                [ngClass]="musicaSelected ? 'border-red-500 bg-red-50/30' : 'border-gray-200 hover:bg-gray-50/50'"
+              >
+                <div class="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    [(ngModel)]="musicaSelected"
+                    class="w-5 h-5 text-red-500 border-gray-300 rounded focus:ring-red-500 cursor-pointer"
+                  />
+                  <div>
+                    <span class="block font-bold text-gray-800">Música y DJ en Vivo</span>
+                    <span class="text-xs text-gray-500">Audio profesional, iluminación y DJ animador ($5,000 total)</span>
+                  </div>
+                </div>
+              </label>
+
+              <label
+                class="flex items-center justify-between p-4 border rounded-2xl cursor-pointer transition select-none"
+                [ngClass]="decoracionSelected ? 'border-red-500 bg-red-50/30' : 'border-gray-200 hover:bg-gray-50/50'"
+              >
+                <div class="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    [(ngModel)]="decoracionSelected"
+                    class="w-5 h-5 text-red-500 border-gray-300 rounded focus:ring-red-500 cursor-pointer"
+                  />
+                  <div>
+                    <span class="block font-bold text-gray-800">Decoración Temática/Premium</span>
+                    <span class="text-xs text-gray-500">Arreglos florales premium, centros de mesa y montaje de lujo ($3,000 total)</span>
+                  </div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <label class="block text-sm font-semibold text-gray-700">Peticiones o Notas Especiales</label>
+            <textarea
+              rows="3"
+              placeholder="Cuéntanos más detalles o requerimientos especiales..."
+              [(ngModel)]="notasEspeciales"
+              class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 transition resize-none"
+            ></textarea>
+          </div>
+          <div class="bg-gray-50 rounded-2xl p-5 border border-gray-100 space-y-3">
+            <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Desglose Estimado</h4>
+            
+            <div class="space-y-2 text-sm text-gray-600">
+              <div class="flex justify-between">
+                <span>Precio Base de Evento:</span>
+                <span class="font-semibold text-gray-800">${{ selectedEvento.precioBase | number:'1.0-2' }}</span>
+              </div>
+              
+              <div *ngIf="horasAdicionales > 0" class="flex justify-between">
+                <span>Horas Extra ({{ horasAdicionales }} hrs):</span>
+                <span class="font-semibold text-gray-800">+${{ (horasAdicionales * 1000) | number:'1.0-2' }}</span>
+              </div>
+
+              <div *ngIf="cateringSelected && cantidadInvitados && cantidadInvitados > 0" class="flex justify-between">
+                <span>Banquete ({{ cantidadInvitados }} invitados):</span>
+                <span class="font-semibold text-gray-800">+${{ (cantidadInvitados * 250) | number:'1.0-2' }}</span>
+              </div>
+
+              <div *ngIf="musicaSelected" class="flex justify-between">
+                <span>Música y DJ:</span>
+                <span class="font-semibold text-gray-800">+$5,000.00</span>
+              </div>
+
+              <div *ngIf="decoracionSelected" class="flex justify-between">
+                <span>Decoración Premium:</span>
+                <span class="font-semibold text-gray-800">+$3,000.00</span>
+              </div>
+            </div>
+
+            <div class="border-t border-gray-200 pt-3 flex justify-between items-center">
+              <span class="text-base font-bold text-gray-900">Total Estimado:</span>
+              <span class="text-2xl font-extrabold text-red-500">
+                ${{ getEstimatedTotal() | number:'1.0-2' }}
+              </span>
+            </div>
+          </div>
+        </ng-container>
+
+        <ng-template #successTemplate>
+          <div class="py-8 flex flex-col items-center text-center space-y-4">
+            <div class="bg-green-100 text-green-600 p-4 rounded-full">
+              <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+              </svg>
+            </div>
+            <h3 class="text-2xl font-extrabold text-gray-900">¡Cotización Registrada!</h3>
+            <p class="text-gray-500 max-w-sm">
+              La simulación de tu cotización para el evento <strong>{{ selectedEvento.nombre }}</strong> se completó correctamente.
+            </p>
+            
+            <div class="bg-gray-50 rounded-2xl p-5 border border-gray-100 text-left w-full space-y-3">
+              <div class="text-xs text-gray-400 font-bold uppercase tracking-wider">Resumen Simulador</div>
+              <div class="text-sm space-y-2 text-gray-600">
+                <div class="flex justify-between">
+                  <span>Fecha de Evento:</span>
+                  <span class="font-bold text-gray-800">{{ fechaEvento }}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span>Invitados:</span>
+                  <span class="font-bold text-gray-800">{{ cantidadInvitados }} personas</span>
+                </div>
+                <div class="flex justify-between">
+                  <span>Total Estimado:</span>
+                  <span class="font-extrabold text-red-500 text-lg">${{ getEstimatedTotal() | number:'1.0-2' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ng-template>
+
+      </div>
+
+      <div class="border-t border-gray-100 p-6 bg-gray-50/50 flex space-x-4 shrink-0">
+        <ng-container *ngIf="!cotizacionEnviada; else successFooter">
+          <button
+            (click)="openDetails(selectedEvento)"
+            class="flex-1 py-3.5 px-4 border border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-100 transition cursor-pointer"
+          >
+            Atrás
+          </button>
+          <button
+            (click)="enviarCotizacion()"
+            [disabled]="!fechaEvento || !cantidadInvitados || cantidadInvitados <= 0"
+            class="flex-1 py-3.5 px-4 bg-red-500 hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-semibold transition shadow-md hover:shadow-lg cursor-pointer"
+          >
+            Enviar cotización
+          </button>
+        </ng-container>
+        
+        <ng-template #successFooter>
+          <button
+            (click)="closeQuote()"
+            class="w-full py-3.5 px-4 bg-gray-900 hover:bg-black text-white rounded-xl font-semibold transition cursor-pointer"
+          >
+            Entendido
+          </button>
+        </ng-template>
+      </div>
+    </div>
+  </div>
+
+</div>

@@ -1,0 +1,197 @@
+<div class="min-h-screen bg-linear-to-br from-gray-100 via-gray-50 to-gray-200">
+
+  <app-navbar></app-navbar>
+
+  <main class="max-w-7xl mx-auto px-6 py-10">
+
+    <div class="mb-10">
+      <h2 class="text-5xl font-bold text-gray-900">Mis eventos</h2>
+      <p class="text-gray-500 mt-2">
+        Consulta el estado y los detalles de los eventos que has contratado.
+      </p>
+    </div>
+
+    <div class="grid gap-6 md:grid-cols-3 mb-10">
+      <div class="bg-white rounded-3xl shadow-lg p-6">
+        <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Total contratados</span>
+        <p class="text-4xl font-extrabold text-gray-900 mt-2">{{ eventos.length }}</p>
+      </div>
+      <div class="bg-white rounded-3xl shadow-lg p-6">
+        <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Próximos</span>
+        <p class="text-4xl font-extrabold text-blue-600 mt-2">{{ totalProgramados }}</p>
+      </div>
+      <div class="bg-white rounded-3xl shadow-lg p-6">
+        <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Completados</span>
+        <p class="text-4xl font-extrabold text-green-600 mt-2">{{ totalCompletados }}</p>
+      </div>
+    </div>
+
+    <div class="flex flex-col md:flex-row gap-4 mb-8">
+      <div class="relative flex-1">
+        <input
+          type="text"
+          placeholder="Buscar por nombre, lugar o contrato..."
+          [(ngModel)]="busqueda"
+          class="w-full bg-white shadow-lg rounded-2xl pl-14 pr-4 py-4 text-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500"
+        />
+        <svg
+          class="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+      </div>
+
+      <select
+        [(ngModel)]="filtroEstatus"
+        class="bg-white shadow-lg rounded-2xl px-5 py-4 text-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer"
+      >
+        <option value="todos">Todos los estatus</option>
+        <option value="programado">Programado</option>
+        <option value="en_curso">En curso</option>
+        <option value="completado">Completado</option>
+        <option value="reprogramado">Reprogramado</option>
+        <option value="cancelado">Cancelado</option>
+      </select>
+    </div>
+
+    <div *ngIf="eventosFiltrados.length === 0" class="bg-white rounded-3xl shadow-lg p-12 text-center">
+      <p class="text-gray-500 text-lg">No se encontraron eventos con los filtros seleccionados.</p>
+    </div>
+
+    <div class="grid gap-8 md:grid-cols-2">
+      <div
+        *ngFor="let evento of eventosFiltrados"
+        class="group bg-white rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1"
+      >
+        <div class="h-48 overflow-hidden relative">
+          <img
+            [src]="evento.imagen"
+            [alt]="evento.nombre"
+            class="w-full h-full object-cover group-hover:scale-110 transition duration-500"
+          />
+          <span
+            class="absolute top-4 left-4 text-sm font-semibold px-3 py-1 rounded-full"
+            [ngClass]="getEstatusClasses(evento.estatus)"
+          >
+            {{ getEstatusLabel(evento.estatus) }}
+          </span>
+        </div>
+
+        <div class="p-6">
+          <h3 class="text-2xl font-bold text-gray-900 mb-1">{{ evento.nombre }}</h3>
+          <p class="text-sm text-gray-400 mb-4">Contrato {{ evento.folioContrato }}</p>
+
+          <div class="space-y-2 text-gray-600 mb-5">
+            <div class="flex items-center gap-2">
+              <svg class="w-5 h-5 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+              </svg>
+              <span>{{ formatearFecha(evento.fechaEvento) }}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <svg class="w-5 h-5 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+              </svg>
+              <span class="truncate">{{ evento.lugar }}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <svg class="w-5 h-5 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+              </svg>
+              <span>{{ evento.aforo }} invitados</span>
+            </div>
+          </div>
+
+          <button
+            (click)="abrirDetalle(evento)"
+            class="w-full bg-gray-900 hover:bg-black text-white py-3 rounded-xl font-semibold transition cursor-pointer"
+          >
+            Ver detalles
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <div
+    *ngIf="eventoSeleccionado"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+  >
+    <div class="relative bg-white rounded-3xl overflow-hidden shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col">
+      <div class="relative h-56 shrink-0">
+        <img
+          [src]="eventoSeleccionado.imagen"
+          [alt]="eventoSeleccionado.nombre"
+          class="w-full h-full object-cover"
+        />
+        <div class="absolute inset-0 bg-linear-to-t from-black/85 via-black/40 to-transparent"></div>
+        <button
+          (click)="cerrarDetalle()"
+          class="absolute top-4 right-4 bg-white/20 hover:bg-white/40 text-white p-2 rounded-full transition-colors backdrop-blur-md cursor-pointer"
+        >
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+        <div class="absolute bottom-6 left-6 right-6 text-white">
+          <span
+            class="text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider"
+            [ngClass]="getEstatusClasses(eventoSeleccionado.estatus)"
+          >
+            {{ getEstatusLabel(eventoSeleccionado.estatus) }}
+          </span>
+          <h2 class="text-3xl font-extrabold mt-2">{{ eventoSeleccionado.nombre }}</h2>
+        </div>
+      </div>
+
+      <div class="p-6 md:p-8 space-y-6 overflow-y-auto grow">
+        <div class="grid grid-cols-2 gap-4">
+          <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+            <span class="text-xs text-gray-400 font-semibold uppercase tracking-wider">Fecha</span>
+            <span class="block text-lg font-bold text-gray-800 mt-1">{{ formatearFecha(eventoSeleccionado.fechaEvento) }}</span>
+          </div>
+          <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+            <span class="text-xs text-gray-400 font-semibold uppercase tracking-wider">Horario</span>
+            <span class="block text-lg font-bold text-gray-800 mt-1">{{ eventoSeleccionado.horaInicio }} – {{ eventoSeleccionado.horaFin }}</span>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <h4 class="text-lg font-bold text-gray-900">Lugar del evento</h4>
+          <p class="text-gray-600">{{ eventoSeleccionado.lugar }}</p>
+        </div>
+
+        <div class="space-y-2">
+          <h4 class="text-lg font-bold text-gray-900">Descripción</h4>
+          <p class="text-gray-600 leading-relaxed">{{ eventoSeleccionado.descripcion }}</p>
+        </div>
+
+        <div class="bg-gray-50 rounded-2xl p-5 border border-gray-100 space-y-3">
+          <div class="flex justify-between text-sm text-gray-600">
+            <span>Contrato:</span>
+            <span class="font-semibold text-gray-800">{{ eventoSeleccionado.folioContrato }}</span>
+          </div>
+          <div class="flex justify-between text-sm text-gray-600">
+            <span>Aforo contratado:</span>
+            <span class="font-semibold text-gray-800">{{ eventoSeleccionado.aforo }} personas</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="border-t border-gray-100 p-6 bg-gray-50/50 shrink-0">
+        <button
+          (click)="cerrarDetalle()"
+          class="w-full py-3.5 px-4 bg-gray-900 hover:bg-black text-white rounded-xl font-semibold transition cursor-pointer"
+        >
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
