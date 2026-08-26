@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { NavbarClient } from '../../components/navbar-client/navbar-client';
 import { environment } from '../../../environments/environment';
+import { CotizacionesService } from '../../services/cotizaciones';
 
 export interface CatalogoEvento {
   id: number;
@@ -23,6 +24,8 @@ export interface CatalogoEvento {
 })
 export class Home implements OnInit {
   private readonly http = inject(HttpClient);
+  private readonly cotizacionesService = inject(CotizacionesService);
+
   eventos: CatalogoEvento[] = [];
 
   selectedEvento: CatalogoEvento | null = null;
@@ -32,11 +35,9 @@ export class Home implements OnInit {
   fechaEvento = '';
   cantidadInvitados: number | null = null;
   horasAdicionales = 0;
-  cateringSelected = false;
-  musicaSelected = false;
-  decoracionSelected = false;
   notasEspeciales = '';
   cotizacionEnviada = false;
+  enviandoCotizacion = false;
 
   ngOnInit(): void {
     this.http.get<CatalogoEvento[]>(`${environment.apiUrl}/api/catalogo-eventos`).subscribe({
@@ -71,9 +72,6 @@ export class Home implements OnInit {
     this.fechaEvento = '';
     this.cantidadInvitados = null;
     this.horasAdicionales = 0;
-    this.cateringSelected = false;
-    this.musicaSelected = false;
-    this.decoracionSelected = false;
     this.notasEspeciales = '';
   }
 
@@ -85,36 +83,48 @@ export class Home implements OnInit {
   getEstimatedTotal(): number {
     if (!this.selectedEvento) return 0;
     let total = Number(this.selectedEvento.precioBase);
-    
     total += (this.horasAdicionales || 0) * 1000;
-
-    if (this.cateringSelected) {
-      total += (this.cantidadInvitados || 0) * 250;
-    }
-    if (this.musicaSelected) {
-      total += 5000;
-    }
-    if (this.decoracionSelected) {
-      total += 3000;
-    }
-
     return total;
   }
 
   enviarCotizacion(): void {
-    this.cotizacionEnviada = true;
-    console.log('Cotización simulada enviada con los siguientes datos:', {
-      evento: this.selectedEvento,
-      fecha: this.fechaEvento,
+    if (!this.selectedEvento || !this.fechaEvento || !this.cantidadInvitados || this.enviandoCotizacion) {
+      return;
+    }
+
+    let clienteId: number | undefined = undefined;
+    const sessionStr = localStorage.getItem('session');
+    if (sessionStr) {
+      try {
+        const session = JSON.parse(sessionStr);
+        if (session?.cliente?.id) {
+          clienteId = session.cliente.id;
+        }
+      } catch (e) {
+        console.error('Error parsing session from localStorage:', e);
+      }
+    }
+
+    this.enviandoCotizacion = true;
+
+    this.cotizacionesService.crearCotizacion({
+      clienteId: clienteId,
+      catalogoEventoId: this.selectedEvento.id,
+      fechaEvento: this.fechaEvento,
       invitados: this.cantidadInvitados,
-      horasAdicionales: this.horasAdicionales,
-      servicios: {
-        catering: this.cateringSelected,
-        musica: this.musicaSelected,
-        decoracion: this.decoracionSelected
+      horasAdicionales: this.horasAdicionales || 0,
+      notas: this.notasEspeciales
+    }).subscribe({
+      next: (response) => {
+        this.enviandoCotizacion = false;
+        this.cotizacionEnviada = true;
+        console.log('Cotización guardada exitosamente en backend:', response);
       },
-      notas: this.notasEspeciales,
-      totalEstimado: this.getEstimatedTotal()
+      error: (err) => {
+        this.enviandoCotizacion = false;
+        console.error('Error al guardar la cotización:', err);
+        alert('Hubo un error al procesar tu cotización. Por favor reintenta.');
+      }
     });
   }
 

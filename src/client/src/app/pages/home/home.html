@@ -250,63 +250,6 @@
             </div>
           </div>
 
-          <div class="space-y-3">
-            <label class="block text-sm font-semibold text-gray-700">Servicios Extra Recomendados</label>
-            
-            <div class="grid grid-cols-1 gap-3">
-              <label
-                class="flex items-center justify-between p-4 border rounded-2xl cursor-pointer transition select-none"
-                [ngClass]="cateringSelected ? 'border-red-500 bg-red-50/30' : 'border-gray-200 hover:bg-gray-50/50'"
-              >
-                <div class="flex items-center space-x-3">
-                  <input
-                    type="checkbox"
-                    [(ngModel)]="cateringSelected"
-                    class="w-5 h-5 text-red-500 border-gray-300 rounded focus:ring-red-500 cursor-pointer"
-                  />
-                  <div>
-                    <span class="block font-bold text-gray-800">Servicio de Banquete/Catering</span>
-                    <span class="text-xs text-gray-500">Deliciosa comida preparada por chefs ($250 por invitado)</span>
-                  </div>
-                </div>
-              </label>
-
-              <label
-                class="flex items-center justify-between p-4 border rounded-2xl cursor-pointer transition select-none"
-                [ngClass]="musicaSelected ? 'border-red-500 bg-red-50/30' : 'border-gray-200 hover:bg-gray-50/50'"
-              >
-                <div class="flex items-center space-x-3">
-                  <input
-                    type="checkbox"
-                    [(ngModel)]="musicaSelected"
-                    class="w-5 h-5 text-red-500 border-gray-300 rounded focus:ring-red-500 cursor-pointer"
-                  />
-                  <div>
-                    <span class="block font-bold text-gray-800">Música y DJ en Vivo</span>
-                    <span class="text-xs text-gray-500">Audio profesional, iluminación y DJ animador ($5,000 total)</span>
-                  </div>
-                </div>
-              </label>
-
-              <label
-                class="flex items-center justify-between p-4 border rounded-2xl cursor-pointer transition select-none"
-                [ngClass]="decoracionSelected ? 'border-red-500 bg-red-50/30' : 'border-gray-200 hover:bg-gray-50/50'"
-              >
-                <div class="flex items-center space-x-3">
-                  <input
-                    type="checkbox"
-                    [(ngModel)]="decoracionSelected"
-                    class="w-5 h-5 text-red-500 border-gray-300 rounded focus:ring-red-500 cursor-pointer"
-                  />
-                  <div>
-                    <span class="block font-bold text-gray-800">Decoración Temática/Premium</span>
-                    <span class="text-xs text-gray-500">Arreglos florales premium, centros de mesa y montaje de lujo ($3,000 total)</span>
-                  </div>
-                </div>
-              </label>
-            </div>
-          </div>
-
           <div class="space-y-2">
             <label class="block text-sm font-semibold text-gray-700">Peticiones o Notas Especiales</label>
             <textarea
@@ -329,21 +272,6 @@
                 <span>Horas Extra ({{ horasAdicionales }} hrs):</span>
                 <span class="font-semibold text-gray-800">+${{ (horasAdicionales * 1000) | number:'1.0-2' }}</span>
               </div>
-
-              <div *ngIf="cateringSelected && cantidadInvitados && cantidadInvitados > 0" class="flex justify-between">
-                <span>Banquete ({{ cantidadInvitados }} invitados):</span>
-                <span class="font-semibold text-gray-800">+${{ (cantidadInvitados * 250) | number:'1.0-2' }}</span>
-              </div>
-
-              <div *ngIf="musicaSelected" class="flex justify-between">
-                <span>Música y DJ:</span>
-                <span class="font-semibold text-gray-800">+$5,000.00</span>
-              </div>
-
-              <div *ngIf="decoracionSelected" class="flex justify-between">
-                <span>Decoración Premium:</span>
-                <span class="font-semibold text-gray-800">+$3,000.00</span>
-              </div>
             </div>
 
             <div class="border-t border-gray-200 pt-3 flex justify-between items-center">
@@ -364,11 +292,11 @@
             </div>
             <h3 class="text-2xl font-extrabold text-gray-900">¡Cotización Registrada!</h3>
             <p class="text-gray-500 max-w-sm">
-              La simulación de tu cotización para el evento <strong>{{ selectedEvento.nombre }}</strong> se completó correctamente.
+              Tu cotización para el evento <strong>{{ selectedEvento.nombre }}</strong> se ha registrado exitosamente en el sistema.
             </p>
             
             <div class="bg-gray-50 rounded-2xl p-5 border border-gray-100 text-left w-full space-y-3">
-              <div class="text-xs text-gray-400 font-bold uppercase tracking-wider">Resumen Simulador</div>
+              <div class="text-xs text-gray-400 font-bold uppercase tracking-wider">Resumen de Cotización</div>
               <div class="text-sm space-y-2 text-gray-600">
                 <div class="flex justify-between">
                   <span>Fecha de Evento:</span>

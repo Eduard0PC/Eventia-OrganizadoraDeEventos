@@ -57,8 +57,12 @@
       </select>
     </div>
 
-    <div *ngIf="cotizacionesFiltradas.length === 0" class="bg-white rounded-3xl shadow-lg p-12 text-center">
-      <p class="text-gray-500 text-lg">No se encontraron cotizaciones con los filtros seleccionados.</p>
+    <div *ngIf="cargando" class="bg-white rounded-3xl shadow-lg p-12 text-center">
+      <p class="text-gray-500 text-lg">Cargando cotizaciones...</p>
+    </div>
+
+    <div *ngIf="!cargando && cotizacionesFiltradas.length === 0" class="bg-white rounded-3xl shadow-lg p-12 text-center">
+      <p class="text-gray-500 text-lg">No hay cotizaciones registradas aún. Genera una desde la página de inicio.</p>
     </div>
 
     <div class="space-y-4">

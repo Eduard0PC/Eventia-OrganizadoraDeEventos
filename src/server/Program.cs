@@ -123,6 +123,225 @@ app.MapPost("/api/auth/login", async (LoginRequest request, AppDbContext db, Can
 })
 .WithName("Login");
 
+app.MapGet("/api/cotizaciones", async (int? clienteId, AppDbContext db, CancellationToken cancellationToken) =>
+{
+    var query = db.Cotizaciones
+        .Include(c => c.Cliente)
+        .Include(c => c.Items)
+            .ThenInclude(i => i.CatalogoEvento)
+        .AsQueryable();
+
+    if (clienteId.HasValue && clienteId.Value > 0)
+    {
+        query = query.Where(c => c.ClienteId == clienteId.Value);
+    }
+
+    var cotizaciones = await query
+        .OrderByDescending(c => c.CreatedAt)
+        .ToListAsync(cancellationToken);
+
+    var dtos = cotizaciones.Select(c =>
+    {
+        var primerItemEvento = c.Items.FirstOrDefault(i => i.Tipo == "evento");
+        var nombreEvento = primerItemEvento?.CatalogoEvento?.Nombre ?? "Evento personalizado";
+
+        var itemsDto = c.Items.Select(i => new CotizacionItemDto(
+            i.Id,
+            !string.IsNullOrWhiteSpace(i.Notas) ? i.Notas : (i.CatalogoEvento != null ? $"Paquete {i.CatalogoEvento.Nombre}" : "Servicio"),
+            i.Subtotal ?? (i.Cantidad * i.PrecioUnitario - i.DescuentoItem)
+        )).ToList();
+
+        return new CotizacionResponse(
+            c.Id,
+            c.Folio,
+            nombreEvento,
+            primerItemEvento?.CatalogoEventoId,
+            c.FechaEvento?.ToString("yyyy-MM-dd"),
+            c.Invitados,
+            c.Total,
+            c.Descuento,
+            c.TotalFinal ?? (c.Total - c.Descuento),
+            c.Estatus,
+            c.FechaVigencia.ToString("yyyy-MM-dd"),
+            c.CreatedAt.ToString("yyyy-MM-dd"),
+            c.Notas ?? "",
+            itemsDto
+        );
+    }).ToList();
+
+    return Results.Ok(dtos);
+})
+.WithName("GetCotizaciones");
+
+app.MapGet("/api/cotizaciones/{id:int}", async (int id, AppDbContext db, CancellationToken cancellationToken) =>
+{
+    var c = await db.Cotizaciones
+        .Include(c => c.Cliente)
+        .Include(c => c.Items)
+            .ThenInclude(i => i.CatalogoEvento)
+        .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+    if (c is null) return Results.NotFound();
+
+    var primerItemEvento = c.Items.FirstOrDefault(i => i.Tipo == "evento");
+    var nombreEvento = primerItemEvento?.CatalogoEvento?.Nombre ?? "Evento personalizado";
+
+    var itemsDto = c.Items.Select(i => new CotizacionItemDto(
+        i.Id,
+        i.Tipo == "evento" && i.CatalogoEvento != null ? $"Paquete {i.CatalogoEvento.Nombre}" : (i.Notas ?? "Servicio"),
+        i.Subtotal ?? (i.Cantidad * i.PrecioUnitario - i.DescuentoItem)
+    )).ToList();
+
+    var dto = new CotizacionResponse(
+        c.Id,
+        c.Folio,
+        nombreEvento,
+        primerItemEvento?.CatalogoEventoId,
+        c.FechaEvento?.ToString("yyyy-MM-dd"),
+        c.Invitados,
+        c.Total,
+        c.Descuento,
+        c.TotalFinal ?? (c.Total - c.Descuento),
+        c.Estatus,
+        c.FechaVigencia.ToString("yyyy-MM-dd"),
+        c.CreatedAt.ToString("yyyy-MM-dd"),
+        c.Notas ?? "",
+        itemsDto
+    );
+
+    return Results.Ok(dto);
+})
+.WithName("GetCotizacionById");
+
+app.MapPost("/api/cotizaciones", async (CrearCotizacionRequest request, AppDbContext db, CancellationToken cancellationToken) =>
+{
+    var evento = await db.CatalogoEventos.FindAsync(new object[] { request.CatalogoEventoId }, cancellationToken);
+    if (evento is null)
+    {
+        return Results.BadRequest(new { error = "El evento especificado no existe en el catálogo." });
+    }
+
+    int targetClienteId = request.ClienteId ?? 0;
+    if (targetClienteId <= 0)
+    {
+        var primerCliente = await db.Clientes.FirstOrDefaultAsync(c => c.Activo, cancellationToken);
+        if (primerCliente != null)
+        {
+            targetClienteId = primerCliente.Id;
+        }
+        else
+        {
+            return Results.BadRequest(new { error = "No hay clientes activos registrados." });
+        }
+    }
+
+    decimal totalBase = evento.PrecioBase;
+    decimal extraHorasMonto = request.HorasAdicionales > 0 ? request.HorasAdicionales * 1000m : 0m;
+    decimal totalCotizacion = totalBase + extraHorasMonto;
+
+    // Generar un folio único: COT-YYYY-XXXX
+    int randomNum = Random.Shared.Next(1000, 9999);
+    string folio = $"COT-{DateTime.UtcNow.Year}-{randomNum}";
+
+    DateTime? fechaEventoParsed = null;
+    if (DateTime.TryParse(request.FechaEvento, out var parsedDate))
+    {
+        fechaEventoParsed = DateTime.SpecifyKind(parsedDate, DateTimeKind.Utc);
+    }
+
+    var nuevaCotizacion = new Cotizacion
+    {
+        ClienteId = targetClienteId,
+        Folio = folio,
+        Total = totalCotizacion,
+        Descuento = 0m,
+        Estatus = "enviada",
+        FechaVigencia = DateTime.UtcNow.AddDays(30),
+        FechaEvento = fechaEventoParsed,
+        Invitados = request.Invitados,
+        Notas = request.Notas,
+        CreatedAt = DateTime.UtcNow,
+        UpdatedAt = DateTime.UtcNow
+    };
+
+    db.Cotizaciones.Add(nuevaCotizacion);
+    await db.SaveChangesAsync(cancellationToken);
+
+    var itemEvento = new CotizacionItem
+    {
+        CotizacionId = nuevaCotizacion.Id,
+        Tipo = "evento",
+        Cantidad = 1,
+        PrecioUnitario = evento.PrecioBase,
+        DescuentoItem = 0m,
+        Notas = $"Paquete {evento.Nombre} - Invitados: {request.Invitados}" + (request.HorasAdicionales > 0 ? $", Horas extra: {request.HorasAdicionales}" : ""),
+        CatalogoEventoId = evento.Id,
+        CreatedAt = DateTime.UtcNow,
+        UpdatedAt = DateTime.UtcNow
+    };
+
+    db.CotizacionItems.Add(itemEvento);
+
+    if (request.HorasAdicionales > 0)
+    {
+        var itemHoras = new CotizacionItem
+        {
+            CotizacionId = nuevaCotizacion.Id,
+            Tipo = "evento",
+            Cantidad = (short)request.HorasAdicionales,
+            PrecioUnitario = 1000m,
+            DescuentoItem = 0m,
+            Notas = $"Horas adicionales ({request.HorasAdicionales} hrs)",
+            CatalogoEventoId = evento.Id,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+        db.CotizacionItems.Add(itemHoras);
+    }
+
+    await db.SaveChangesAsync(cancellationToken);
+
+    var itemsDto = new List<CotizacionItemDto>
+    {
+        new CotizacionItemDto(itemEvento.Id, $"Paquete {evento.Nombre}", evento.PrecioBase)
+    };
+    if (request.HorasAdicionales > 0)
+    {
+        itemsDto.Add(new CotizacionItemDto(0, $"Horas adicionales ({request.HorasAdicionales} hrs)", extraHorasMonto));
+    }
+
+    var responseDto = new CotizacionResponse(
+        nuevaCotizacion.Id,
+        nuevaCotizacion.Folio,
+        evento.Nombre,
+        evento.Id,
+        nuevaCotizacion.FechaEvento?.ToString("yyyy-MM-dd"),
+        nuevaCotizacion.Invitados,
+        nuevaCotizacion.Total,
+        nuevaCotizacion.Descuento,
+        nuevaCotizacion.Total,
+        nuevaCotizacion.Estatus,
+        nuevaCotizacion.FechaVigencia.ToString("yyyy-MM-dd"),
+        nuevaCotizacion.CreatedAt.ToString("yyyy-MM-dd"),
+        nuevaCotizacion.Notas ?? "",
+        itemsDto
+    );
+
+    return Results.Created($"/api/cotizaciones/{nuevaCotizacion.Id}", responseDto);
+})
+.WithName("CrearCotizacion");
+
+app.MapDelete("/api/cotizaciones/{id:int}", async (int id, AppDbContext db, CancellationToken cancellationToken) =>
+{
+    var cotizacion = await db.Cotizaciones.FindAsync(new object[] { id }, cancellationToken);
+    if (cotizacion is null) return Results.NotFound();
+
+    db.Cotizaciones.Remove(cotizacion);
+    await db.SaveChangesAsync(cancellationToken);
+    return Results.NoContent();
+})
+.WithName("DeleteCotizacion");
+
 app.Run();
 
 static bool PasswordMatches(string password, string passwordHash)
@@ -140,3 +359,30 @@ static bool PasswordMatches(string password, string passwordHash)
 record LoginRequest(string Email, string Password);
 record LoginResponse(int Id, string Email, string Rol, ClienteResponse? Cliente);
 record ClienteResponse(int Id, string Nombre, string Apellido, string Email, string? Telefono);
+
+record CotizacionItemDto(int Id, string Descripcion, decimal Monto);
+record CotizacionResponse(
+    int Id,
+    string Folio,
+    string Evento,
+    int? CatalogoEventoId,
+    string? FechaEvento,
+    int Invitados,
+    decimal Total,
+    decimal Descuento,
+    decimal TotalFinal,
+    string Estatus,
+    string FechaVigencia,
+    string FechaCreacion,
+    string Notas,
+    List<CotizacionItemDto> Items
+);
+record CrearCotizacionRequest(
+    int? ClienteId,
+    int CatalogoEventoId,
+    string FechaEvento,
+    int Invitados,
+    int HorasAdicionales,
+    string? Notas
+);
+
