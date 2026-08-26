@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict EDsErKsxgtx9JbmjpZgS5Q8o2zpcdxr71TS3JwrBcnxClAaX4Rm9k501iPFvDv3
+\restrict yetSbID28v2mGjkADA8QxQuweZc8vnXqlWY65awKddN82gTmGirJlmnHCRPQvGe
 
 -- Dumped from database version 17.6
 -- Dumped by pg_dump version 18.4
@@ -377,6 +377,21 @@ CREATE TYPE public.prioridad_tarea AS ENUM (
 
 
 ALTER TYPE public.prioridad_tarea OWNER TO postgres;
+
+--
+-- Name: rol_asignacion; Type: TYPE; Schema: public; Owner: postgres
+--
+
+CREATE TYPE public.rol_asignacion AS ENUM (
+    'coordinador',
+    'logistica',
+    'montaje',
+    'atencion_cliente',
+    'otro'
+);
+
+
+ALTER TYPE public.rol_asignacion OWNER TO postgres;
 
 --
 -- Name: rol_usuario; Type: TYPE; Schema: public; Owner: postgres
@@ -3536,15 +3551,23 @@ CREATE TABLE public.asignacion_recursos (
     id integer NOT NULL,
     recurso_id integer NOT NULL,
     contrato_id integer NOT NULL,
-    rol character varying(100),
+    rol public.rol_asignacion,
     fecha_inicio date NOT NULL,
     fecha_fin date NOT NULL,
     notas text,
-    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT chk_asig_fechas CHECK ((fecha_fin >= fecha_inicio))
 );
 
 
 ALTER TABLE public.asignacion_recursos OWNER TO postgres;
+
+--
+-- Name: TABLE asignacion_recursos; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON TABLE public.asignacion_recursos IS 'Relación de un empleado (recurso) asignado a un contrato, con su rol y periodo de participación.';
+
 
 --
 -- Name: asignacion_recursos_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
@@ -3579,8 +3602,9 @@ CREATE TABLE public.catalogo_eventos (
     precio_base numeric(10,2) DEFAULT 0.00 NOT NULL,
     duracion_horas smallint DEFAULT 1 NOT NULL,
     activo boolean DEFAULT true NOT NULL,
-    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT chk_evt_precio CHECK ((precio_base >= (0)::numeric))
 );
 
 
@@ -3619,8 +3643,9 @@ CREATE TABLE public.catalogo_servicios (
     precio_base numeric(10,2) DEFAULT 0.00 NOT NULL,
     unidad character varying(50) DEFAULT 'unidad'::character varying NOT NULL,
     activo boolean DEFAULT true NOT NULL,
-    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT chk_srv_precio CHECK ((precio_base >= (0)::numeric))
 );
 
 
@@ -3655,7 +3680,10 @@ ALTER SEQUENCE public.catalogo_servicios_id_seq OWNED BY public.catalogo_servici
 CREATE TABLE public.categorias_proveedores (
     id integer NOT NULL,
     nombre character varying(100) NOT NULL,
-    descripcion text
+    descripcion text,
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    activo boolean DEFAULT true NOT NULL
 );
 
 
@@ -3694,8 +3722,8 @@ CREATE TABLE public.clientes (
     email character varying(150) NOT NULL,
     telefono character varying(20),
     activo boolean DEFAULT true NOT NULL,
-    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 
@@ -3731,7 +3759,7 @@ CREATE TABLE public.contratos (
     id integer NOT NULL,
     cliente_id integer NOT NULL,
     cotizacion_id integer,
-    folio character varying(20) NOT NULL,
+    folio character varying(30) NOT NULL,
     fecha_firma date,
     fecha_inicio date NOT NULL,
     fecha_fin date NOT NULL,
@@ -3739,8 +3767,10 @@ CREATE TABLE public.contratos (
     estatus public.estatus_contrato DEFAULT 'activo'::public.estatus_contrato NOT NULL,
     condiciones text,
     archivo_url character varying(500),
-    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT chk_contrato_fechas CHECK ((fecha_fin >= fecha_inicio)),
+    CONSTRAINT chk_contrato_total CHECK ((total_contrato >= (0)::numeric))
 );
 
 
@@ -3776,16 +3806,28 @@ CREATE TABLE public.cotizacion_items (
     id integer NOT NULL,
     cotizacion_id integer NOT NULL,
     tipo public.tipo_item_cotizacion NOT NULL,
-    referencia_id integer NOT NULL,
     cantidad smallint DEFAULT 1 NOT NULL,
     precio_unitario numeric(10,2) NOT NULL,
     descuento_item numeric(10,2) DEFAULT 0.00 NOT NULL,
-    subtotal numeric(12,2) NOT NULL,
-    notas character varying(255)
+    notas character varying(255),
+    catalogo_evento_id integer,
+    catalogo_servicio_id integer,
+    subtotal numeric(12,2) GENERATED ALWAYS AS ((((cantidad)::numeric * precio_unitario) - descuento_item)) STORED,
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT chk_item_precio CHECK (((precio_unitario >= (0)::numeric) AND (descuento_item >= (0)::numeric))),
+    CONSTRAINT chk_item_tipo_ref CHECK ((((tipo = 'evento'::public.tipo_item_cotizacion) AND (catalogo_evento_id IS NOT NULL) AND (catalogo_servicio_id IS NULL)) OR ((tipo = 'servicio'::public.tipo_item_cotizacion) AND (catalogo_servicio_id IS NOT NULL) AND (catalogo_evento_id IS NULL))))
 );
 
 
 ALTER TABLE public.cotizacion_items OWNER TO postgres;
+
+--
+-- Name: TABLE cotizacion_items; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON TABLE public.cotizacion_items IS 'Líneas de detalle de una cotización. catalogo_evento_id o catalogo_servicio_id según el valor de tipo.';
+
 
 --
 -- Name: cotizacion_items_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
@@ -3817,15 +3859,15 @@ CREATE TABLE public.cotizaciones (
     id integer NOT NULL,
     cliente_id integer NOT NULL,
     recurso_id integer,
-    folio character varying(20) NOT NULL,
+    folio character varying(30) NOT NULL,
     total numeric(12,2) DEFAULT 0.00 NOT NULL,
     descuento numeric(10,2) DEFAULT 0.00 NOT NULL,
-    total_final numeric(12,2) DEFAULT 0.00 NOT NULL,
     estatus public.estatus_cotizacion DEFAULT 'borrador'::public.estatus_cotizacion NOT NULL,
     fecha_vigencia date NOT NULL,
     notas text,
-    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    total_final numeric(12,2) GENERATED ALWAYS AS ((total - descuento)) STORED
 );
 
 
@@ -3865,12 +3907,34 @@ CREATE TABLE public.empleados (
     telefono character varying(20),
     cargo character varying(100),
     disponible boolean DEFAULT true NOT NULL,
-    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 
 ALTER TABLE public.empleados OWNER TO postgres;
+
+--
+-- Name: empleados_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.empleados_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.empleados_id_seq OWNER TO postgres;
+
+--
+-- Name: empleados_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.empleados_id_seq OWNED BY public.empleados.id;
+
 
 --
 -- Name: eventos_contratados; Type: TABLE; Schema: public; Owner: postgres
@@ -3887,8 +3951,9 @@ CREATE TABLE public.eventos_contratados (
     aforo smallint,
     estatus public.estatus_evento DEFAULT 'programado'::public.estatus_evento NOT NULL,
     notas text,
-    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT chk_evento_horas CHECK (((hora_fin IS NULL) OR (hora_inicio IS NULL) OR (hora_fin > hora_inicio)))
 );
 
 
@@ -3931,7 +3996,8 @@ CREATE TABLE public.pagos (
     fecha_pago date NOT NULL,
     estatus public.estatus_pago DEFAULT 'procesado'::public.estatus_pago NOT NULL,
     notas text,
-    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT chk_pagos_monto CHECK ((monto >= (0)::numeric))
 );
 
 
@@ -3970,7 +4036,8 @@ CREATE TABLE public.plan_pagos (
     monto numeric(12,2) NOT NULL,
     fecha_vencimiento date NOT NULL,
     estatus public.estatus_plan_pago DEFAULT 'pendiente'::public.estatus_plan_pago NOT NULL,
-    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 
@@ -4007,7 +4074,9 @@ CREATE TABLE public.proveedor_disponibilidad (
     proveedor_id integer NOT NULL,
     fecha date NOT NULL,
     disponible boolean DEFAULT true NOT NULL,
-    nota character varying(255)
+    nota character varying(255),
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 
@@ -4046,7 +4115,10 @@ CREATE TABLE public.proveedor_servicios (
     descripcion text,
     costo numeric(12,2) DEFAULT 0.00 NOT NULL,
     unidad character varying(50) DEFAULT 'paquete'::character varying NOT NULL,
-    activo boolean DEFAULT true NOT NULL
+    activo boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT chk_ps_costo CHECK ((costo >= (0)::numeric))
 );
 
 
@@ -4089,8 +4161,8 @@ CREATE TABLE public.proveedores (
     sitio_web character varying(300),
     rfc character varying(13),
     activo boolean DEFAULT true NOT NULL,
-    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 
@@ -4119,28 +4191,6 @@ ALTER SEQUENCE public.proveedores_id_seq OWNED BY public.proveedores.id;
 
 
 --
--- Name: recursos_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
-
-CREATE SEQUENCE public.recursos_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE public.recursos_id_seq OWNER TO postgres;
-
---
--- Name: recursos_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
---
-
-ALTER SEQUENCE public.recursos_id_seq OWNED BY public.empleados.id;
-
-
---
 -- Name: tareas; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -4152,8 +4202,8 @@ CREATE TABLE public.tareas (
     fecha_limite date,
     prioridad public.prioridad_tarea DEFAULT 'media'::public.prioridad_tarea NOT NULL,
     estatus public.estatus_tarea DEFAULT 'pendiente'::public.estatus_tarea NOT NULL,
-    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 
@@ -4189,9 +4239,11 @@ CREATE TABLE public.tickets (
     id integer NOT NULL,
     pago_id integer NOT NULL,
     folio character varying(30) NOT NULL,
-    emitido_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    emitido_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
     impreso boolean DEFAULT false NOT NULL,
-    url_pdf character varying(500)
+    url_pdf character varying(500),
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 
@@ -4231,16 +4283,23 @@ CREATE TABLE public.usuarios (
     cliente_id integer,
     empleado_id integer,
     activo boolean DEFAULT true NOT NULL,
-    ultimo_acceso timestamp without time zone,
+    ultimo_acceso timestamp with time zone,
     token_recuperacion character varying(255),
-    token_recuperacion_exp timestamp without time zone,
-    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    token_recuperacion_exp timestamp with time zone,
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
     CONSTRAINT chk_usr_vinculo CHECK ((((rol = 'cliente'::public.rol_usuario) AND (cliente_id IS NOT NULL) AND (empleado_id IS NULL)) OR ((rol = 'organizador'::public.rol_usuario) AND (empleado_id IS NOT NULL) AND (cliente_id IS NULL)) OR ((rol = 'admin'::public.rol_usuario) AND (cliente_id IS NULL) AND (empleado_id IS NULL))))
 );
 
 
 ALTER TABLE public.usuarios OWNER TO postgres;
+
+--
+-- Name: COLUMN usuarios.token_recuperacion_exp; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.usuarios.token_recuperacion_exp IS 'Fecha de expiración del token de recuperación de contraseña.';
+
 
 --
 -- Name: usuarios_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
@@ -4558,7 +4617,7 @@ ALTER TABLE ONLY public.cotizaciones ALTER COLUMN id SET DEFAULT nextval('public
 -- Name: empleados id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.empleados ALTER COLUMN id SET DEFAULT nextval('public.recursos_id_seq'::regclass);
+ALTER TABLE ONLY public.empleados ALTER COLUMN id SET DEFAULT nextval('public.empleados_id_seq'::regclass);
 
 
 --
@@ -4898,11 +4957,11 @@ COPY public.asignacion_recursos (id, recurso_id, contrato_id, rol, fecha_inicio,
 --
 
 COPY public.catalogo_eventos (id, nombre, descripcion, precio_base, duracion_horas, activo, created_at, updated_at) FROM stdin;
-1	Boda estándar	Evento nupcial para hasta 100 personas	25000.00	8	t	2026-06-26 22:22:45.718457	2026-06-26 22:22:45.718457
-2	Boda premium	Evento nupcial para hasta 300 personas	60000.00	10	t	2026-06-26 22:22:45.718457	2026-06-26 22:22:45.718457
-3	XV años	Celebración de quinceañera	18000.00	6	t	2026-06-26 22:22:45.718457	2026-06-26 22:22:45.718457
-4	Evento corporativo	Conferencia, presentación o team building	12000.00	4	t	2026-06-26 22:22:45.718457	2026-06-26 22:22:45.718457
-5	Graduación	Celebración de graduación universitaria	15000.00	5	t	2026-06-26 22:22:45.718457	2026-06-26 22:22:45.718457
+1	Boda estándar	Evento nupcial para hasta 100 personas	25000.00	8	t	2026-06-26 22:22:45.718457+00	2026-06-26 22:22:45.718457+00
+2	Boda premium	Evento nupcial para hasta 300 personas	60000.00	10	t	2026-06-26 22:22:45.718457+00	2026-06-26 22:22:45.718457+00
+3	XV años	Celebración de quinceañera	18000.00	6	t	2026-06-26 22:22:45.718457+00	2026-06-26 22:22:45.718457+00
+4	Evento corporativo	Conferencia, presentación o team building	12000.00	4	t	2026-06-26 22:22:45.718457+00	2026-06-26 22:22:45.718457+00
+5	Graduación	Celebración de graduación universitaria	15000.00	5	t	2026-06-26 22:22:45.718457+00	2026-06-26 22:22:45.718457+00
 \.
 
 
@@ -4911,12 +4970,12 @@ COPY public.catalogo_eventos (id, nombre, descripcion, precio_base, duracion_hor
 --
 
 COPY public.catalogo_servicios (id, nombre, descripcion, precio_base, unidad, activo, created_at, updated_at) FROM stdin;
-1	Meseros	Personal de servicio por evento	350.00	persona	t	2026-06-26 22:22:45.718457	2026-06-26 22:22:45.718457
-2	Bartender	Servicio de barra libre	1200.00	evento	t	2026-06-26 22:22:45.718457	2026-06-26 22:22:45.718457
-3	Sonido básico	Sistema de audio para hasta 100 pax	3500.00	evento	t	2026-06-26 22:22:45.718457	2026-06-26 22:22:45.718457
-4	Iluminación LED	Diseño de iluminación ambiental	4500.00	evento	t	2026-06-26 22:22:45.718457	2026-06-26 22:22:45.718457
-5	Mesa de dulces	Decoración y surtido de mesa de dulces	2800.00	evento	t	2026-06-26 22:22:45.718457	2026-06-26 22:22:45.718457
-6	Arreglo floral mesa	Centro de mesa floral	450.00	pieza	t	2026-06-26 22:22:45.718457	2026-06-26 22:22:45.718457
+1	Meseros	Personal de servicio por evento	350.00	persona	t	2026-06-26 22:22:45.718457+00	2026-06-26 22:22:45.718457+00
+2	Bartender	Servicio de barra libre	1200.00	evento	t	2026-06-26 22:22:45.718457+00	2026-06-26 22:22:45.718457+00
+3	Sonido básico	Sistema de audio para hasta 100 pax	3500.00	evento	t	2026-06-26 22:22:45.718457+00	2026-06-26 22:22:45.718457+00
+4	Iluminación LED	Diseño de iluminación ambiental	4500.00	evento	t	2026-06-26 22:22:45.718457+00	2026-06-26 22:22:45.718457+00
+5	Mesa de dulces	Decoración y surtido de mesa de dulces	2800.00	evento	t	2026-06-26 22:22:45.718457+00	2026-06-26 22:22:45.718457+00
+6	Arreglo floral mesa	Centro de mesa floral	450.00	pieza	t	2026-06-26 22:22:45.718457+00	2026-06-26 22:22:45.718457+00
 \.
 
 
@@ -4924,14 +4983,14 @@ COPY public.catalogo_servicios (id, nombre, descripcion, precio_base, unidad, ac
 -- Data for Name: categorias_proveedores; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.categorias_proveedores (id, nombre, descripcion) FROM stdin;
-1	Catering	Servicios de alimentos y bebidas
-2	Audiovisual	Sonido, iluminación, pantallas y producción
-3	Decoración	Arreglos florales, mobiliario y ambientación
-4	Fotografía	Fotografía y videografía del evento
-5	Transporte	Traslado de invitados y logística
-6	Seguridad	Personal de seguridad y control de acceso
-7	Entretenimiento	Música en vivo, animación y show
+COPY public.categorias_proveedores (id, nombre, descripcion, created_at, updated_at, activo) FROM stdin;
+1	Catering	Servicios de alimentos y bebidas	2026-07-07 00:11:50.595302+00	2026-07-07 00:11:50.595302+00	t
+2	Audiovisual	Sonido, iluminación, pantallas y producción	2026-07-07 00:11:50.595302+00	2026-07-07 00:11:50.595302+00	t
+3	Decoración	Arreglos florales, mobiliario y ambientación	2026-07-07 00:11:50.595302+00	2026-07-07 00:11:50.595302+00	t
+4	Fotografía	Fotografía y videografía del evento	2026-07-07 00:11:50.595302+00	2026-07-07 00:11:50.595302+00	t
+5	Transporte	Traslado de invitados y logística	2026-07-07 00:11:50.595302+00	2026-07-07 00:11:50.595302+00	t
+6	Seguridad	Personal de seguridad y control de acceso	2026-07-07 00:11:50.595302+00	2026-07-07 00:11:50.595302+00	t
+7	Entretenimiento	Música en vivo, animación y show	2026-07-07 00:11:50.595302+00	2026-07-07 00:11:50.595302+00	t
 \.
 
 
@@ -4940,10 +4999,10 @@ COPY public.categorias_proveedores (id, nombre, descripcion) FROM stdin;
 --
 
 COPY public.clientes (id, nombre, apellido, email, telefono, activo, created_at, updated_at) FROM stdin;
-1	Laura	Domínguez Reyes	laura.dominguez@gmail.com	9991234567	t	2026-06-28 23:46:06.528986	2026-06-28 23:46:06.528986
-2	Jose	Perez	jose.perez@gmail.com	9994567893	t	2026-06-30 16:36:34.666627	2026-06-30 16:36:34.666627
-3	Francisco	Juarez	frank.juarez@gmail.com	9994567893	t	2026-06-30 17:26:56.602974	2026-06-30 17:26:56.602974
-4	Juan	García	juan.garcia@example.com	9993467867	t	2026-06-30 23:34:28.649387	2026-06-30 23:34:28.649387
+1	Laura	Domínguez Reyes	laura.dominguez@gmail.com	9991234567	t	2026-06-28 23:46:06.528986+00	2026-06-28 23:46:06.528986+00
+2	Jose	Perez	jose.perez@gmail.com	9994567893	t	2026-06-30 16:36:34.666627+00	2026-06-30 16:36:34.666627+00
+3	Francisco	Juarez	frank.juarez@gmail.com	9994567893	t	2026-06-30 17:26:56.602974+00	2026-06-30 17:26:56.602974+00
+4	Juan	García	juan.garcia@example.com	9993467867	t	2026-06-30 23:34:28.649387+00	2026-06-30 23:34:28.649387+00
 \.
 
 
@@ -4959,7 +5018,7 @@ COPY public.contratos (id, cliente_id, cotizacion_id, folio, fecha_firma, fecha_
 -- Data for Name: cotizacion_items; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.cotizacion_items (id, cotizacion_id, tipo, referencia_id, cantidad, precio_unitario, descuento_item, subtotal, notas) FROM stdin;
+COPY public.cotizacion_items (id, cotizacion_id, tipo, cantidad, precio_unitario, descuento_item, notas, catalogo_evento_id, catalogo_servicio_id, created_at, updated_at) FROM stdin;
 \.
 
 
@@ -4967,7 +5026,7 @@ COPY public.cotizacion_items (id, cotizacion_id, tipo, referencia_id, cantidad, 
 -- Data for Name: cotizaciones; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.cotizaciones (id, cliente_id, recurso_id, folio, total, descuento, total_final, estatus, fecha_vigencia, notas, created_at, updated_at) FROM stdin;
+COPY public.cotizaciones (id, cliente_id, recurso_id, folio, total, descuento, estatus, fecha_vigencia, notas, created_at, updated_at) FROM stdin;
 \.
 
 
@@ -4999,7 +5058,7 @@ COPY public.pagos (id, contrato_id, plan_pago_id, monto, metodo_pago, tipo_trans
 -- Data for Name: plan_pagos; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.plan_pagos (id, contrato_id, numero_pago, monto, fecha_vencimiento, estatus, created_at) FROM stdin;
+COPY public.plan_pagos (id, contrato_id, numero_pago, monto, fecha_vencimiento, estatus, created_at, updated_at) FROM stdin;
 \.
 
 
@@ -5007,7 +5066,7 @@ COPY public.plan_pagos (id, contrato_id, numero_pago, monto, fecha_vencimiento, 
 -- Data for Name: proveedor_disponibilidad; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.proveedor_disponibilidad (id, proveedor_id, fecha, disponible, nota) FROM stdin;
+COPY public.proveedor_disponibilidad (id, proveedor_id, fecha, disponible, nota, created_at, updated_at) FROM stdin;
 \.
 
 
@@ -5015,7 +5074,7 @@ COPY public.proveedor_disponibilidad (id, proveedor_id, fecha, disponible, nota)
 -- Data for Name: proveedor_servicios; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.proveedor_servicios (id, proveedor_id, nombre_servicio, descripcion, costo, unidad, activo) FROM stdin;
+COPY public.proveedor_servicios (id, proveedor_id, nombre_servicio, descripcion, costo, unidad, activo, created_at, updated_at) FROM stdin;
 \.
 
 
@@ -5039,7 +5098,7 @@ COPY public.tareas (id, asignacion_id, titulo, descripcion, fecha_limite, priori
 -- Data for Name: tickets; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.tickets (id, pago_id, folio, emitido_at, impreso, url_pdf) FROM stdin;
+COPY public.tickets (id, pago_id, folio, emitido_at, impreso, url_pdf, created_at, updated_at) FROM stdin;
 \.
 
 
@@ -5048,8 +5107,8 @@ COPY public.tickets (id, pago_id, folio, emitido_at, impreso, url_pdf) FROM stdi
 --
 
 COPY public.usuarios (id, email, password_hash, rol, cliente_id, empleado_id, activo, ultimo_acceso, token_recuperacion, token_recuperacion_exp, created_at, updated_at) FROM stdin;
-1	admin@organizadoraeventos.com	$2b$12$AIoC2r/1WRTfDrXjiqkdDOT8iW.eiPiOdADXfAh91oe6ZhDQky4hS	admin	\N	\N	t	\N	\N	\N	2026-06-30 03:13:33.251244	2026-07-01 00:17:48.41051
-2	juan.garcia@example.com	$2b$12$AIoC2r/1WRTfDrXjiqkdDOT8iW.eiPiOdADXfAh91oe6ZhDQky4hS	cliente	4	\N	t	2026-07-03 01:57:25.634241	\N	\N	2026-06-30 23:35:15.619596	2026-07-03 01:57:25.704783
+1	admin@organizadoraeventos.com	$2b$12$AIoC2r/1WRTfDrXjiqkdDOT8iW.eiPiOdADXfAh91oe6ZhDQky4hS	admin	\N	\N	t	\N	\N	\N	2026-06-30 03:13:33.251244+00	2026-07-01 00:17:48.41051+00
+2	juan.garcia@example.com	$2b$12$AIoC2r/1WRTfDrXjiqkdDOT8iW.eiPiOdADXfAh91oe6ZhDQky4hS	cliente	4	\N	t	2026-07-03 01:57:25.634241+00	\N	\N	2026-06-30 23:35:15.619596+00	2026-07-03 01:57:25.704783+00
 \.
 
 
@@ -5344,6 +5403,13 @@ SELECT pg_catalog.setval('public.cotizaciones_id_seq', 1, false);
 
 
 --
+-- Name: empleados_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.empleados_id_seq', 1, false);
+
+
+--
 -- Name: eventos_contratados_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -5383,13 +5449,6 @@ SELECT pg_catalog.setval('public.proveedor_servicios_id_seq', 1, false);
 --
 
 SELECT pg_catalog.setval('public.proveedores_id_seq', 1, false);
-
-
---
--- Name: recursos_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
---
-
-SELECT pg_catalog.setval('public.recursos_id_seq', 1, false);
 
 
 --
@@ -5781,6 +5840,22 @@ ALTER TABLE ONLY public.cotizaciones
 
 
 --
+-- Name: empleados empleados_email_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.empleados
+    ADD CONSTRAINT empleados_email_key UNIQUE (email);
+
+
+--
+-- Name: empleados empleados_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.empleados
+    ADD CONSTRAINT empleados_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: eventos_contratados eventos_contratados_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -5837,27 +5912,19 @@ ALTER TABLE ONLY public.proveedor_servicios
 
 
 --
+-- Name: proveedores proveedores_email_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.proveedores
+    ADD CONSTRAINT proveedores_email_key UNIQUE (email);
+
+
+--
 -- Name: proveedores proveedores_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.proveedores
     ADD CONSTRAINT proveedores_pkey PRIMARY KEY (id);
-
-
---
--- Name: empleados recursos_email_key; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.empleados
-    ADD CONSTRAINT recursos_email_key UNIQUE (email);
-
-
---
--- Name: empleados recursos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.empleados
-    ADD CONSTRAINT recursos_pkey PRIMARY KEY (id);
 
 
 --
@@ -6456,6 +6523,27 @@ CREATE INDEX idx_asig_recurso ON public.asignacion_recursos USING btree (recurso
 
 
 --
+-- Name: idx_asignacion_contrato; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_asignacion_contrato ON public.asignacion_recursos USING btree (contrato_id);
+
+
+--
+-- Name: idx_categorias_proveedores_activo; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_categorias_proveedores_activo ON public.categorias_proveedores USING btree (activo);
+
+
+--
+-- Name: idx_clientes_telefono; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_clientes_telefono ON public.clientes USING btree (telefono);
+
+
+--
 -- Name: idx_contratos_cliente; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -6463,10 +6551,38 @@ CREATE INDEX idx_contratos_cliente ON public.contratos USING btree (cliente_id);
 
 
 --
+-- Name: idx_contratos_cotizacion; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_contratos_cotizacion ON public.contratos USING btree (cotizacion_id);
+
+
+--
 -- Name: idx_contratos_estatus; Type: INDEX; Schema: public; Owner: postgres
 --
 
 CREATE INDEX idx_contratos_estatus ON public.contratos USING btree (estatus);
+
+
+--
+-- Name: idx_cotizacion_items_cotizacion; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_cotizacion_items_cotizacion ON public.cotizacion_items USING btree (cotizacion_id);
+
+
+--
+-- Name: idx_cotizacion_items_evento; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_cotizacion_items_evento ON public.cotizacion_items USING btree (catalogo_evento_id);
+
+
+--
+-- Name: idx_cotizacion_items_servicio; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_cotizacion_items_servicio ON public.cotizacion_items USING btree (catalogo_servicio_id);
 
 
 --
@@ -6481,6 +6597,41 @@ CREATE INDEX idx_cotizaciones_cliente ON public.cotizaciones USING btree (client
 --
 
 CREATE INDEX idx_cotizaciones_estatus ON public.cotizaciones USING btree (estatus);
+
+
+--
+-- Name: idx_cotizaciones_recurso; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_cotizaciones_recurso ON public.cotizaciones USING btree (recurso_id);
+
+
+--
+-- Name: idx_empleados_cargo; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_empleados_cargo ON public.empleados USING btree (cargo);
+
+
+--
+-- Name: idx_empleados_telefono; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_empleados_telefono ON public.empleados USING btree (telefono);
+
+
+--
+-- Name: idx_eventos_catalogo_evento; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_eventos_catalogo_evento ON public.eventos_contratados USING btree (catalogo_evento_id);
+
+
+--
+-- Name: idx_eventos_contrato; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_eventos_contrato ON public.eventos_contratados USING btree (contrato_id);
 
 
 --
@@ -6512,6 +6663,13 @@ CREATE INDEX idx_pagos_fecha ON public.pagos USING btree (fecha_pago);
 
 
 --
+-- Name: idx_pagos_plan; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_pagos_plan ON public.pagos USING btree (plan_pago_id);
+
+
+--
 -- Name: idx_plan_vencimiento; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -6526,10 +6684,24 @@ CREATE INDEX idx_prov_disp_fecha ON public.proveedor_disponibilidad USING btree 
 
 
 --
+-- Name: idx_proveedor_servicios_proveedor; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_proveedor_servicios_proveedor ON public.proveedor_servicios USING btree (proveedor_id);
+
+
+--
 -- Name: idx_proveedores_categoria; Type: INDEX; Schema: public; Owner: postgres
 --
 
 CREATE INDEX idx_proveedores_categoria ON public.proveedores USING btree (categoria_id);
+
+
+--
+-- Name: idx_tareas_asignacion; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_tareas_asignacion ON public.tareas USING btree (asignacion_id);
 
 
 --
@@ -6645,6 +6817,13 @@ CREATE TRIGGER trg_updated_catalogo_servicios BEFORE UPDATE ON public.catalogo_s
 
 
 --
+-- Name: categorias_proveedores trg_updated_categorias_proveedores; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_updated_categorias_proveedores BEFORE UPDATE ON public.categorias_proveedores FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
 -- Name: clientes trg_updated_clientes; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -6659,6 +6838,13 @@ CREATE TRIGGER trg_updated_contratos BEFORE UPDATE ON public.contratos FOR EACH 
 
 
 --
+-- Name: cotizacion_items trg_updated_cotizacion_items; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_updated_cotizacion_items BEFORE UPDATE ON public.cotizacion_items FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
 -- Name: cotizaciones trg_updated_cotizaciones; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -6670,6 +6856,27 @@ CREATE TRIGGER trg_updated_cotizaciones BEFORE UPDATE ON public.cotizaciones FOR
 --
 
 CREATE TRIGGER trg_updated_eventos_contratados BEFORE UPDATE ON public.eventos_contratados FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
+-- Name: plan_pagos trg_updated_plan_pagos; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_updated_plan_pagos BEFORE UPDATE ON public.plan_pagos FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
+-- Name: proveedor_disponibilidad trg_updated_proveedor_disponibilidad; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_updated_proveedor_disponibilidad BEFORE UPDATE ON public.proveedor_disponibilidad FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
+-- Name: proveedor_servicios trg_updated_proveedor_servicios; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_updated_proveedor_servicios BEFORE UPDATE ON public.proveedor_servicios FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
 
 --
@@ -6691,6 +6898,13 @@ CREATE TRIGGER trg_updated_recursos BEFORE UPDATE ON public.empleados FOR EACH R
 --
 
 CREATE TRIGGER trg_updated_tareas BEFORE UPDATE ON public.tareas FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+
+--
+-- Name: tickets trg_updated_tickets; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER trg_updated_tickets BEFORE UPDATE ON public.tickets FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
 
 --
@@ -6877,6 +7091,22 @@ ALTER TABLE ONLY auth.webauthn_challenges
 
 ALTER TABLE ONLY auth.webauthn_credentials
     ADD CONSTRAINT webauthn_credentials_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: cotizacion_items cotizacion_items_catalogo_evento_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.cotizacion_items
+    ADD CONSTRAINT cotizacion_items_catalogo_evento_id_fkey FOREIGN KEY (catalogo_evento_id) REFERENCES public.catalogo_eventos(id);
+
+
+--
+-- Name: cotizacion_items cotizacion_items_catalogo_servicio_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.cotizacion_items
+    ADD CONSTRAINT cotizacion_items_catalogo_servicio_id_fkey FOREIGN KEY (catalogo_servicio_id) REFERENCES public.catalogo_servicios(id);
 
 
 --
@@ -8505,6 +8735,15 @@ GRANT ALL ON TABLE public.empleados TO service_role;
 
 
 --
+-- Name: SEQUENCE empleados_id_seq; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT ALL ON SEQUENCE public.empleados_id_seq TO anon;
+GRANT ALL ON SEQUENCE public.empleados_id_seq TO authenticated;
+GRANT ALL ON SEQUENCE public.empleados_id_seq TO service_role;
+
+
+--
 -- Name: TABLE eventos_contratados; Type: ACL; Schema: public; Owner: postgres
 --
 
@@ -8610,15 +8849,6 @@ GRANT ALL ON TABLE public.proveedores TO service_role;
 GRANT ALL ON SEQUENCE public.proveedores_id_seq TO anon;
 GRANT ALL ON SEQUENCE public.proveedores_id_seq TO authenticated;
 GRANT ALL ON SEQUENCE public.proveedores_id_seq TO service_role;
-
-
---
--- Name: SEQUENCE recursos_id_seq; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT ALL ON SEQUENCE public.recursos_id_seq TO anon;
-GRANT ALL ON SEQUENCE public.recursos_id_seq TO authenticated;
-GRANT ALL ON SEQUENCE public.recursos_id_seq TO service_role;
 
 
 --
@@ -9094,5 +9324,5 @@ ALTER EVENT TRIGGER pgrst_drop_watch OWNER TO supabase_admin;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict EDsErKsxgtx9JbmjpZgS5Q8o2zpcdxr71TS3JwrBcnxClAaX4Rm9k501iPFvDv3
+\unrestrict yetSbID28v2mGjkADA8QxQuweZc8vnXqlWY65awKddN82gTmGirJlmnHCRPQvGe
 

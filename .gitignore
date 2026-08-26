@@ -1,2 +1,8 @@
+oldDB/
+
+# Test de base de datos
+test/
+
+# Prompts de IA
 prompt.md
 review.md
