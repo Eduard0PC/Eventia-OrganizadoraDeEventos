@@ -19,4 +19,5 @@ public class CotizacionItem
 
     public Cotizacion? Cotizacion { get; set; }
     public CatalogoEvento? CatalogoEvento { get; set; }
+    public CatalogoServicio? CatalogoServicio { get; set; }
 }

@@ -1,0 +1,1155 @@
+<div class="min-h-screen bg-linear-to-br from-gray-100 via-gray-50 to-gray-200 text-gray-800 flex overflow-hidden font-sans">
+
+  <!-- MOBILE SIDEBAR BACKDROP -->
+  <div
+    *ngIf="sidebarOpen"
+    (click)="sidebarOpen = false"
+    class="fixed inset-0 bg-black/60 z-40 md:hidden backdrop-blur-xs transition-opacity"
+  ></div>
+
+  <!-- SIDEBAR -->
+  <aside
+    [class.translate-x-0]="sidebarOpen"
+    [class.-translate-x-full]="!sidebarOpen"
+    class="fixed md:static inset-y-0 left-0 z-50 w-72 bg-gray-900 text-white flex flex-col justify-between transition-transform duration-300 ease-in-out md:translate-x-0 border-r border-gray-800 shadow-2xl shrink-0"
+  >
+    <div>
+      <!-- BRAND HEADER -->
+      <div class="p-6 border-b border-gray-800/80 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-linear-to-tr from-red-600 to-red-500 flex items-center justify-center text-white shadow-md shadow-red-500/30">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+            </svg>
+          </div>
+          <div>
+            <h1 class="text-xl font-black tracking-tight text-white">EventPlanner</h1>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-500/20 text-red-400 border border-red-500/30">
+              Panel Empleado
+            </span>
+          </div>
+        </div>
+        <button (click)="sidebarOpen = false" class="md:hidden text-gray-400 hover:text-white">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- NAVIGATION LINKS -->
+      <nav class="px-4 py-6 space-y-1.5 overflow-y-auto max-h-[calc(100vh-200px)]">
+
+        <!-- INICIO -->
+        <button
+          (click)="setActiveTab('inicio')"
+          [class]="activeTab === 'inicio' ? 'bg-red-600/90 text-white font-semibold shadow-lg shadow-red-600/20' : 'text-gray-400 hover:bg-gray-800/80 hover:text-gray-100'"
+          class="w-full flex items-center gap-3.5 px-4 py-3 rounded-xl transition duration-200 text-left text-sm group"
+        >
+          <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+          </svg>
+          <span>Inicio</span>
+        </button>
+
+        <!-- CATÁLOGO -->
+        <button
+          (click)="setActiveTab('catalogo')"
+          [class]="activeTab === 'catalogo' ? 'bg-red-600/90 text-white font-semibold shadow-lg shadow-red-600/20' : 'text-gray-400 hover:bg-gray-800/80 hover:text-gray-100'"
+          class="w-full flex items-center gap-3.5 px-4 py-3 rounded-xl transition duration-200 text-left text-sm group"
+        >
+          <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+          </svg>
+          <span>Catálogo</span>
+        </button>
+
+        <!-- CLIENTES -->
+        <button
+          (click)="setActiveTab('clientes')"
+          [class]="activeTab === 'clientes' ? 'bg-red-600/90 text-white font-semibold shadow-lg shadow-red-600/20' : 'text-gray-400 hover:bg-gray-800/80 hover:text-gray-100'"
+          class="w-full flex items-center gap-3.5 px-4 py-3 rounded-xl transition duration-200 text-left text-sm group"
+        >
+          <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5-3.562M9 20H4v-2a3 3 0 015-3.562M9 20a6 6 0 006-6v-1a6 6 0 00-6-6H9a6 6 0 00-6 6v1a6 6 0 006 6zM15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+          <span>Clientes</span>
+        </button>
+
+        <!-- PLANIFICADOR -->
+        <button
+          (click)="setActiveTab('planificador')"
+          [class]="activeTab === 'planificador' ? 'bg-red-600/90 text-white font-semibold shadow-lg shadow-red-600/20' : 'text-gray-400 hover:bg-gray-800/80 hover:text-gray-100'"
+          class="w-full flex items-center gap-3.5 px-4 py-3 rounded-xl transition duration-200 text-left text-sm group"
+        >
+          <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+          </svg>
+          <div class="flex items-center justify-between w-full">
+            <span>Planificador</span>
+            <span class="bg-red-500/30 text-red-300 text-xs px-2 py-0.5 rounded-full font-medium">
+              {{ totalEventosActivos }}
+            </span>
+          </div>
+        </button>
+
+        <!-- COTIZACIONES -->
+        <button
+          (click)="setActiveTab('cotizaciones')"
+          [class]="activeTab === 'cotizaciones' ? 'bg-red-600/90 text-white font-semibold shadow-lg shadow-red-600/20' : 'text-gray-400 hover:bg-gray-800/80 hover:text-gray-100'"
+          class="w-full flex items-center gap-3.5 px-4 py-3 rounded-xl transition duration-200 text-left text-sm group"
+        >
+          <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          <div class="flex items-center justify-between w-full">
+            <span>Cotizaciones</span>
+            <span *ngIf="totalCotizacionesPendientes > 0" class="bg-amber-500/30 text-amber-300 text-xs px-2 py-0.5 rounded-full font-medium">
+              {{ totalCotizacionesPendientes }}
+            </span>
+          </div>
+        </button>
+
+        <!-- PAGOS -->
+        <button
+          (click)="setActiveTab('pagos')"
+          [class]="activeTab === 'pagos' ? 'bg-red-600/90 text-white font-semibold shadow-lg shadow-red-600/20' : 'text-gray-400 hover:bg-gray-800/80 hover:text-gray-100'"
+          class="w-full flex items-center gap-3.5 px-4 py-3 rounded-xl transition duration-200 text-left text-sm group"
+        >
+          <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+          </svg>
+          <span>Pagos</span>
+        </button>
+
+        <!-- PROVEEDORES -->
+        <button
+          (click)="setActiveTab('proveedores')"
+          [class]="activeTab === 'proveedores' ? 'bg-red-600/90 text-white font-semibold shadow-lg shadow-red-600/20' : 'text-gray-400 hover:bg-gray-800/80 hover:text-gray-100'"
+          class="w-full flex items-center gap-3.5 px-4 py-3 rounded-xl transition duration-200 text-left text-sm group"
+        >
+          <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z"/>
+          </svg>
+          <span>Proveedores</span>
+        </button>
+
+      </nav>
+    </div>
+
+    <!-- EMPLOYEE USER CARD -->
+    <div class="p-4 m-4 rounded-2xl bg-gray-800/60 border border-gray-700/60 flex items-center justify-between">
+      <div class="flex items-center gap-3 overflow-hidden">
+        <div class="w-10 h-10 rounded-full bg-linear-to-tr from-gray-700 to-gray-600 text-white font-bold flex items-center justify-center text-sm border border-gray-600">
+          {{ empleadoNombre.charAt(0) }}
+        </div>
+        <div class="truncate">
+          <p class="text-sm font-semibold text-white truncate">{{ empleadoNombre }}</p>
+          <p class="text-xs text-gray-400 truncate">{{ empleadoRol }}</p>
+        </div>
+      </div>
+      <button
+        (click)="logout()"
+        title="Cerrar sesión"
+        class="text-gray-400 hover:text-red-400 p-2 rounded-lg hover:bg-gray-700/60 transition"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+        </svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT AREA -->
+  <div class="flex-1 flex flex-col min-w-0 overflow-y-auto h-screen">
+
+    <!-- TOPBAR -->
+    <header class="bg-white/80 backdrop-blur-md sticky top-0 z-30 border-b border-gray-200/80 px-6 py-4 flex items-center justify-between shadow-xs">
+      <div class="flex items-center gap-4">
+        <button (click)="sidebarOpen = true" class="md:hidden text-gray-600 hover:text-gray-900 p-1">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+        <div>
+          <h2 class="text-2xl font-bold text-gray-900 capitalize tracking-tight">
+            {{ activeTab }}
+          </h2>
+          <p class="text-xs text-gray-500 hidden sm:block">Gestión operativa e intectiva de eventos</p>
+        </div>
+      </div>
+
+      <!-- SEARCH BAR & NOTIFS -->
+      <div class="flex items-center gap-4">
+        <div class="relative hidden sm:block w-64 md:w-80">
+          <input
+            type="text"
+            [(ngModel)]="searchQuery"
+            placeholder="Buscar evento, cliente, folio..."
+            class="w-full bg-gray-100/90 text-sm rounded-xl pl-10 pr-4 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500/50 transition"
+          />
+          <svg class="absolute left-3 top-2.5 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+        </div>
+
+        <button class="relative p-2 text-gray-600 hover:text-red-500 rounded-xl hover:bg-gray-100 transition">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 01-6 0v-1m6 0H9"/>
+          </svg>
+          <span class="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full ring-2 ring-white"></span>
+        </button>
+
+        <a routerLink="/home" class="text-xs bg-gray-900 hover:bg-black text-white px-3.5 py-2 rounded-xl font-medium transition flex items-center gap-1.5">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+          </svg>
+          <span>Ver Vista Cliente</span>
+        </a>
+      </div>
+    </header>
+
+    <!-- CONTENT BODY SWITCHER -->
+    <main class="p-6 md:p-8 space-y-8 flex-1">
+
+      <!-- ================= TAB 1: INICIO (DASHBOARD) ================= -->
+      <div *ngIf="activeTab === 'inicio'" class="space-y-8 animate-fade-in">
+
+        <!-- WELCOME BANNER -->
+        <div class="bg-linear-to-r from-gray-900 via-gray-800 to-slate-900 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div class="z-10 max-w-xl">
+            <span class="bg-red-500/20 text-red-400 text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full border border-red-500/30">
+              Panel Operativo
+            </span>
+            <h3 class="text-3xl font-extrabold mt-3 tracking-tight">
+              Bienvenido de nuevo, {{ empleadoNombre }}
+            </h3>
+            <p class="text-gray-300 mt-2 text-sm leading-relaxed">
+              Tienes {{ totalEventosActivos }} eventos activos en proceso y {{ totalCotizacionesPendientes }} cotizaciones pendientes por revisar hoy.
+            </p>
+          </div>
+          <div class="z-10 flex gap-3">
+            <button (click)="setActiveTab('planificador')" class="bg-red-500 hover:bg-red-600 text-white px-5 py-3 rounded-xl font-semibold text-sm transition shadow-lg shadow-red-500/30 flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+              </svg>
+              <span>Ver Planificador</span>
+            </button>
+          </div>
+          <!-- Decorative Glow -->
+          <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-red-500/10 rounded-full blur-3xl"></div>
+        </div>
+
+        <!-- KPI CARDS -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+
+          <!-- Card 1 -->
+          <div class="bg-white rounded-3xl p-6 shadow-md border border-gray-100 hover:shadow-xl transition duration-300 flex items-center justify-between">
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Eventos Activos</p>
+              <h4 class="text-3xl font-black text-gray-900 mt-1">{{ totalEventosActivos }}</h4>
+              <p class="text-xs text-emerald-600 mt-1 font-medium flex items-center gap-1">
+                <span>↑ 12%</span> vs mes anterior
+              </p>
+            </div>
+            <div class="w-14 h-14 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center shadow-inner">
+              <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+              </svg>
+            </div>
+          </div>
+
+          <!-- Card 2 -->
+          <div class="bg-white rounded-3xl p-6 shadow-md border border-gray-100 hover:shadow-xl transition duration-300 flex items-center justify-between">
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Cotizaciones Pendientes</p>
+              <h4 class="text-3xl font-black text-gray-900 mt-1">{{ totalCotizacionesPendientes }}</h4>
+              <p class="text-xs text-amber-600 mt-1 font-medium">Revisión requerida</p>
+            </div>
+            <div class="w-14 h-14 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center shadow-inner">
+              <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+              </svg>
+            </div>
+          </div>
+
+          <!-- Card 3 -->
+          <div class="bg-white rounded-3xl p-6 shadow-md border border-gray-100 hover:shadow-xl transition duration-300 flex items-center justify-between">
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Ingresos Cobrados</p>
+              <h4 class="text-3xl font-black text-gray-900 mt-1">${{ ingresosTotalesMes | number:'1.0-0' }}</h4>
+              <p class="text-xs text-emerald-600 mt-1 font-medium">Transacciones confirmadas</p>
+            </div>
+            <div class="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shadow-inner">
+              <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </div>
+          </div>
+
+          <!-- Card 4 -->
+          <div class="bg-white rounded-3xl p-6 shadow-md border border-gray-100 hover:shadow-xl transition duration-300 flex items-center justify-between">
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Clientes Totales</p>
+              <h4 class="text-3xl font-black text-gray-900 mt-1">{{ totalClientes }}</h4>
+              <p class="text-xs text-blue-600 mt-1 font-medium">Directorio actualizado</p>
+            </div>
+            <div class="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shadow-inner">
+              <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5-3.562M9 20H4v-2a3 3 0 015-3.562M9 20a6 6 0 006-6v-1a6 6 0 00-6-6H9a6 6 0 00-6 6v1a6 6 0 006 6zM15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+              </svg>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- TWO COLUMN DASHBOARD DETAILS -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+          <!-- PRÓXIMOS EVENTOS (2 COLUMNS) -->
+          <div class="lg:col-span-2 bg-white rounded-3xl p-6 shadow-md border border-gray-100 space-y-6">
+            <div class="flex items-center justify-between">
+              <h3 class="text-xl font-bold text-gray-900">Próximos Eventos</h3>
+              <button (click)="setActiveTab('planificador')" class="text-sm font-semibold text-red-500 hover:text-red-600">
+                Ver todos ({{ planificador.length }}) →
+              </button>
+            </div>
+
+            <div class="space-y-4">
+              <div
+                *ngFor="let ev of planificador.slice(0, 3)"
+                class="p-5 rounded-2xl border border-gray-100 hover:border-red-200 hover:shadow-md transition bg-gray-50/50 flex flex-col sm:flex-row justify-between sm:items-center gap-4"
+              >
+                <div class="space-y-1">
+                  <div class="flex items-center gap-2">
+                    <span [class]="getStatusBadgeClass(ev.estatus)" class="px-2.5 py-0.5 rounded-full text-xs font-bold border">
+                      {{ ev.estatus }}
+                    </span>
+                    <span class="text-xs text-gray-400 font-medium">📅 {{ ev.fecha }}</span>
+                  </div>
+                  <h4 class="text-lg font-bold text-gray-900">{{ ev.nombreEvento }}</h4>
+                  <p class="text-xs text-gray-500">Cliente: <strong class="text-gray-700">{{ ev.clienteNombre }}</strong> • Lugar: {{ ev.lugar }}</p>
+                </div>
+
+                <div class="sm:text-right space-y-2">
+                  <div class="w-36 bg-gray-200 rounded-full h-2 overflow-hidden">
+                    <div class="bg-red-500 h-2 rounded-full" [style.width.%]="ev.progreso"></div>
+                  </div>
+                  <p class="text-xs text-gray-500 font-semibold">{{ ev.progreso }}% completado</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ACTIVIDAD RECIENTE (1 COLUMN) -->
+          <div class="bg-white rounded-3xl p-6 shadow-md border border-gray-100 space-y-6">
+            <h3 class="text-xl font-bold text-gray-900">Actividad Reciente</h3>
+            <div class="space-y-4">
+              <div class="flex gap-3">
+                <div class="w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center font-bold text-xs shrink-0">
+                  COT
+                </div>
+                <div>
+                  <p class="text-xs font-semibold text-gray-900">Cotización COT-2026-4821 creada</p>
+                  <p class="text-xs text-gray-400">Cliente: Mariana González • Hace 2 hrs</p>
+                </div>
+              </div>
+              <div class="flex gap-3">
+                <div class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-xs shrink-0">
+                  PAG
+                </div>
+                <div>
+                  <p class="text-xs font-semibold text-gray-900">Pago recibido por $23,000 MXN</p>
+                  <p class="text-xs text-gray-400">Transferencia confirmada • Hace 4 hrs</p>
+                </div>
+              </div>
+              <div class="flex gap-3">
+                <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0">
+                  PROV
+                </div>
+                <div>
+                  <p class="text-xs font-semibold text-gray-900">Proveedor asignado</p>
+                  <p class="text-xs text-gray-400">Gourmet Catering asignado a Boda Elegante</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="pt-4 border-t border-gray-100 space-y-2">
+              <p class="text-xs font-bold text-gray-400 uppercase">Acciones Rápidas</p>
+              <div class="grid grid-cols-2 gap-2">
+                <button (click)="showNewClientModal = true" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-800 p-2.5 rounded-xl font-semibold transition text-center">
+                  + Nuevo Cliente
+                </button>
+                <button (click)="showNewSupplierModal = true" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-800 p-2.5 rounded-xl font-semibold transition text-center">
+                  + Proveedor
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- ================= TAB 2: CATÁLOGO ================= -->
+      <div *ngIf="activeTab === 'catalogo'" class="space-y-6 animate-fade-in">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h3 class="text-xl font-bold text-gray-900">Catálogo de Paquetes y Servicios</h3>
+            <p class="text-xs text-gray-500">Administración de opciones disponibles para eventos</p>
+          </div>
+          <div class="flex gap-2">
+            <button
+              *ngFor="let cat of ['Todos', 'Bodas', 'Corporativos', 'Sociales', 'Graduaciones']"
+              (click)="catalogoFilterCategory = cat"
+              [class]="catalogoFilterCategory === cat ? 'bg-red-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'"
+              class="px-3.5 py-1.5 rounded-xl text-xs font-semibold transition border border-gray-200"
+            >
+              {{ cat }}
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div
+            *ngFor="let item of filteredCatalogo"
+            class="bg-white rounded-3xl overflow-hidden shadow-md hover:shadow-xl transition border border-gray-100 flex flex-col justify-between"
+          >
+            <div>
+              <div class="h-48 relative overflow-hidden bg-gray-900">
+                <img [src]="item.imagen" [alt]="item.nombre" class="w-full h-full object-cover opacity-90 hover:scale-105 transition duration-500" />
+                <span class="absolute top-3 right-3 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">
+                  ${{ item.precioBase | number:'1.0-0' }} MXN
+                </span>
+                <span class="absolute bottom-3 left-3 bg-black/60 text-white backdrop-blur-xs text-xs px-2.5 py-1 rounded-lg">
+                  ⏱ {{ item.duracionHoras }} horas
+                </span>
+              </div>
+              <div class="p-6 space-y-3">
+                <span class="text-xs font-bold text-red-500 uppercase tracking-wider">{{ item.categoria }}</span>
+                <h4 class="text-xl font-bold text-gray-900">{{ item.nombre }}</h4>
+                <p class="text-xs text-gray-500 leading-relaxed">{{ item.descripcion }}</p>
+              </div>
+            </div>
+            <div class="p-6 pt-0 border-t border-gray-100 mt-4 flex items-center justify-between">
+              <span [class]="item.activo ? 'text-emerald-600 bg-emerald-50' : 'text-gray-500 bg-gray-100'" class="px-2.5 py-1 rounded-full text-xs font-bold">
+                {{ item.activo ? '● Activo' : '○ Inactivo' }}
+              </span>
+              <button (click)="setActiveTab('cotizaciones')" class="text-xs bg-gray-900 hover:bg-black text-white px-4 py-2 rounded-xl font-semibold transition">
+                Cotizar paquete
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= TAB 3: CLIENTES ================= -->
+      <div *ngIf="activeTab === 'clientes'" class="space-y-6 animate-fade-in">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h3 class="text-xl font-bold text-gray-900">Directorio de Clientes</h3>
+            <p class="text-xs text-gray-500">Administra los clientes e historial de eventos</p>
+          </div>
+          <button (click)="showNewClientModal = true" class="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition flex items-center gap-2 shadow-md shadow-red-600/20">
+            <span>+ Registrar Nuevo Cliente</span>
+          </button>
+        </div>
+
+        <div class="bg-white rounded-3xl shadow-md border border-gray-100 overflow-hidden">
+          <div class="p-4 border-b border-gray-100 flex items-center justify-between">
+            <input
+              type="text"
+              [(ngModel)]="clientesSearch"
+              placeholder="Filtrar por nombre, correo o evento..."
+              class="w-full sm:w-80 bg-gray-50 text-sm rounded-xl px-4 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500/50"
+            />
+            <span class="text-xs text-gray-400 font-semibold">{{ filteredClientes.length }} Clientes encontrados</span>
+          </div>
+
+          <!-- Spinner Loading Clientes -->
+          <div *ngIf="loadingClientes" class="py-12 flex flex-col items-center justify-center text-gray-400 space-y-3">
+            <div class="w-8 h-8 border-4 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+            <p class="text-xs font-semibold">Cargando clientes...</p>
+          </div>
+
+          <div *ngIf="!loadingClientes" class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-gray-50/80 text-gray-500 text-xs uppercase font-bold border-b border-gray-100">
+                  <th class="py-4 px-6">Cliente</th>
+                  <th class="py-4 px-6">Email</th>
+                  <th class="py-4 px-6">Estado</th>
+                  <th class="py-4 px-6">Último Evento Contratado</th>
+                  <th class="py-4 px-6 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100 text-sm">
+                <tr *ngFor="let cl of filteredClientes" class="hover:bg-gray-50/80 transition">
+                  <td class="py-4 px-6 font-bold text-gray-900 flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full bg-red-100 text-red-600 font-bold flex items-center justify-center text-xs border border-red-200">
+                      {{ cl.nombre.charAt(0) }}{{ cl.apellido.charAt(0) }}
+                    </div>
+                    <div>
+                      <p class="font-bold text-gray-900">{{ cl.nombreCompleto }}</p>
+                      <p class="text-xs text-gray-400 font-normal">{{ cl.telefono || 'Sin teléfono' }}</p>
+                    </div>
+                  </td>
+                  <td class="py-4 px-6 text-gray-600 text-xs font-semibold">
+                    {{ cl.email }}
+                  </td>
+                  <td class="py-4 px-6">
+                    <span [class]="getStatusBadgeClass(cl.estatusLabel)" class="px-2.5 py-0.5 rounded-full text-xs font-bold border">
+                      {{ cl.estatusLabel }}
+                    </span>
+                  </td>
+                  <td class="py-4 px-6 text-gray-700 font-medium text-xs">
+                    <span class="inline-block bg-gray-100 text-gray-800 px-3 py-1 rounded-xl font-bold">
+                      {{ cl.ultimoEventoContratado }}
+                    </span>
+                  </td>
+                  <td class="py-4 px-6 text-right">
+                    <button (click)="abrirFichaCliente(cl.id)" class="text-xs bg-red-600 hover:bg-red-700 text-white px-3.5 py-2 rounded-xl font-bold shadow-xs transition cursor-pointer">
+                      ver ficha del cliente
+                    </button>
+                  </td>
+                </tr>
+                <tr *ngIf="filteredClientes.length === 0">
+                  <td colspan="5" class="py-8 text-center text-gray-400 text-sm">
+                    No se encontraron clientes registrados en Supabase.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= TAB 4: PLANIFICADOR ================= -->
+      <div *ngIf="activeTab === 'planificador'" class="space-y-6 animate-fade-in">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h3 class="text-xl font-bold text-gray-900">Planificador y Seguimiento de Eventos</h3>
+            <p class="text-xs text-gray-500">Gestión de etapas, tareas clave y estado operativo</p>
+          </div>
+          <div class="flex gap-2">
+            <button
+              *ngFor="let st of ['Todos', 'En preparación', 'Confirmado', 'En ejecución', 'Finalizado']"
+              (click)="planificadorFilterStatus = st"
+              [class]="planificadorFilterStatus === st ? 'bg-red-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'"
+              class="px-3 py-1.5 rounded-xl text-xs font-semibold transition border border-gray-200"
+            >
+              {{ st }}
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div
+            *ngFor="let plan of filteredPlanificador"
+            class="bg-white rounded-3xl p-6 shadow-md border border-gray-100 space-y-5 hover:shadow-xl transition"
+          >
+            <div class="flex justify-between items-start">
+              <div>
+                <span [class]="getStatusBadgeClass(plan.estatus)" class="px-2.5 py-0.5 rounded-full text-xs font-bold border">
+                  {{ plan.estatus }}
+                </span>
+                <h4 class="text-2xl font-bold text-gray-900 mt-2">{{ plan.nombreEvento }}</h4>
+                <p class="text-xs text-gray-500 mt-0.5">Cliente: <strong class="text-gray-800">{{ plan.clienteNombre }}</strong></p>
+              </div>
+              <div class="text-right">
+                <span class="text-xs font-bold text-red-600 bg-red-50 px-3 py-1 rounded-xl">📅 {{ plan.fecha }}</span>
+                <p class="text-xs text-gray-400 mt-1">👥 {{ plan.invitados }} invitados</p>
+              </div>
+            </div>
+
+            <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100 space-y-2">
+              <div class="flex justify-between text-xs font-bold text-gray-700">
+                <span>Avance de preparación</span>
+                <span class="text-red-600">{{ plan.progreso }}%</span>
+              </div>
+              <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                <div class="bg-linear-to-r from-red-600 to-red-500 h-2.5 rounded-full transition-all duration-500" [style.width.%]="plan.progreso"></div>
+              </div>
+            </div>
+
+            <!-- CHECKLIST DE TAREAS -->
+            <div class="space-y-2">
+              <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Checklist de Coordinación</p>
+              <div class="space-y-1.5">
+                <label
+                  *ngFor="let item of plan.checklist; let idx = index"
+                  class="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50 transition cursor-pointer text-xs font-medium text-gray-800"
+                >
+                  <input
+                    type="checkbox"
+                    [checked]="item.completado"
+                    (change)="toggleChecklist(plan, idx)"
+                    class="w-4 h-4 text-red-600 rounded-md focus:ring-red-500 border-gray-300"
+                  />
+                  <span [class.line-through]="item.completado" [class.text-gray-400]="item.completado">
+                    {{ item.tarea }}
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <div class="pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
+              <span>📍 {{ plan.lugar }}</span>
+              <span>Encargado: <strong class="text-gray-800">{{ plan.encargado }}</strong></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= TAB 5: COTIZACIONES ================= -->
+      <div *ngIf="activeTab === 'cotizaciones'" class="space-y-6 animate-fade-in">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h3 class="text-xl font-bold text-gray-900">Gestión de Cotizaciones</h3>
+            <p class="text-xs text-gray-500">Revisa, aprueba y da seguimiento a las cotizaciones</p>
+          </div>
+          <div class="flex gap-2">
+            <button
+              *ngFor="let st of ['Todos', 'enviada', 'aceptada', 'rechazada']"
+              (click)="cotizacionesFilterStatus = st"
+              [class]="cotizacionesFilterStatus === st ? 'bg-red-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'"
+              class="px-3.5 py-1.5 rounded-xl text-xs font-semibold transition border border-gray-200 capitalize"
+            >
+              {{ st }}
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-3xl shadow-md border border-gray-100 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-gray-50/80 text-gray-500 text-xs uppercase font-bold border-b border-gray-100">
+                  <th class="py-4 px-6">Folio</th>
+                  <th class="py-4 px-6">Evento</th>
+                  <th class="py-4 px-6">Invitados</th>
+                  <th class="py-4 px-6">Total Final</th>
+                  <th class="py-4 px-6">Estado</th>
+                  <th class="py-4 px-6 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100 text-sm">
+                <tr *ngFor="let c of filteredCotizaciones" class="hover:bg-gray-50/80 transition">
+                  <td class="py-4 px-6 font-extrabold text-red-600">
+                    {{ c.folio }}
+                  </td>
+                  <td class="py-4 px-6">
+                    <p class="font-bold text-gray-900">{{ c.evento }}</p>
+                    <p class="text-xs text-gray-400">Fecha evento: {{ c.fechaEvento || 'Pendiente' }}</p>
+                  </td>
+                  <td class="py-4 px-6 text-gray-600 font-semibold">{{ c.invitados }} pers.</td>
+                  <td class="py-4 px-6 font-extrabold text-gray-900">
+                    ${{ c.totalFinal | number:'1.0-0' }} MXN
+                  </td>
+                  <td class="py-4 px-6">
+                    <span [class]="getStatusBadgeClass(c.estatus)" class="px-2.5 py-0.5 rounded-full text-xs font-bold border capitalize">
+                      {{ c.estatus }}
+                    </span>
+                  </td>
+                  <td class="py-4 px-6 text-right space-x-2">
+                    <button
+                      *ngIf="c.estatus === 'enviada'"
+                      (click)="approveCotizacion(c)"
+                      class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl font-bold transition shadow-xs"
+                    >
+                      Aprobar
+                    </button>
+                    <button
+                      *ngIf="c.estatus === 'enviada'"
+                      (click)="rejectCotizacion(c)"
+                      class="text-xs bg-gray-200 hover:bg-red-100 hover:text-red-600 text-gray-700 px-3 py-1.5 rounded-xl font-semibold transition"
+                    >
+                      Rechazar
+                    </button>
+                    <button
+                      (click)="selectedCotizacionDetail = c"
+                      class="text-xs bg-gray-900 hover:bg-black text-white px-3 py-1.5 rounded-xl font-semibold transition"
+                    >
+                      Detalle
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= TAB 6: PAGOS ================= -->
+      <div *ngIf="activeTab === 'pagos'" class="space-y-6 animate-fade-in">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h3 class="text-xl font-bold text-gray-900">Control Financiero de Pagos</h3>
+            <p class="text-xs text-gray-500">Historial de abonos, liquidaciones y recibos de cotizaciones</p>
+          </div>
+          <button (click)="showNewPaymentModal = true" class="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition flex items-center gap-2 shadow-md shadow-red-600/20">
+            <span>+ Registrar Nuevo Pago</span>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-md">
+            <p class="text-xs font-semibold text-gray-400 uppercase">Recaudación Total</p>
+            <h4 class="text-3xl font-black text-gray-900 mt-2">${{ ingresosTotalesMes | number:'1.0-0' }} MXN</h4>
+            <p class="text-xs text-emerald-600 mt-1 font-semibold">Fondos disponibles</p>
+          </div>
+          <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-md">
+            <p class="text-xs font-semibold text-gray-400 uppercase">Pagos Pendientes por Cobrar</p>
+            <h4 class="text-3xl font-black text-gray-900 mt-2">$23,000 MXN</h4>
+            <p class="text-xs text-amber-600 mt-1 font-semibold">1 pago programado</p>
+          </div>
+          <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-md">
+            <p class="text-xs font-semibold text-gray-400 uppercase">Método Preferido</p>
+            <h4 class="text-3xl font-black text-gray-900 mt-2">Transferencia (75%)</h4>
+            <p class="text-xs text-blue-600 mt-1 font-semibold">SPEI / Banamex</p>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-3xl shadow-md border border-gray-100 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-gray-50/80 text-gray-500 text-xs uppercase font-bold border-b border-gray-100">
+                  <th class="py-4 px-6">ID Pago</th>
+                  <th class="py-4 px-6">Folio Cotización</th>
+                  <th class="py-4 px-6">Cliente</th>
+                  <th class="py-4 px-6">Método</th>
+                  <th class="py-4 px-6">Monto</th>
+                  <th class="py-4 px-6">Estado</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100 text-sm">
+                <tr *ngFor="let p of pagos" class="hover:bg-gray-50/80 transition">
+                  <td class="py-4 px-6 font-bold text-gray-900">{{ p.id }}</td>
+                  <td class="py-4 px-6 font-semibold text-red-600">{{ p.folioCotizacion }}</td>
+                  <td class="py-4 px-6 text-gray-800 font-medium">{{ p.clienteNombre }}</td>
+                  <td class="py-4 px-6 text-xs text-gray-600 font-semibold">{{ p.metodo }}</td>
+                  <td class="py-4 px-6 font-extrabold text-gray-900">${{ p.monto | number:'1.0-0' }} MXN</td>
+                  <td class="py-4 px-6">
+                    <span [class]="getStatusBadgeClass(p.estatus)" class="px-2.5 py-0.5 rounded-full text-xs font-bold border">
+                      {{ p.estatus }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= TAB 7: PROVEEDORES ================= -->
+      <div *ngIf="activeTab === 'proveedores'" class="space-y-6 animate-fade-in">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h3 class="text-xl font-bold text-gray-900">Directorio de Proveedores y Aliados</h3>
+            <p class="text-xs text-gray-500">Gestión de convenios, catering, música, iluminación y mobiliario</p>
+          </div>
+          <div class="flex gap-2">
+            <button (click)="showNewSupplierModal = true" class="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition flex items-center gap-2 shadow-md shadow-red-600/20">
+              <span>+ Agregar Proveedor</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div
+            *ngFor="let pv of filteredProveedores"
+            class="bg-white rounded-3xl p-6 shadow-md border border-gray-100 hover:shadow-xl transition space-y-4 flex flex-col justify-between"
+          >
+            <div>
+              <div class="flex justify-between items-start">
+                <span class="bg-red-50 text-red-600 text-xs font-extrabold px-3 py-1 rounded-full border border-red-100 uppercase">
+                  {{ pv.categoria }}
+                </span>
+                <span class="text-amber-400 font-bold text-sm">★ {{ pv.rating }}.0</span>
+              </div>
+              <h4 class="text-xl font-bold text-gray-900 mt-3">{{ pv.nombreEmpresa }}</h4>
+              <p class="text-xs text-gray-500 mt-1">Contacto: <strong class="text-gray-800">{{ pv.contacto }}</strong></p>
+
+              <div class="mt-4 pt-4 border-t border-gray-100 space-y-1.5 text-xs text-gray-600">
+                <p>📞 {{ pv.telefono }}</p>
+                <p>✉️ {{ pv.email }}</p>
+                <p>Rango de precios: <strong class="text-gray-900">{{ pv.precioPromedio }}</strong></p>
+              </div>
+            </div>
+
+            <div class="pt-4 border-t border-gray-100 flex items-center justify-between">
+              <span [class]="getStatusBadgeClass(pv.estatus)" class="px-2.5 py-0.5 rounded-full text-xs font-bold border">
+                {{ pv.estatus }}
+              </span>
+              <a [href]="'mailto:' + pv.email" class="text-xs bg-gray-900 hover:bg-black text-white px-4 py-2 rounded-xl font-semibold transition">
+                Contactar
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- MODAL: REGISTRAR NUEVO CLIENTE -->
+  <div *ngIf="showNewClientModal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 space-y-6 shadow-2xl animate-fade-in">
+      <div class="flex justify-between items-center border-b border-gray-100 pb-4">
+        <h3 class="text-xl font-bold text-gray-900">Registrar Nuevo Cliente</h3>
+        <button (click)="showNewClientModal = false" class="text-gray-400 hover:text-gray-600">✕</button>
+      </div>
+      <div class="space-y-4 text-sm">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1">Nombre</label>
+            <input type="text" [(ngModel)]="newClientData.nombre" placeholder="ej. Ana" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-red-500" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1">Apellido</label>
+            <input type="text" [(ngModel)]="newClientData.apellido" placeholder="ej. Martínez" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-red-500" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-700 mb-1">Correo Electrónico</label>
+          <input type="email" [(ngModel)]="newClientData.email" placeholder="ana.martinez@gmail.com" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-red-500" />
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1">Teléfono</label>
+            <input type="text" [(ngModel)]="newClientData.telefono" placeholder="+52 55..." class="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-red-500" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1">Ciudad</label>
+            <input type="text" [(ngModel)]="newClientData.ciudad" placeholder="Ciudad de México" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-red-500" />
+          </div>
+        </div>
+      </div>
+      <div class="flex justify-end gap-3 border-t border-gray-100 pt-4">
+        <button (click)="showNewClientModal = false" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-xl font-semibold text-xs">Cancelar</button>
+        <button (click)="saveNewClient()" class="px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-xs shadow-md">Guardar Cliente</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: REGISTRAR NUEVO PROVEEDOR -->
+  <div *ngIf="showNewSupplierModal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 space-y-6 shadow-2xl animate-fade-in">
+      <div class="flex justify-between items-center border-b border-gray-100 pb-4">
+        <h3 class="text-xl font-bold text-gray-900">Agregar Proveedor de Servicio</h3>
+        <button (click)="showNewSupplierModal = false" class="text-gray-400 hover:text-gray-600">✕</button>
+      </div>
+      <div class="space-y-4 text-sm">
+        <div>
+          <label class="block text-xs font-bold text-gray-700 mb-1">Nombre de la Empresa</label>
+          <input type="text" [(ngModel)]="newSupplierData.nombreEmpresa" placeholder="ej. Sonido & Iluminación Pro" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-red-500" />
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1">Persona de Contacto</label>
+            <input type="text" [(ngModel)]="newSupplierData.contacto" placeholder="ej. Luis Torres" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-red-500" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1">Categoría</label>
+            <select [(ngModel)]="newSupplierData.categoria" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-red-500">
+              <option value="Catering">Catering</option>
+              <option value="Floristería">Floristería</option>
+              <option value="Música & DJ">Música & DJ</option>
+              <option value="Mobiliario">Mobiliario</option>
+              <option value="Fotografía">Fotografía</option>
+              <option value="Iluminación">Iluminación</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1">Teléfono</label>
+            <input type="text" [(ngModel)]="newSupplierData.telefono" placeholder="+52 55..." class="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-red-500" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1">Correo Electrónico</label>
+            <input type="email" [(ngModel)]="newSupplierData.email" placeholder="contacto@proveedor.com" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-red-500" />
+          </div>
+        </div>
+      </div>
+      <div class="flex justify-end gap-3 border-t border-gray-100 pt-4">
+        <button (click)="showNewSupplierModal = false" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-xl font-semibold text-xs">Cancelar</button>
+        <button (click)="saveNewSupplier()" class="px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-xs shadow-md">Guardar Proveedor</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: REGISTRAR NUEVO PAGO -->
+  <div *ngIf="showNewPaymentModal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 space-y-6 shadow-2xl animate-fade-in">
+      <div class="flex justify-between items-center border-b border-gray-100 pb-4">
+        <h3 class="text-xl font-bold text-gray-900">Registrar Nuevo Pago</h3>
+        <button (click)="showNewPaymentModal = false" class="text-gray-400 hover:text-gray-600">✕</button>
+      </div>
+      <div class="space-y-4 text-sm">
+        <div>
+          <label class="block text-xs font-bold text-gray-700 mb-1">Folio de Cotización</label>
+          <input type="text" [(ngModel)]="newPaymentData.folioCotizacion" placeholder="ej. COT-2026-4821" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-red-500" />
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-700 mb-1">Cliente</label>
+          <input type="text" [(ngModel)]="newPaymentData.clienteNombre" placeholder="ej. Mariana González" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-red-500" />
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1">Monto (MXN)</label>
+            <input type="number" [(ngModel)]="newPaymentData.monto" placeholder="23000" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-red-500" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-700 mb-1">Método de Pago</label>
+            <select [(ngModel)]="newPaymentData.metodo" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-red-500">
+              <option value="Transferencia">Transferencia</option>
+              <option value="Tarjeta">Tarjeta</option>
+              <option value="Efectivo">Efectivo</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="flex justify-end gap-3 border-t border-gray-100 pt-4">
+        <button (click)="showNewPaymentModal = false" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-xl font-semibold text-xs">Cancelar</button>
+        <button (click)="saveNewPayment()" class="px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-xs shadow-md">Confirmar Pago</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: DETALLE COTIZACIÓN -->
+  <div *ngIf="selectedCotizacionDetail" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 space-y-6 shadow-2xl animate-fade-in">
+      <div class="flex justify-between items-center border-b border-gray-100 pb-4">
+        <div>
+          <span class="text-xs font-extrabold text-red-600">{{ selectedCotizacionDetail.folio }}</span>
+          <h3 class="text-2xl font-bold text-gray-900">{{ selectedCotizacionDetail.evento }}</h3>
+        </div>
+        <button (click)="selectedCotizacionDetail = null" class="text-gray-400 hover:text-gray-600">✕</button>
+      </div>
+      <div class="space-y-4 text-sm">
+        <div class="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-2xl border border-gray-100">
+          <div>
+            <p class="text-xs text-gray-400 font-semibold uppercase">Invitados</p>
+            <p class="font-bold text-gray-900">{{ selectedCotizacionDetail.invitados }} personas</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-400 font-semibold uppercase">Total Cotizado</p>
+            <p class="font-black text-red-600 text-lg">${{ selectedCotizacionDetail.totalFinal | number:'1.0-0' }} MXN</p>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <p class="text-xs font-bold text-gray-400 uppercase">Desglose de Conceptos</p>
+          <div class="space-y-2">
+            <div *ngFor="let item of selectedCotizacionDetail.items" class="flex justify-between text-xs p-2.5 rounded-xl bg-gray-50">
+              <span class="font-medium text-gray-800">{{ item.descripcion }}</span>
+              <span class="font-bold text-gray-900">${{ item.monto | number:'1.0-0' }} MXN</span>
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="selectedCotizacionDetail.notas" class="text-xs text-gray-500 bg-amber-50/60 border border-amber-100 p-3 rounded-xl">
+          <strong class="text-amber-800">Notas:</strong> {{ selectedCotizacionDetail.notas }}
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-3 border-t border-gray-100 pt-4">
+        <button (click)="selectedCotizacionDetail = null" class="px-5 py-2 bg-gray-900 text-white hover:bg-black rounded-xl font-semibold text-xs">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: FICHA DEL CLIENTE -->
+  <div *ngIf="showFichaClienteModal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs">
+    <div class="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl animate-fade-in">
+      <!-- Header Modal -->
+      <div class="bg-gray-900 text-white p-6 flex justify-between items-start">
+        <div class="flex items-center gap-4">
+          <div class="w-14 h-14 rounded-2xl bg-red-600/20 text-red-500 border border-red-500/30 flex items-center justify-center text-xl font-black">
+            {{ clienteFicha?.nombre?.charAt(0) || 'C' }}{{ clienteFicha?.apellido?.charAt(0) || '' }}
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="text-2xl font-black text-white">{{ clienteFicha?.nombreCompleto || 'Cargando cliente...' }}</h3>
+              <span *ngIf="clienteFicha" [class]="getStatusBadgeClass(clienteFicha.estatusLabel)" class="px-2.5 py-0.5 rounded-full text-xs font-bold border">
+                {{ clienteFicha.estatusLabel }}
+              </span>
+            </div>
+            <p class="text-xs text-gray-400 mt-1 flex items-center gap-4">
+              <span>Email: {{ clienteFicha?.email || '-' }}</span>
+              <span>Tel: {{ clienteFicha?.telefono || 'Sin teléfono' }}</span>
+            </p>
+          </div>
+        </div>
+        <button (click)="cerrarFichaCliente()" class="text-gray-400 hover:text-white text-lg font-bold p-1">✕</button>
+      </div>
+
+      <!-- Quick Metrics Header -->
+      <div *ngIf="clienteFicha" class="bg-gray-800 border-b border-gray-700 p-4 grid grid-cols-1 sm:grid-cols-3 gap-4 text-white">
+        <div class="bg-gray-900/80 p-3 rounded-2xl border border-gray-700 flex flex-col">
+          <span class="text-[10px] text-gray-400 uppercase font-semibold">Total Pagado</span>
+          <span class="text-xl font-extrabold text-emerald-400">${{ clienteFicha.totalPagado | number:'1.2-2' }} MXN</span>
+        </div>
+        <div class="bg-gray-900/80 p-3 rounded-2xl border border-gray-700 flex flex-col">
+          <span class="text-[10px] text-gray-400 uppercase font-semibold">Último Evento</span>
+          <span class="text-xs font-bold text-gray-200 truncate mt-1">{{ clienteFicha.ultimoEventoContratado }}</span>
+        </div>
+        <div class="bg-gray-900/80 p-3 rounded-2xl border border-gray-700 flex flex-col">
+          <span class="text-[10px] text-gray-400 uppercase font-semibold">Total Eventos</span>
+          <span class="text-xl font-extrabold text-red-400">{{ clienteFicha.totalEventos }}</span>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs Inside Modal -->
+      <div class="flex border-b border-gray-100 bg-gray-50 px-6 pt-2">
+        <button
+          (click)="fichaActiveTab = 'pagos'"
+          [class]="fichaActiveTab === 'pagos' ? 'border-red-600 text-red-600 font-bold border-b-2' : 'text-gray-500 hover:text-gray-900 font-medium'"
+          class="px-4 py-3 text-sm transition">
+          Historial de Pagos
+        </button>
+        <button
+          (click)="fichaActiveTab = 'servicios'"
+          [class]="fichaActiveTab === 'servicios' ? 'border-red-600 text-red-600 font-bold border-b-2' : 'text-gray-500 hover:text-gray-900 font-medium'"
+          class="px-4 py-3 text-sm transition">
+          Servicios Contratados
+        </button>
+        <button
+          (click)="fichaActiveTab = 'eventos'"
+          [class]="fichaActiveTab === 'eventos' ? 'border-red-600 text-red-600 font-bold border-b-2' : 'text-gray-500 hover:text-gray-900 font-medium'"
+          class="px-4 py-3 text-sm transition">
+          Eventos Activos
+        </button>
+      </div>
+
+      <!-- Modal Body Content -->
+      <div class="p-6 overflow-y-auto flex-1 space-y-4 max-h-[500px]">
+        <!-- Spinner Loading -->
+        <div *ngIf="loadingFicha" class="py-12 flex flex-col items-center justify-center text-gray-400 space-y-3">
+          <div class="w-8 h-8 border-4 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+          <p class="text-xs font-semibold">Cargando información detallada del cliente...</p>
+        </div>
+
+        <div *ngIf="!loadingFicha && clienteFicha">
+          <!-- TAB 1: HISTORIAL DE PAGOS -->
+          <div *ngIf="fichaActiveTab === 'pagos'">
+            <div *ngIf="clienteFicha.historialPagos.length === 0" class="py-8 text-center text-gray-400 text-sm">
+              No hay registros de pagos para este cliente.
+            </div>
+            <div *ngIf="clienteFicha.historialPagos.length > 0" class="overflow-x-auto">
+              <table class="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr class="bg-gray-50 text-gray-500 font-bold border-b border-gray-100 uppercase">
+                    <th class="py-3 px-4">Folio Contrato</th>
+                    <th class="py-3 px-4">Monto</th>
+                    <th class="py-3 px-4">Método</th>
+                    <th class="py-3 px-4">Tipo</th>
+                    <th class="py-3 px-4">Fecha</th>
+                    <th class="py-3 px-4">Estatus</th>
+                    <th class="py-3 px-4">Referencia</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                  <tr *ngFor="let pago of clienteFicha.historialPagos" class="hover:bg-gray-50/80">
+                    <td class="py-3 px-4 font-bold text-gray-900">{{ pago.folioContrato }}</td>
+                    <td class="py-3 px-4 font-extrabold text-emerald-600">${{ pago.monto | number:'1.2-2' }} MXN</td>
+                    <td class="py-3 px-4 font-medium text-gray-700 capitalize">{{ pago.metodoPago }}</td>
+                    <td class="py-3 px-4 text-gray-500 capitalize">{{ pago.tipoTransaccion }}</td>
+                    <td class="py-3 px-4 text-gray-500">{{ pago.fechaPago }}</td>
+                    <td class="py-3 px-4">
+                      <span [class]="getStatusBadgeClass(pago.estatus)" class="px-2 py-0.5 rounded-full text-[10px] font-bold border">
+                        {{ pago.estatus }}
+                      </span>
+                    </td>
+                    <td class="py-3 px-4 text-gray-400">{{ pago.referencia || '-' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- TAB 2: SERVICIOS CONTRATADOS -->
+          <div *ngIf="fichaActiveTab === 'servicios'">
+            <div *ngIf="clienteFicha.serviciosContratados.length === 0" class="py-8 text-center text-gray-400 text-sm">
+              No hay servicios o eventos contratados registrados.
+            </div>
+            <div *ngIf="clienteFicha.serviciosContratados.length > 0" class="overflow-x-auto">
+              <table class="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr class="bg-gray-50 text-gray-500 font-bold border-b border-gray-100 uppercase">
+                    <th class="py-3 px-4">Concepto / Servicio</th>
+                    <th class="py-3 px-4">Tipo</th>
+                    <th class="py-3 px-4">Precio U.</th>
+                    <th class="py-3 px-4">Cantidad</th>
+                    <th class="py-3 px-4">Subtotal</th>
+                    <th class="py-3 px-4">Folio Cotización</th>
+                    <th class="py-3 px-4">Fecha</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                  <tr *ngFor="let srv of clienteFicha.serviciosContratados" class="hover:bg-gray-50/80">
+                    <td class="py-3 px-4 font-bold text-gray-900">{{ srv.nombre }}</td>
+                    <td class="py-3 px-4">
+                      <span class="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full text-[10px] uppercase font-semibold">
+                        {{ srv.tipo }}
+                      </span>
+                    </td>
+                    <td class="py-3 px-4 font-medium text-gray-700">${{ srv.precioUnitario | number:'1.2-2' }}</td>
+                    <td class="py-3 px-4 font-bold text-gray-800">{{ srv.cantidad }}</td>
+                    <td class="py-3 px-4 font-extrabold text-red-600">${{ srv.subtotal | number:'1.2-2' }} MXN</td>
+                    <td class="py-3 px-4 text-gray-500 font-semibold">{{ srv.folioCotizacion }}</td>
+                    <td class="py-3 px-4 text-gray-400">{{ srv.fechaCotizacion }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- TAB 3: EVENTOS ACTIVOS -->
+          <div *ngIf="fichaActiveTab === 'eventos'">
+            <div *ngIf="clienteFicha.eventosActivos.length === 0" class="py-8 text-center text-gray-400 text-sm">
+              No hay eventos activos para este cliente.
+            </div>
+            <div *ngIf="clienteFicha.eventosActivos.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div *ngFor="let ev of clienteFicha.eventosActivos" class="bg-gradient-to-br from-gray-50 to-white p-5 rounded-2xl border border-gray-200 shadow-xs space-y-3">
+                <div class="flex justify-between items-start">
+                  <div>
+                    <span class="text-[10px] uppercase tracking-wider font-extrabold text-red-600">Folio: {{ ev.folioContrato }}</span>
+                    <h4 class="font-bold text-gray-900 text-base">{{ ev.nombreEvento }}</h4>
+                  </div>
+                  <span [class]="getStatusBadgeClass(ev.estatus)" class="px-2.5 py-0.5 rounded-full text-xs font-bold border">
+                    {{ ev.estatus }}
+                  </span>
+                </div>
+                <div class="grid grid-cols-2 gap-2 text-xs text-gray-600 pt-2 border-t border-gray-100">
+                  <div>
+                    <p class="text-[10px] text-gray-400 uppercase font-semibold">Fecha Evento</p>
+                    <p class="font-bold text-gray-800">{{ ev.fechaEvento }}</p>
+                  </div>
+                  <div>
+                    <p class="text-[10px] text-gray-400 uppercase font-semibold">Lugar</p>
+                    <p class="font-bold text-gray-800">{{ ev.lugar || 'No especificado' }}</p>
+                  </div>
+                  <div *ngIf="ev.aforo">
+                    <p class="text-[10px] text-gray-400 uppercase font-semibold">Aforo Invitados</p>
+                    <p class="font-bold text-gray-800">{{ ev.aforo }} personas</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer Modal -->
+      <div class="p-4 bg-gray-50 border-t border-gray-100 flex justify-end">
+        <button (click)="cerrarFichaCliente()" class="px-6 py-2.5 bg-gray-900 hover:bg-black text-white rounded-xl font-bold text-xs shadow-md transition cursor-pointer">
+          Cerrar Ficha
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>

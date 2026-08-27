@@ -29,5 +29,6 @@ app.UseHttpsRedirection();
 app.MapAuthEndpoints();
 app.MapCatalogoEndpoints();
 app.MapCotizacionEndpoints();
+app.MapClienteEndpoints();
 
 app.Run();

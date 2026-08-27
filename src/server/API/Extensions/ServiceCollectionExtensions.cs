@@ -43,6 +43,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<ICatalogoService, CatalogoService>();
         services.AddScoped<ICotizacionService, CotizacionService>();
+        services.AddScoped<IClienteService, ClienteService>();
 
         return services;
     }
