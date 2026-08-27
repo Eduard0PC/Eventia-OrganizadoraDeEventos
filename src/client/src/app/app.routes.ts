@@ -5,6 +5,7 @@ import { Register } from './pages/register/register';
 import { MisEventos } from './pages/mis-eventos/mis-eventos';
 import { Cotizaciones } from './pages/cotizaciones/cotizaciones';
 import { Pagos } from './pages/pagos/pagos';
+import { Empleado } from './pages/empleado/empleado';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -14,5 +15,7 @@ export const routes: Routes = [
   { path: 'mis-eventos', component: MisEventos },
   { path: 'cotizaciones', component: Cotizaciones },
   { path: 'pagos', component: Pagos },
+  { path: 'empleado', component: Empleado },
   { path: '**', redirectTo: 'login' },
 ];
+

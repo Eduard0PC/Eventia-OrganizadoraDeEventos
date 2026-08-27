@@ -36,8 +36,13 @@ export class Login {
         this.loading = false;
       }),
     ).subscribe({
-      next: () => {
-        this.router.navigateByUrl('/home');
+      next: (session) => {
+        const role = session?.rol?.toLowerCase();
+        if (role === 'empleado' || role === 'organizador' || role === 'admin') {
+          this.router.navigateByUrl('/empleado');
+        } else {
+          this.router.navigateByUrl('/home');
+        }
       },
       error: (err) => {
         if (err instanceof TimeoutError) {

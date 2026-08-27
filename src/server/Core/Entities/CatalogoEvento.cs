@@ -1,5 +1,6 @@
-// Models/CatalogoEvento.cs
 using System;
+
+namespace Server.Core.Entities;
 
 public class CatalogoEvento
 {

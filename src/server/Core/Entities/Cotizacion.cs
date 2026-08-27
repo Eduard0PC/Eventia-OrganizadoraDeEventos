@@ -1,6 +1,7 @@
-// Models/Cotizacion.cs
 using System;
 using System.Collections.Generic;
+
+namespace Server.Core.Entities;
 
 public class Cotizacion
 {

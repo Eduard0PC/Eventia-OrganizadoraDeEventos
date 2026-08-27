@@ -5109,6 +5109,7 @@ COPY public.tickets (id, pago_id, folio, emitido_at, impreso, url_pdf, created_a
 COPY public.usuarios (id, email, password_hash, rol, cliente_id, empleado_id, activo, ultimo_acceso, token_recuperacion, token_recuperacion_exp, created_at, updated_at) FROM stdin;
 1	admin@organizadoraeventos.com	$2b$12$AIoC2r/1WRTfDrXjiqkdDOT8iW.eiPiOdADXfAh91oe6ZhDQky4hS	admin	\N	\N	t	\N	\N	\N	2026-06-30 03:13:33.251244+00	2026-07-01 00:17:48.41051+00
 2	juan.garcia@example.com	$2b$12$AIoC2r/1WRTfDrXjiqkdDOT8iW.eiPiOdADXfAh91oe6ZhDQky4hS	cliente	4	\N	t	2026-07-03 01:57:25.634241+00	\N	\N	2026-06-30 23:35:15.619596+00	2026-07-03 01:57:25.704783+00
+3	empleado@eventplanner.com	$2b$12$AIoC2r/1WRTfDrXjiqkdDOT8iW.eiPiOdADXfAh91oe6ZhDQky4hS	empleado	\N	\N	t	\N	\N	\N	2026-08-26 12:00:00.000000+00	2026-08-26 12:00:00.000000+00
 \.
 
 

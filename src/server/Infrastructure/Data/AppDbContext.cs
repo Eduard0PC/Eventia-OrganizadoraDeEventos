@@ -1,5 +1,7 @@
-// Data/AppDbContext.cs
 using Microsoft.EntityFrameworkCore;
+using Server.Core.Entities;
+
+namespace Server.Infrastructure.Data;
 
 public class AppDbContext : DbContext
 {

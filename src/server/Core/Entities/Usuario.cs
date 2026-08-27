@@ -1,3 +1,7 @@
+using System;
+
+namespace Server.Core.Entities;
+
 public class Usuario
 {
     public int Id { get; set; }

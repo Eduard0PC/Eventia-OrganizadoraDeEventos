@@ -1,5 +1,6 @@
-// Models/CotizacionItem.cs
 using System;
+
+namespace Server.Core.Entities;
 
 public class CotizacionItem
 {

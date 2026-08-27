@@ -1,3 +1,5 @@
+namespace Server.Core.Entities;
+
 public class Cliente
 {
     public int Id { get; set; }
