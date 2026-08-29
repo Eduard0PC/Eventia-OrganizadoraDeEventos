@@ -78,4 +78,5 @@ public class CrearClienteRequest
     public string Apellido { get; set; } = null!;
     public string Email { get; set; } = null!;
     public string? Telefono { get; set; }
+    public string? Password { get; set; }
 }

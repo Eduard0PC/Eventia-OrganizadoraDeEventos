@@ -15,4 +15,9 @@ public class BcryptPasswordHasher : IPasswordHasher
             return false;
         }
     }
+
+    public string HashPassword(string password)
+    {
+        return BCrypt.Net.BCrypt.HashPassword(password);
+    }
 }

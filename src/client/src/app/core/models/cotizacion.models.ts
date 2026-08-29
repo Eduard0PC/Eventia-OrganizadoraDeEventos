@@ -2,8 +2,13 @@ export type EstatusCotizacion = 'borrador' | 'enviada' | 'aceptada' | 'rechazada
 
 export interface CotizacionItem {
   id?: number;
+  tipo?: string;
   descripcion: string;
+  precioUnitario?: number;
+  cantidad?: number;
+  descuentoItem?: number;
   monto: number;
+  notas?: string;
 }
 
 export interface Cotizacion {

@@ -14,10 +14,12 @@ namespace Server.Infrastructure.Services;
 public class ClienteService : IClienteService
 {
     private readonly AppDbContext _db;
+    private readonly IPasswordHasher _passwordHasher;
 
-    public ClienteService(AppDbContext db)
+    public ClienteService(AppDbContext db, IPasswordHasher passwordHasher)
     {
         _db = db;
+        _passwordHasher = passwordHasher;
     }
 
     public async Task<List<ClienteSummaryResponse>> GetClientesAsync(CancellationToken cancellationToken = default)
@@ -139,37 +141,39 @@ public class ClienteService : IClienteService
         respuesta.HistorialPagos = pagosList;
         respuesta.TotalPagado = pagosList.Sum(p => p.Monto);
 
-        // 2. Servicios Contratados
+        // 2. Servicios / Cotizaciones Contratadas (Agrupados por Cotización Principal)
         var cotizaciones = await _db.Cotizaciones
             .Where(c => c.ClienteId == id)
             .Include(c => c.Items)
                 .ThenInclude(i => i.CatalogoEvento)
             .Include(c => c.Items)
                 .ThenInclude(i => i.CatalogoServicio)
+            .OrderByDescending(c => c.CreatedAt)
             .ToListAsync(cancellationToken);
 
-        var serviciosList = new List<ServicioContratadoDto>();
-        foreach (var cot in cotizaciones)
+        var serviciosList = cotizaciones.Select(cot =>
         {
-            foreach (var item in cot.Items)
-            {
-                string nombreItem = item.Tipo.ToLower() == "evento"
-                    ? (item.CatalogoEvento?.Nombre ?? "Evento")
-                    : (item.CatalogoServicio?.Nombre ?? item.Notas ?? "Servicio");
+            var primerItemEvento = cot.Items.FirstOrDefault(i => i.Tipo == "evento");
+            string nombrePrincipal = primerItemEvento?.CatalogoEvento?.Nombre
+                ?? cot.Items.FirstOrDefault(i => i.CatalogoServicio != null)?.CatalogoServicio?.Nombre
+                ?? cot.Items.FirstOrDefault()?.Notas
+                ?? "Cotización de Evento / Servicios";
 
-                serviciosList.Add(new ServicioContratadoDto
-                {
-                    Id = item.Id,
-                    Nombre = nombreItem,
-                    Tipo = item.Tipo,
-                    PrecioUnitario = item.PrecioUnitario,
-                    Cantidad = item.Cantidad,
-                    Subtotal = item.Subtotal ?? (item.PrecioUnitario * item.Cantidad),
-                    FechaCotizacion = cot.CreatedAt.ToString("yyyy-MM-dd"),
-                    FolioCotizacion = cot.Folio
-                });
-            }
-        }
+            decimal totalCot = cot.TotalFinal ?? cot.Total;
+
+            return new ServicioContratadoDto
+            {
+                Id = cot.Id,
+                Nombre = nombrePrincipal,
+                Tipo = primerItemEvento != null ? "Paquete de Evento" : "Servicios",
+                PrecioUnitario = totalCot,
+                Cantidad = cot.Items.Count,
+                Subtotal = totalCot,
+                FechaCotizacion = cot.CreatedAt.ToString("yyyy-MM-dd"),
+                FolioCotizacion = cot.Folio
+            };
+        }).ToList();
+
         respuesta.ServiciosContratados = serviciosList;
 
         // 3. Eventos Activos
@@ -233,10 +237,13 @@ public class ClienteService : IClienteService
             return (null, "El email es obligatorio.");
         }
 
-        var existeEmail = await _db.Clientes.AnyAsync(c => c.Email.ToLower() == request.Email.ToLower(), cancellationToken);
-        if (existeEmail)
+        var emailLower = request.Email.Trim().ToLowerInvariant();
+
+        var existeCliente = await _db.Clientes.AnyAsync(c => c.Email.ToLower() == emailLower, cancellationToken);
+        var existeUsuario = await _db.Usuarios.AnyAsync(u => u.Email.ToLower() == emailLower, cancellationToken);
+        if (existeCliente || existeUsuario)
         {
-            return (null, "Ya existe un cliente registrado con ese correo electrónico.");
+            return (null, "Ya existe un usuario o cliente registrado con ese correo electrónico.");
         }
 
         var nuevoCliente = new Cliente
@@ -249,6 +256,20 @@ public class ClienteService : IClienteService
         };
 
         _db.Clientes.Add(nuevoCliente);
+        await _db.SaveChangesAsync(cancellationToken);
+
+        // Crear la cuenta de usuario asociada en la tabla 'usuarios' de Supabase
+        var password = !string.IsNullOrWhiteSpace(request.Password) ? request.Password : "Cliente123!";
+        var nuevoUsuario = new Usuario
+        {
+            Email = nuevoCliente.Email,
+            PasswordHash = _passwordHasher.HashPassword(password),
+            Rol = "cliente",
+            ClienteId = nuevoCliente.Id,
+            Activo = true
+        };
+
+        _db.Usuarios.Add(nuevoUsuario);
         await _db.SaveChangesAsync(cancellationToken);
 
         var summary = new ClienteSummaryResponse

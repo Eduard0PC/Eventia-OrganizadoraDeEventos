@@ -127,12 +127,13 @@ export class Empleado implements OnInit {
 
   // Modals State
   showNewClientModal = false;
-  newClientData: Partial<ClienteItem> = {
+  newClientData: Partial<ClienteItem> & { password?: string; confirmPassword?: string } = {
     nombre: '',
     apellido: '',
     email: '',
     telefono: '',
-    ciudad: 'Ciudad de México',
+    password: '',
+    confirmPassword: '',
     estatus: 'Activo',
   };
 
@@ -681,20 +682,29 @@ export class Empleado implements OnInit {
   }
 
   saveNewClient(): void {
-    if (!this.newClientData.nombre || !this.newClientData.email) return;
+    if (!this.newClientData.nombre || !this.newClientData.apellido || !this.newClientData.email) {
+      alert('Por favor completa el nombre, apellido y correo electrónico.');
+      return;
+    }
+    if (this.newClientData.password && this.newClientData.password !== this.newClientData.confirmPassword) {
+      alert('Las contraseñas no coinciden.');
+      return;
+    }
     this.clientesService.crearCliente({
       nombre: this.newClientData.nombre || '',
       apellido: this.newClientData.apellido || '',
       email: this.newClientData.email || '',
       telefono: this.newClientData.telefono || '',
+      password: this.newClientData.password || '',
     }).subscribe({
       next: (nuevoCliente) => {
         this.clientes.unshift(nuevoCliente);
         this.showNewClientModal = false;
-        this.newClientData = { nombre: '', apellido: '', email: '', telefono: '', ciudad: 'Ciudad de México', estatus: 'Activo' };
+        this.newClientData = { nombre: '', apellido: '', email: '', telefono: '', password: '', confirmPassword: '', estatus: 'Activo' };
       },
       error: (err) => {
         console.error('Error al crear cliente en backend:', err);
+        alert(err?.error?.error || 'Error al registrar el cliente.');
       },
     });
   }
@@ -732,6 +742,41 @@ export class Empleado implements OnInit {
     this.pagos.unshift(newPayment);
     this.showNewPaymentModal = false;
     this.newPaymentData = { folioCotizacion: '', clienteNombre: '', monto: 0, metodo: 'Transferencia', estatus: 'Completado' };
+  }
+
+  verDesgloseCotizacion(cotizacionId: number): void {
+    const found = this.cotizaciones.find((c) => c.id === cotizacionId);
+    if (found) {
+      this.selectedCotizacionDetail = found;
+    } else {
+      this.cotizacionesService.getCotizacionById(cotizacionId).subscribe({
+        next: (cot) => {
+          this.selectedCotizacionDetail = cot;
+        },
+        error: (err) => {
+          console.error('Error al cargar desglose de la cotización:', err);
+        },
+      });
+    }
+  }
+
+  verDesgloseCotizacionPorFolio(folio: string): void {
+    if (!folio) return;
+    const found = this.cotizaciones.find((c) => c.folio.toLowerCase() === folio.toLowerCase());
+    if (found) {
+      this.selectedCotizacionDetail = found;
+    } else {
+      // Find quote by loading all
+      this.cotizacionesService.getCotizaciones().subscribe({
+        next: (cots) => {
+          this.cotizaciones = cots;
+          const matched = cots.find((c) => c.folio.toLowerCase() === folio.toLowerCase());
+          if (matched) {
+            this.selectedCotizacionDetail = matched;
+          }
+        },
+      });
+    }
   }
 
   logout(): void {

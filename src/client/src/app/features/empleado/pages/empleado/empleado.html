@@ -178,20 +178,8 @@
         </div>
       </div>
 
-      <!-- SEARCH BAR & NOTIFS -->
+      <!-- NOTIFS & VISTA CLIENTE -->
       <div class="flex items-center gap-4">
-        <div class="relative hidden sm:block w-64 md:w-80">
-          <input
-            type="text"
-            [(ngModel)]="searchQuery"
-            placeholder="Buscar evento, cliente, folio..."
-            class="w-full bg-gray-100/90 text-sm rounded-xl pl-10 pr-4 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500/50 transition"
-          />
-          <svg class="absolute left-3 top-2.5 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-          </svg>
-        </div>
-
         <button class="relative p-2 text-gray-600 hover:text-red-500 rounded-xl hover:bg-gray-100 transition">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 01-6 0v-1m6 0H9"/>
@@ -815,14 +803,18 @@
           <label class="block text-xs font-bold text-gray-700 mb-1">Correo Electrónico</label>
           <input type="email" [(ngModel)]="newClientData.email" placeholder="ana.martinez@gmail.com" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-red-500" />
         </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-700 mb-1">Teléfono</label>
+          <input type="text" [(ngModel)]="newClientData.telefono" placeholder="+52 55..." class="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-red-500" />
+        </div>
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block text-xs font-bold text-gray-700 mb-1">Teléfono</label>
-            <input type="text" [(ngModel)]="newClientData.telefono" placeholder="+52 55..." class="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-red-500" />
+            <label class="block text-xs font-bold text-gray-700 mb-1">Contraseña</label>
+            <input type="password" [(ngModel)]="newClientData.password" placeholder="********" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-red-500" />
           </div>
           <div>
-            <label class="block text-xs font-bold text-gray-700 mb-1">Ciudad</label>
-            <input type="text" [(ngModel)]="newClientData.ciudad" placeholder="Ciudad de México" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-red-500" />
+            <label class="block text-xs font-bold text-gray-700 mb-1">Confirmar Contraseña</label>
+            <input type="password" [(ngModel)]="newClientData.confirmPassword" placeholder="********" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-red-500" />
           </div>
         </div>
       </div>
@@ -918,45 +910,103 @@
     </div>
   </div>
 
-  <!-- MODAL: DETALLE COTIZACIÓN -->
+  <!-- MODAL: DETALLE DE COTIZACIÓN CON DESGLOSE DE ÍTEMS -->
   <div *ngIf="selectedCotizacionDetail" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs">
-    <div class="bg-white rounded-3xl max-w-lg w-full p-6 space-y-6 shadow-2xl animate-fade-in">
-      <div class="flex justify-between items-center border-b border-gray-100 pb-4">
+    <div class="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl animate-fade-in">
+      <!-- Header Modal -->
+      <div class="bg-gray-900 text-white p-6 flex justify-between items-start">
         <div>
-          <span class="text-xs font-extrabold text-red-600">{{ selectedCotizacionDetail.folio }}</span>
-          <h3 class="text-2xl font-bold text-gray-900">{{ selectedCotizacionDetail.evento }}</h3>
-        </div>
-        <button (click)="selectedCotizacionDetail = null" class="text-gray-400 hover:text-gray-600">✕</button>
-      </div>
-      <div class="space-y-4 text-sm">
-        <div class="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-2xl border border-gray-100">
-          <div>
-            <p class="text-xs text-gray-400 font-semibold uppercase">Invitados</p>
-            <p class="font-bold text-gray-900">{{ selectedCotizacionDetail.invitados }} personas</p>
+          <div class="flex items-center gap-3">
+            <span class="text-xs font-extrabold bg-red-600/30 text-red-400 px-2.5 py-1 rounded-lg border border-red-500/30">
+              {{ selectedCotizacionDetail.folio }}
+            </span>
+            <span [class]="getStatusBadgeClass(selectedCotizacionDetail.estatus)" class="px-2.5 py-0.5 rounded-full text-xs font-bold border capitalize">
+              {{ selectedCotizacionDetail.estatus }}
+            </span>
           </div>
-          <div>
-            <p class="text-xs text-gray-400 font-semibold uppercase">Total Cotizado</p>
-            <p class="font-black text-red-600 text-lg">${{ selectedCotizacionDetail.totalFinal | number:'1.0-0' }} MXN</p>
-          </div>
+          <h3 class="text-2xl font-black text-white mt-2">{{ selectedCotizacionDetail.evento }}</h3>
+          <p class="text-xs text-gray-400 mt-1">Fecha Evento: {{ selectedCotizacionDetail.fechaEvento || 'Pendiente' }} | Creación: {{ selectedCotizacionDetail.fechaCreacion }}</p>
         </div>
-
-        <div class="space-y-2">
-          <p class="text-xs font-bold text-gray-400 uppercase">Desglose de Conceptos</p>
-          <div class="space-y-2">
-            <div *ngFor="let item of selectedCotizacionDetail.items" class="flex justify-between text-xs p-2.5 rounded-xl bg-gray-50">
-              <span class="font-medium text-gray-800">{{ item.descripcion }}</span>
-              <span class="font-bold text-gray-900">${{ item.monto | number:'1.0-0' }} MXN</span>
-            </div>
-          </div>
-        </div>
-
-        <div *ngIf="selectedCotizacionDetail.notas" class="text-xs text-gray-500 bg-amber-50/60 border border-amber-100 p-3 rounded-xl">
-          <strong class="text-amber-800">Notas:</strong> {{ selectedCotizacionDetail.notas }}
-        </div>
+        <button (click)="selectedCotizacionDetail = null" class="text-gray-400 hover:text-white text-lg font-bold p-1">✕</button>
       </div>
 
-      <div class="flex justify-end gap-3 border-t border-gray-100 pt-4">
-        <button (click)="selectedCotizacionDetail = null" class="px-5 py-2 bg-gray-900 text-white hover:bg-black rounded-xl font-semibold text-xs">Cerrar</button>
+      <!-- Quick Summary Metrics -->
+      <div class="bg-gray-800 border-b border-gray-700 p-4 grid grid-cols-2 sm:grid-cols-4 gap-3 text-white text-xs">
+        <div class="bg-gray-900/80 p-2.5 rounded-xl border border-gray-700 flex flex-col">
+          <span class="text-[10px] text-gray-400 uppercase font-semibold">Invitados</span>
+          <span class="text-sm font-bold text-gray-200 mt-0.5">{{ selectedCotizacionDetail.invitados }} personas</span>
+        </div>
+        <div class="bg-gray-900/80 p-2.5 rounded-xl border border-gray-700 flex flex-col">
+          <span class="text-[10px] text-gray-400 uppercase font-semibold">Subtotal</span>
+          <span class="text-sm font-bold text-gray-200 mt-0.5">${{ selectedCotizacionDetail.total | number:'1.2-2' }}</span>
+        </div>
+        <div class="bg-gray-900/80 p-2.5 rounded-xl border border-gray-700 flex flex-col">
+          <span class="text-[10px] text-gray-400 uppercase font-semibold">Descuento</span>
+          <span class="text-sm font-bold text-amber-400 mt-0.5">${{ selectedCotizacionDetail.descuento | number:'1.2-2' }}</span>
+        </div>
+        <div class="bg-gray-900/80 p-2.5 rounded-xl border border-gray-700 flex flex-col">
+          <span class="text-[10px] text-gray-400 uppercase font-semibold">Total Final</span>
+          <span class="text-sm font-extrabold text-red-400 mt-0.5">${{ selectedCotizacionDetail.totalFinal | number:'1.2-2' }} MXN</span>
+        </div>
+      </div>
+
+      <!-- Body Content: Table Desglose de Ítems -->
+      <div class="p-6 overflow-y-auto flex-1 space-y-5 max-h-[450px]">
+        <div>
+          <h4 class="text-xs font-extrabold text-gray-400 uppercase tracking-wider mb-3">Desglose de Ítems de la Cotización</h4>
+          <div class="overflow-x-auto border border-gray-200 rounded-2xl">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr class="bg-gray-50 text-gray-500 font-bold border-b border-gray-200 uppercase">
+                  <th class="py-3 px-4">Concepto / Descripción</th>
+                  <th class="py-3 px-4">Tipo</th>
+                  <th class="py-3 px-4">Precio U.</th>
+                  <th class="py-3 px-4">Cantidad</th>
+                  <th class="py-3 px-4 text-right">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100">
+                <tr *ngFor="let item of selectedCotizacionDetail.items" class="hover:bg-gray-50/80">
+                  <td class="py-3 px-4 font-bold text-gray-900">
+                    <p>{{ item.descripcion }}</p>
+                    <p *ngIf="item.notas" class="text-[11px] text-gray-400 font-normal mt-0.5">{{ item.notas }}</p>
+                  </td>
+                  <td class="py-3 px-4">
+                    <span class="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full text-[10px] uppercase font-semibold">
+                      {{ item.tipo || 'concepto' }}
+                    </span>
+                  </td>
+                  <td class="py-3 px-4 text-gray-600 font-medium">
+                    ${{ (item.precioUnitario || item.monto) | number:'1.2-2' }}
+                  </td>
+                  <td class="py-3 px-4 text-gray-800 font-bold">
+                    {{ item.cantidad || 1 }}
+                  </td>
+                  <td class="py-3 px-4 text-right font-extrabold text-red-600">
+                    ${{ item.monto | number:'1.2-2' }} MXN
+                  </td>
+                </tr>
+                <tr *ngIf="!selectedCotizacionDetail.items || selectedCotizacionDetail.items.length === 0">
+                  <td colspan="5" class="py-6 text-center text-gray-400 text-xs">
+                    No hay ítems registrados en esta cotización.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div *ngIf="selectedCotizacionDetail.notas" class="text-xs text-gray-600 bg-amber-50/80 border border-amber-200/60 p-4 rounded-2xl">
+          <span class="font-bold text-amber-900 block mb-1">Notas Adicionales:</span>
+          <p>{{ selectedCotizacionDetail.notas }}</p>
+        </div>
+      </div>
+
+      <!-- Footer Modal -->
+      <div class="p-4 bg-gray-50 border-t border-gray-100 flex justify-end">
+        <button (click)="selectedCotizacionDetail = null" class="px-6 py-2 rounded-xl bg-gray-900 hover:bg-black text-white font-bold text-xs shadow-md transition cursor-pointer">
+          Cerrar Desglose
+        </button>
       </div>
     </div>
   </div>
@@ -1070,21 +1120,20 @@
             </div>
           </div>
 
-          <!-- TAB 2: SERVICIOS CONTRATADOS -->
+          <!-- TAB 2: SERVICIOS CONTRATADOS (AGRUPADOS POR COTIZACIÓN) -->
           <div *ngIf="fichaActiveTab === 'servicios'">
             <div *ngIf="clienteFicha.serviciosContratados.length === 0" class="py-8 text-center text-gray-400 text-sm">
-              No hay servicios o eventos contratados registrados.
+              No hay cotizaciones o eventos contratados registrados.
             </div>
             <div *ngIf="clienteFicha.serviciosContratados.length > 0" class="overflow-x-auto">
               <table class="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr class="bg-gray-50 text-gray-500 font-bold border-b border-gray-100 uppercase">
-                    <th class="py-3 px-4">Concepto / Servicio</th>
+                    <th class="py-3 px-4">Paquete / Evento Cotizado</th>
                     <th class="py-3 px-4">Tipo</th>
-                    <th class="py-3 px-4">Precio U.</th>
-                    <th class="py-3 px-4">Cantidad</th>
-                    <th class="py-3 px-4">Subtotal</th>
-                    <th class="py-3 px-4">Folio Cotización</th>
+                    <th class="py-3 px-4">Ítems</th>
+                    <th class="py-3 px-4">Total Cotizado</th>
+                    <th class="py-3 px-4">Folio (Ver Desglose)</th>
                     <th class="py-3 px-4">Fecha</th>
                   </tr>
                 </thead>
@@ -1096,10 +1145,14 @@
                         {{ srv.tipo }}
                       </span>
                     </td>
-                    <td class="py-3 px-4 font-medium text-gray-700">${{ srv.precioUnitario | number:'1.2-2' }}</td>
-                    <td class="py-3 px-4 font-bold text-gray-800">{{ srv.cantidad }}</td>
+                    <td class="py-3 px-4 font-bold text-gray-800">{{ srv.cantidad }} conceptos</td>
                     <td class="py-3 px-4 font-extrabold text-red-600">${{ srv.subtotal | number:'1.2-2' }} MXN</td>
-                    <td class="py-3 px-4 text-gray-500 font-semibold">{{ srv.folioCotizacion }}</td>
+                    <td class="py-3 px-4 font-semibold">
+                      <button (click)="verDesgloseCotizacionPorFolio(srv.folioCotizacion)" class="text-red-600 hover:text-red-800 underline font-bold cursor-pointer flex items-center gap-1">
+                        <span>{{ srv.folioCotizacion }}</span>
+                        <span class="text-[10px] bg-red-50 text-red-700 px-1.5 py-0.5 rounded border border-red-200">Ver Desglose</span>
+                      </button>
+                    </td>
                     <td class="py-3 px-4 text-gray-400">{{ srv.fechaCotizacion }}</td>
                   </tr>
                 </tbody>

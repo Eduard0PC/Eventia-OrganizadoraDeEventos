@@ -66,4 +66,5 @@ export interface CrearClienteRequest {
   apellido: string;
   email: string;
   telefono?: string;
+  password?: string;
 }

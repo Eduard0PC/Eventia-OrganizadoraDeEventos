@@ -2,7 +2,16 @@ using System.Collections.Generic;
 
 namespace Server.Core.DTOs;
 
-public record CotizacionItemDto(int Id, string Descripcion, decimal Monto);
+public record CotizacionItemDto(
+    int Id,
+    string Tipo,
+    string Descripcion,
+    decimal PrecioUnitario,
+    int Cantidad,
+    decimal DescuentoItem,
+    decimal Monto,
+    string? Notas
+);
 
 public record CotizacionResponse(
     int Id,

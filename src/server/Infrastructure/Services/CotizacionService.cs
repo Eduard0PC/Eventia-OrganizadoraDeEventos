@@ -143,11 +143,11 @@ public class CotizacionService : ICotizacionService
 
         var itemsDto = new List<CotizacionItemDto>
         {
-            new CotizacionItemDto(itemEvento.Id, $"Paquete {evento.Nombre}", evento.PrecioBase)
+            new CotizacionItemDto(itemEvento.Id, "evento", $"Paquete {evento.Nombre}", evento.PrecioBase, 1, 0m, evento.PrecioBase, null)
         };
         if (request.HorasAdicionales > 0)
         {
-            itemsDto.Add(new CotizacionItemDto(0, $"Horas adicionales ({request.HorasAdicionales} hrs)", extraHorasMonto));
+            itemsDto.Add(new CotizacionItemDto(0, "servicio", $"Horas adicionales ({request.HorasAdicionales} hrs)", 1000m, request.HorasAdicionales, 0m, extraHorasMonto, null));
         }
 
         var responseDto = new CotizacionResponse(
@@ -185,11 +185,25 @@ public class CotizacionService : ICotizacionService
         var primerItemEvento = c.Items.FirstOrDefault(i => i.Tipo == "evento");
         var nombreEvento = primerItemEvento?.CatalogoEvento?.Nombre ?? "Evento personalizado";
 
-        var itemsDto = c.Items.Select(i => new CotizacionItemDto(
-            i.Id,
-            !string.IsNullOrWhiteSpace(i.Notas) ? i.Notas : (i.CatalogoEvento != null ? $"Paquete {i.CatalogoEvento.Nombre}" : "Servicio"),
-            i.Subtotal ?? (i.Cantidad * i.PrecioUnitario - i.DescuentoItem)
-        )).ToList();
+        var itemsDto = c.Items.Select(i =>
+        {
+            string desc = !string.IsNullOrWhiteSpace(i.Notas)
+                ? i.Notas
+                : (i.CatalogoEvento != null ? $"Paquete {i.CatalogoEvento.Nombre}" : (i.CatalogoServicio != null ? i.CatalogoServicio.Nombre : "Servicio contratado"));
+
+            decimal subtotal = i.Subtotal ?? (i.Cantidad * i.PrecioUnitario - i.DescuentoItem);
+
+            return new CotizacionItemDto(
+                i.Id,
+                i.Tipo ?? "evento",
+                desc,
+                i.PrecioUnitario,
+                i.Cantidad,
+                i.DescuentoItem,
+                subtotal,
+                i.Notas
+            );
+        }).ToList();
 
         return new CotizacionResponse(
             c.Id,
