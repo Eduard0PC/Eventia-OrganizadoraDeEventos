@@ -18,12 +18,14 @@ import { CatalogoEventoItem } from '../../models/catalogo.models';
           <span class="absolute top-3 right-3 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">
             \${{ item.precioBase | number:'1.0-0' }} MXN
           </span>
-          <span class="absolute bottom-3 left-3 bg-black/60 text-white backdrop-blur-xs text-xs px-2.5 py-1 rounded-lg">
-            {{ item.duracionHoras }} horas
+          <span class="absolute bottom-3 left-3 bg-black/60 text-white backdrop-blur-xs text-xs px-2.5 py-1 rounded-lg flex items-center gap-1.5 font-medium">
+            <span>{{ item.duracionHoras }} hrs</span>
+            <span>•</span>
+            <span>Capacidad: {{ item.capacidadPersonas }} personas</span>
           </span>
         </div>
         <div class="p-6 space-y-3">
-          <span class="text-xs font-bold text-red-500 uppercase tracking-wider">{{ item.categoria || 'Sociales' }}</span>
+          <span class="text-xs font-bold text-red-500 uppercase tracking-wider">{{ item.categoria }}</span>
           <h4 class="text-xl font-bold text-gray-900">{{ item.nombre }}</h4>
           <p class="text-xs text-gray-500 leading-relaxed">{{ item.descripcion || 'Sin descripción' }}</p>
         </div>

@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, inject, ChangeDetectorRef, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CatalogoEventoItem, CrearCatalogoEventoRequest, ActualizarCatalogoEventoRequest } from '../../models/catalogo.models';
@@ -72,6 +72,31 @@ export interface SaveCatalogEventPayload {
 
           <div class="grid grid-cols-2 gap-4">
             <div>
+              <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Categoría *</label>
+              <select
+                [(ngModel)]="formData.categoria"
+                class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/50"
+              >
+                <option value="Bodas">Bodas</option>
+                <option value="Corporativos">Corporativos</option>
+                <option value="Sociales">Sociales</option>
+                <option value="Graduaciones">Graduaciones</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Capacidad (Personas) *</label>
+              <input
+                type="number"
+                [(ngModel)]="formData.capacidadPersonas"
+                min="1"
+                placeholder="ej. 100"
+                class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/50"
+              />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
               <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">Precio Base (MXN) *</label>
               <input
                 type="number"
@@ -134,7 +159,7 @@ export interface SaveCatalogEventPayload {
   `,
   styles: [],
 })
-export class CatalogoFormModalComponent implements OnInit {
+export class CatalogoFormModalComponent implements OnInit, OnChanges {
   @Input() show = false;
   @Input() mode: 'create' | 'edit' = 'create';
   @Input() itemToEdit: CatalogoEventoItem | null = null;
@@ -151,6 +176,8 @@ export class CatalogoFormModalComponent implements OnInit {
     descripcion: '',
     precioBase: 0,
     duracionHoras: 4,
+    categoria: 'Sociales',
+    capacidadPersonas: 50,
     activo: true,
   };
 
@@ -178,6 +205,8 @@ export class CatalogoFormModalComponent implements OnInit {
         descripcion: this.itemToEdit.descripcion || '',
         precioBase: this.itemToEdit.precioBase || 0,
         duracionHoras: this.itemToEdit.duracionHoras || 4,
+        categoria: this.itemToEdit.categoria || 'Sociales',
+        capacidadPersonas: this.itemToEdit.capacidadPersonas ?? 50,
         activo: this.itemToEdit.activo ?? true,
       };
       this.imagePreviewUrl = this.itemToEdit.imagen || this.itemToEdit.imagenUrl || null;
@@ -187,6 +216,8 @@ export class CatalogoFormModalComponent implements OnInit {
         descripcion: '',
         precioBase: 0,
         duracionHoras: 4,
+        categoria: 'Sociales',
+        capacidadPersonas: 50,
         activo: true,
       };
       this.imagePreviewUrl = null;
@@ -243,6 +274,8 @@ export class CatalogoFormModalComponent implements OnInit {
       descripcion: this.formData.descripcion || null,
       precioBase: Number(this.formData.precioBase) || 0,
       duracionHoras: Math.max(1, Number(this.formData.duracionHoras) || 1),
+      categoria: this.formData.categoria,
+      capacidadPersonas: Math.max(1, Number(this.formData.capacidadPersonas) || 1),
       activo: this.formData.activo,
       imagenUrl: imagenUrl,
     };
@@ -280,7 +313,6 @@ export class CatalogoFormModalComponent implements OnInit {
     this.toastService.showSuccess(mensaje);
     this.cdr.detectChanges();
 
-    // Pequeño retardo de 900ms para mostrar la alerta visual antes de cerrar el modal
     setTimeout(() => {
       this.show = false;
       this.successMessage = null;

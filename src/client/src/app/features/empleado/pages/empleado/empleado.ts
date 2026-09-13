@@ -32,6 +32,7 @@ export interface CatalogoEventoItem {
   activo: boolean;
   imagenUrl?: string | null;
   categoria?: string;
+  capacidadPersonas?: number;
   imagen?: string;
 }
 
@@ -284,7 +285,7 @@ export class Empleado implements OnInit {
             }
             return {
               ...item,
-              categoria: this.assignCategory(item.nombre),
+              categoria: item.categoria,
               imagen: img,
             };
           });

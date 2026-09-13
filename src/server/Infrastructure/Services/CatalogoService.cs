@@ -64,6 +64,8 @@ public class CatalogoService : ICatalogoService
             Descripcion = request.Descripcion?.Trim(),
             PrecioBase = request.PrecioBase,
             DuracionHoras = request.DuracionHoras,
+            Categoria = !string.IsNullOrWhiteSpace(request.Categoria) ? request.Categoria.Trim() : "Sociales",
+            CapacidadPersonas = request.CapacidadPersonas.HasValue && request.CapacidadPersonas.Value > 0 ? request.CapacidadPersonas.Value : 50,
             Activo = request.Activo ?? true,
             ImagenUrl = request.ImagenUrl?.Trim(),
             CreatedAt = utcNow,
@@ -103,6 +105,14 @@ public class CatalogoService : ICatalogoService
         evento.Descripcion = request.Descripcion?.Trim();
         evento.PrecioBase = request.PrecioBase;
         evento.DuracionHoras = request.DuracionHoras;
+        if (!string.IsNullOrWhiteSpace(request.Categoria))
+        {
+            evento.Categoria = request.Categoria.Trim();
+        }
+        if (request.CapacidadPersonas.HasValue && request.CapacidadPersonas.Value > 0)
+        {
+            evento.CapacidadPersonas = request.CapacidadPersonas.Value;
+        }
         if (!string.IsNullOrWhiteSpace(request.ImagenUrl) && request.ImagenUrl.Trim() != evento.ImagenUrl)
         {
             if (!string.IsNullOrWhiteSpace(evento.ImagenUrl))

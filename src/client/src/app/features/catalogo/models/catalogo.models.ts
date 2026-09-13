@@ -4,9 +4,10 @@ export interface CatalogoEventoItem {
   descripcion?: string | null;
   precioBase: number;
   duracionHoras: number;
+  categoria?: string;
+  capacidadPersonas?: number;
   activo: boolean;
   imagenUrl?: string | null;
-  categoria?: string;
   imagen?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -17,6 +18,8 @@ export interface CrearCatalogoEventoRequest {
   descripcion?: string | null;
   precioBase: number;
   duracionHoras: number;
+  categoria?: string;
+  capacidadPersonas?: number;
   activo?: boolean;
   imagenUrl?: string | null;
 }
@@ -26,6 +29,8 @@ export interface ActualizarCatalogoEventoRequest {
   descripcion?: string | null;
   precioBase: number;
   duracionHoras: number;
+  categoria?: string;
+  capacidadPersonas?: number;
   activo?: boolean;
   imagenUrl?: string | null;
 }
@@ -33,4 +38,3 @@ export interface ActualizarCatalogoEventoRequest {
 export interface UploadImagenResponse {
   imageUrl: string;
 }
-

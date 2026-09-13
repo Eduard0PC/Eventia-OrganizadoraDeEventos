@@ -5,7 +5,9 @@ public record CrearCatalogoEventoRequest(
     string? Descripcion,
     decimal PrecioBase,
     short DuracionHoras,
-    bool? Activo,
+    string? Categoria = "Sociales",
+    int? CapacidadPersonas = 50,
+    bool? Activo = true,
     string? ImagenUrl = null
 );
 
@@ -14,7 +16,9 @@ public record ActualizarCatalogoEventoRequest(
     string? Descripcion,
     decimal PrecioBase,
     short DuracionHoras,
-    bool? Activo,
+    string? Categoria = null,
+    int? CapacidadPersonas = null,
+    bool? Activo = null,
     string? ImagenUrl = null
 );
 
