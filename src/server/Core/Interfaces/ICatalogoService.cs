@@ -9,7 +9,7 @@ namespace Server.Core.Interfaces;
 public interface ICatalogoService
 {
     // Eventos de Catálogo
-    Task<List<CatalogoEvento>> GetCatalogoEventosAsync(CancellationToken cancellationToken = default);
+    Task<List<CatalogoEvento>> GetCatalogoEventosAsync(bool incluirInactivos = false, CancellationToken cancellationToken = default);
     Task<CatalogoEvento?> GetCatalogoEventoByIdAsync(int id, CancellationToken cancellationToken = default);
     Task<(CatalogoEvento? Result, string? Error)> CrearCatalogoEventoAsync(CrearCatalogoEventoRequest request, CancellationToken cancellationToken = default);
     Task<(CatalogoEvento? Result, string? Error)> ActualizarCatalogoEventoAsync(int id, ActualizarCatalogoEventoRequest request, CancellationToken cancellationToken = default);

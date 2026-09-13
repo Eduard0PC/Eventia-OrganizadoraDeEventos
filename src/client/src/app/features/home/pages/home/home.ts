@@ -13,6 +13,7 @@ export interface CatalogoEvento {
   precioBase: number;
   duracionHoras: number;
   activo: boolean;
+  imagenUrl?: string | null;
   imagen?: string;
 }
 
@@ -42,10 +43,16 @@ export class Home implements OnInit {
   ngOnInit(): void {
     this.http.get<CatalogoEvento[]>(`${environment.apiUrl}/api/catalogo-eventos`).subscribe({
       next: (data) => {
-        this.eventos = data.map(evento => ({
-          ...evento,
-          imagen: this.getEventImage(evento.nombre)
-        }));
+        this.eventos = data.map(evento => {
+          let fullImg = this.getEventImage(evento.nombre);
+          if (evento.imagenUrl) {
+            fullImg = evento.imagenUrl.startsWith('http') ? evento.imagenUrl : `${environment.apiUrl}${evento.imagenUrl}`;
+          }
+          return {
+            ...evento,
+            imagen: fullImg
+          };
+        });
       },
       error: (err) => {
         console.error('Error fetching events:', err);

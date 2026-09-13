@@ -5,7 +5,8 @@ public record CrearCatalogoEventoRequest(
     string? Descripcion,
     decimal PrecioBase,
     short DuracionHoras,
-    bool? Activo
+    bool? Activo,
+    string? ImagenUrl = null
 );
 
 public record ActualizarCatalogoEventoRequest(
@@ -13,7 +14,8 @@ public record ActualizarCatalogoEventoRequest(
     string? Descripcion,
     decimal PrecioBase,
     short DuracionHoras,
-    bool? Activo
+    bool? Activo,
+    string? ImagenUrl = null
 );
 
 public record CrearCatalogoServicioRequest(

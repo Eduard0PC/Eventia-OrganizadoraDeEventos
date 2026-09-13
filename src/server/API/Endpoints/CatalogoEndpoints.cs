@@ -1,3 +1,5 @@
+using System;
+using System.IO;
 using System.Threading;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -11,9 +13,9 @@ public static class CatalogoEndpoints
 {
     public static IEndpointRouteBuilder MapCatalogoEndpoints(this IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapGet("/api/catalogo-eventos", async (ICatalogoService catalogoService, CancellationToken cancellationToken) =>
+        endpoints.MapGet("/api/catalogo-eventos", async (bool? incluirInactivos, ICatalogoService catalogoService, CancellationToken cancellationToken) =>
         {
-            var eventos = await catalogoService.GetCatalogoEventosAsync(cancellationToken);
+            var eventos = await catalogoService.GetCatalogoEventosAsync(incluirInactivos ?? false, cancellationToken);
             return Results.Ok(eventos);
         })
         .WithName("GetCatalogoEventos");
@@ -39,6 +41,7 @@ public static class CatalogoEndpoints
 
             return Results.Created($"/api/catalogo-eventos/{result!.Id}", result);
         })
+        .DisableAntiforgery()
         .WithName("CrearCatalogoEvento");
 
         endpoints.MapPut("/api/catalogo-eventos/{id:int}", async (int id, ActualizarCatalogoEventoRequest request, ICatalogoService catalogoService, CancellationToken cancellationToken) =>
@@ -55,6 +58,7 @@ public static class CatalogoEndpoints
 
             return Results.Ok(result);
         })
+        .DisableAntiforgery()
         .WithName("ActualizarCatalogoEvento");
 
         endpoints.MapDelete("/api/catalogo-eventos/{id:int}", async (int id, ICatalogoService catalogoService, CancellationToken cancellationToken) =>
@@ -66,7 +70,43 @@ public static class CatalogoEndpoints
             }
             return Results.NoContent();
         })
+        .DisableAntiforgery()
         .WithName("DeleteCatalogoEvento");
+
+        endpoints.MapPost("/api/catalogo-eventos/upload-imagen", async (HttpRequest request, CancellationToken cancellationToken) =>
+        {
+            if (!request.HasFormContentType || request.Form.Files.Count == 0)
+            {
+                return Results.BadRequest(new { error = "Debe proporcionar una imagen válida." });
+            }
+
+            var file = request.Form.Files[0];
+            if (file.Length == 0)
+            {
+                return Results.BadRequest(new { error = "El archivo de imagen está vacío." });
+            }
+
+            var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "eventos");
+            if (!Directory.Exists(uploadsFolder))
+            {
+                Directory.CreateDirectory(uploadsFolder);
+            }
+
+            var extension = Path.GetExtension(file.FileName);
+            if (string.IsNullOrEmpty(extension)) extension = ".jpg";
+            var uniqueFileName = $"{Guid.NewGuid()}{extension}";
+            var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, true))
+            {
+                await file.CopyToAsync(stream, cancellationToken);
+            }
+
+            var relativeUrl = $"/uploads/eventos/{uniqueFileName}";
+            return Results.Ok(new { imageUrl = relativeUrl });
+        })
+        .DisableAntiforgery()
+        .WithName("UploadImagenCatalogoEvento");
 
         // ==========================================
         // ENDPOINTS DE SERVICIOS DE CATÁLOGO

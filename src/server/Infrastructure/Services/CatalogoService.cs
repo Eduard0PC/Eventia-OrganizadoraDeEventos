@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,10 +21,15 @@ public class CatalogoService : ICatalogoService
         _db = db;
     }
 
-    public async Task<List<CatalogoEvento>> GetCatalogoEventosAsync(CancellationToken cancellationToken = default)
+    public async Task<List<CatalogoEvento>> GetCatalogoEventosAsync(bool incluirInactivos = false, CancellationToken cancellationToken = default)
     {
-        return await _db.CatalogoEventos
-            .Where(e => e.Activo)
+        var query = _db.CatalogoEventos.AsQueryable();
+        if (!incluirInactivos)
+        {
+            query = query.Where(e => e.Activo);
+        }
+
+        return await query
             .OrderBy(e => e.Nombre)
             .ToListAsync(cancellationToken);
     }
@@ -59,6 +65,7 @@ public class CatalogoService : ICatalogoService
             PrecioBase = request.PrecioBase,
             DuracionHoras = request.DuracionHoras,
             Activo = request.Activo ?? true,
+            ImagenUrl = request.ImagenUrl?.Trim(),
             CreatedAt = utcNow,
             UpdatedAt = utcNow
         };
@@ -96,6 +103,14 @@ public class CatalogoService : ICatalogoService
         evento.Descripcion = request.Descripcion?.Trim();
         evento.PrecioBase = request.PrecioBase;
         evento.DuracionHoras = request.DuracionHoras;
+        if (!string.IsNullOrWhiteSpace(request.ImagenUrl) && request.ImagenUrl.Trim() != evento.ImagenUrl)
+        {
+            if (!string.IsNullOrWhiteSpace(evento.ImagenUrl))
+            {
+                EliminarArchivoImagen(evento.ImagenUrl);
+            }
+            evento.ImagenUrl = request.ImagenUrl.Trim();
+        }
         if (request.Activo.HasValue)
         {
             evento.Activo = request.Activo.Value;
@@ -115,12 +130,60 @@ public class CatalogoService : ICatalogoService
             return false;
         }
 
-        evento.Activo = false;
-        evento.UpdatedAt = DateTime.UtcNow;
+        // Desvincular de cotizacion_items (set CatalogoEventoId = null) para evitar violaciones de clave foránea
+        var itemsRelacionados = await _db.CotizacionItems
+            .Where(ci => ci.CatalogoEventoId == id)
+            .ToListAsync(cancellationToken);
 
-        await _db.SaveChangesAsync(cancellationToken);
+        foreach (var item in itemsRelacionados)
+        {
+            item.CatalogoEventoId = null;
+        }
 
-        return true;
+        if (!string.IsNullOrWhiteSpace(evento.ImagenUrl))
+        {
+            EliminarArchivoImagen(evento.ImagenUrl);
+        }
+
+        _db.CatalogoEventos.Remove(evento);
+
+        try
+        {
+            await _db.SaveChangesAsync(cancellationToken);
+            return true;
+        }
+        catch (DbUpdateException ex)
+        {
+            Console.WriteLine($"[CatalogoService] No se pudo eliminar el evento {id} de Supabase por restricciones de integridad: {ex.Message}");
+            return false;
+        }
+    }
+
+    private void EliminarArchivoImagen(string? imagenUrl)
+    {
+        if (string.IsNullOrWhiteSpace(imagenUrl))
+            return;
+
+        try
+        {
+            string relativePath = imagenUrl.Trim();
+            if (Uri.TryCreate(relativePath, UriKind.Absolute, out var uri))
+            {
+                relativePath = uri.AbsolutePath;
+            }
+
+            relativePath = relativePath.TrimStart('/', '\\');
+            var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", relativePath);
+
+            if (File.Exists(filePath))
+            {
+                File.Delete(filePath);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[CatalogoService] No se pudo eliminar el archivo de imagen '{imagenUrl}': {ex.Message}");
+        }
     }
 
     // ==========================================

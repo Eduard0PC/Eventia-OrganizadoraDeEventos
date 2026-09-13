@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -8,6 +8,11 @@ import { Cotizacion } from '@core/models/cotizacion.models';
 import { CotizacionesService } from '@features/cotizaciones/services/cotizaciones.service';
 import { ClientesService } from '@features/clientes/services/clientes.service';
 import { ClienteSummary, ClienteDetalle } from '@features/clientes/models/cliente.models';
+import { CatalogoService } from '@features/catalogo/services/catalogo.service';
+import { ToastComponent } from '@shared/components/toast/toast.component';
+import { ToastService } from '@shared/components/toast/toast.service';
+import { CatalogoCardComponent } from '@features/catalogo/components/catalogo-card/catalogo-card.component';
+import { CatalogoFormModalComponent } from '@features/catalogo/components/catalogo-form-modal/catalogo-form-modal.component';
 
 export type EmployeeTab =
   | 'inicio'
@@ -21,10 +26,11 @@ export type EmployeeTab =
 export interface CatalogoEventoItem {
   id: number;
   nombre: string;
-  descripcion: string | null;
+  descripcion?: string | null;
   precioBase: number;
   duracionHoras: number;
   activo: boolean;
+  imagenUrl?: string | null;
   categoria?: string;
   imagen?: string;
 }
@@ -79,7 +85,14 @@ export interface ProveedorItem {
 @Component({
   selector: 'app-empleado',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterLink,
+    ToastComponent,
+    CatalogoCardComponent,
+    CatalogoFormModalComponent,
+  ],
   templateUrl: './empleado.html',
   styleUrl: './empleado.css',
 })
@@ -168,6 +181,25 @@ export class Empleado implements OnInit {
     estatus: 'Completado',
   };
 
+  private readonly catalogoService = inject(CatalogoService);
+  private readonly toastService = inject(ToastService);
+  private readonly cdr = inject(ChangeDetectorRef);
+
+  showNewCatalogModal = false;
+  showEditCatalogModal = false;
+  newCatalogData = {
+    nombre: '',
+    descripcion: '',
+    precioBase: 0,
+    duracionHoras: 4,
+    activo: true,
+    imagenUrl: '',
+  };
+  editCatalogData: (CatalogoEventoItem & { imagenUrl?: string | null }) | null = null;
+  selectedImageFile: File | null = null;
+  imagePreviewUrl: string | null = null;
+  guardandoCatalogo = false;
+
   selectedCotizacionDetail: Cotizacion | null = null;
   selectedPlanDetail: PlanificadorEvento | null = null;
 
@@ -242,71 +274,296 @@ export class Empleado implements OnInit {
 
   loadCatalogo(): void {
     this.loadingCatalogo = true;
-    this.http.get<CatalogoEventoItem[]>(`${environment.apiUrl}/api/catalogo-eventos`).subscribe({
+    this.catalogoService.getCatalogoEventos(true).subscribe({
       next: (data) => {
-        this.catalogo = data.map((item) => ({
-          ...item,
-          categoria: this.assignCategory(item.nombre),
-          imagen: this.getEventImage(item.nombre),
-        }));
+        if (data && data.length > 0) {
+          this.catalogo = data.map((item) => {
+            let img = this.getEventImage(item.nombre);
+            if (item.imagenUrl) {
+              img = item.imagenUrl.startsWith('http') ? item.imagenUrl : `${environment.apiUrl}${item.imagenUrl}`;
+            }
+            return {
+              ...item,
+              categoria: this.assignCategory(item.nombre),
+              imagen: img,
+            };
+          });
+        } else if (this.catalogo.length === 0) {
+          this.initMockCatalogo();
+        }
         this.loadingCatalogo = false;
       },
-      error: () => {
-        // Fallback default catalog if backend API isn't live
-        this.catalogo = [
-          {
-            id: 1,
-            nombre: 'Boda Elegante Premium',
-            descripcion: 'Servicio completo de banquete, decoración floral, iluminación, música en vivo y coordinación total.',
-            precioBase: 45000,
-            duracionHoras: 8,
-            activo: true,
-            categoria: 'Bodas',
-            imagen: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=600&auto=format&fit=crop&q=80',
-          },
-          {
-            id: 2,
-            nombre: 'Gala Corporativa',
-            descripcion: 'Montaje de auditorio/escenario, catering ejecutivo, ambientación de marca y sistema audiovisual.',
-            precioBase: 38000,
-            duracionHoras: 6,
-            activo: true,
-            categoria: 'Corporativos',
-            imagen: 'https://images.unsplash.com/photo-1511578314322-379afb476865?w=600&auto=format&fit=crop&q=80',
-          },
-          {
-            id: 3,
-            nombre: 'Fiesta de XV Años',
-            descripcion: 'Pista iluminada, DJ profesional, catering juvenil, mesa de dulces gourmet y vals con efectos.',
-            precioBase: 32000,
-            duracionHoras: 7,
-            activo: true,
-            categoria: 'Sociales',
-            imagen: 'https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=600&auto=format&fit=crop&q=80',
-          },
-          {
-            id: 4,
-            nombre: 'Graduación Universitaria',
-            descripcion: 'Recepción, cena de 3 tiempos, brindis, sonido e iluminación inteligente y alfombra roja.',
-            precioBase: 29000,
-            duracionHoras: 6,
-            activo: true,
-            categoria: 'Graduaciones',
-            imagen: 'https://images.unsplash.com/photo-1523580494863-6f3031224c94?w=600&auto=format&fit=crop&q=80',
-          },
-          {
-            id: 5,
-            nombre: 'Aniversario & Cóctel Exclusive',
-            descripcion: 'Barra de coctelería de autor, bocadillos finos, cuarteto de cuerdas y salas lounge.',
-            precioBase: 25000,
-            duracionHoras: 5,
-            activo: true,
-            categoria: 'Cócteles',
-            imagen: 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=600&auto=format&fit=crop&q=80',
-          },
-        ];
+      error: (err) => {
+        console.error('Error al cargar catálogo de la base de datos:', err);
+        if (this.catalogo.length === 0) {
+          this.initMockCatalogo();
+        }
         this.loadingCatalogo = false;
       },
+    });
+  }
+
+  initMockCatalogo(): void {
+    if (this.catalogo.length === 0) {
+      this.catalogo = [
+        {
+          id: 1,
+          nombre: 'Boda Elegante Premium',
+          descripcion: 'Banquete de 3 tiempos, decoración floral deluxe, DJ profesional, luces robóticas y barra libre.',
+          precioBase: 45000,
+          duracionHoras: 8,
+          activo: true,
+          categoria: 'Bodas',
+          imagen: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=600&auto=format&fit=crop&q=80',
+        },
+        {
+          id: 2,
+          nombre: 'Gala Corporativa Full',
+          descripcion: 'Escenario, pantallas LED, sistema de audio surround, banquete ejecutivo y maestro de ceremonias.',
+          precioBase: 38000,
+          duracionHoras: 6,
+          activo: true,
+          categoria: 'Corporativos',
+          imagen: 'https://images.unsplash.com/photo-1511578314322-379afb476865?w=600&auto=format&fit=crop&q=80',
+        },
+        {
+          id: 3,
+          nombre: 'Fiesta XV Años Deluxe',
+          descripcion: 'Pista de cristal iluminada, show de luces, cabina fotográfica, robot LED y mesas de dulces.',
+          precioBase: 34000,
+          duracionHoras: 7,
+          activo: true,
+          categoria: 'Sociales',
+          imagen: 'https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=600&auto=format&fit=crop&q=80',
+        },
+      ];
+    }
+  }
+
+  onCatalogImageSelected(evt: any): void {
+    const file = evt.target.files?.[0];
+    if (file) {
+      this.selectedImageFile = file;
+      const reader = new FileReader();
+      reader.onload = () => {
+        this.imagePreviewUrl = reader.result as string;
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  openNewCatalogModal(): void {
+    this.guardandoCatalogo = false;
+    this.newCatalogData = {
+      nombre: '',
+      descripcion: '',
+      precioBase: 0,
+      duracionHoras: 4,
+      activo: true,
+      imagenUrl: '',
+    };
+    this.selectedImageFile = null;
+    this.imagePreviewUrl = null;
+    this.showNewCatalogModal = true;
+    this.cdr.detectChanges();
+  }
+
+  saveNewCatalogEvent(): void {
+    if (!this.newCatalogData.nombre || this.newCatalogData.precioBase < 0) {
+      alert('Por favor especifica un nombre válido y precio mayor o igual a 0.');
+      return;
+    }
+
+    this.guardandoCatalogo = true;
+    this.cdr.detectChanges();
+
+    if (this.selectedImageFile) {
+      this.catalogoService.subirImagenEvento(this.selectedImageFile).subscribe({
+        next: (uploadRes) => {
+          this.submitCreateCatalogEvent(uploadRes.imageUrl);
+        },
+        error: (err) => {
+          console.error('Error al subir imagen:', err);
+          this.submitCreateCatalogEvent(null);
+        }
+      });
+    } else {
+      this.submitCreateCatalogEvent(null);
+    }
+  }
+
+  private submitCreateCatalogEvent(imagenUrl: string | null): void {
+    const request = {
+      nombre: this.newCatalogData.nombre,
+      descripcion: this.newCatalogData.descripcion || null,
+      precioBase: Number(this.newCatalogData.precioBase) || 0,
+      duracionHoras: Math.max(1, Number(this.newCatalogData.duracionHoras) || 1),
+      activo: this.newCatalogData.activo,
+      imagenUrl: imagenUrl
+    };
+
+    let img = this.imagePreviewUrl || this.getEventImage(request.nombre);
+    if (imagenUrl) {
+      img = imagenUrl.startsWith('http') ? imagenUrl : `${environment.apiUrl}${imagenUrl}`;
+    }
+
+    const newItemLocal: CatalogoEventoItem = {
+      id: Date.now(),
+      nombre: request.nombre,
+      descripcion: request.descripcion,
+      precioBase: request.precioBase,
+      duracionHoras: request.duracionHoras,
+      activo: request.activo,
+      imagenUrl: imagenUrl,
+      categoria: this.assignCategory(request.nombre),
+      imagen: img,
+    };
+
+    // Actualización local inmediata y cierre de modal instantáneo
+    this.catalogo = [newItemLocal, ...this.catalogo];
+    this.guardandoCatalogo = false;
+    this.showNewCatalogModal = false;
+    this.selectedImageFile = null;
+    this.imagePreviewUrl = null;
+    this.cdr.detectChanges();
+
+    this.catalogoService.crearCatalogoEvento(request).subscribe({
+      next: (nuevoEvento) => {
+        if (nuevoEvento) {
+          let realImg = this.getEventImage(nuevoEvento.nombre);
+          if (nuevoEvento.imagenUrl) {
+            realImg = nuevoEvento.imagenUrl.startsWith('http') ? nuevoEvento.imagenUrl : `${environment.apiUrl}${nuevoEvento.imagenUrl}`;
+          }
+          const itemFormateado: CatalogoEventoItem = {
+            ...nuevoEvento,
+            categoria: this.assignCategory(nuevoEvento.nombre),
+            imagen: realImg,
+          };
+          this.catalogo = [itemFormateado, ...this.catalogo.filter(x => x.id !== newItemLocal.id)];
+        }
+        this.loadCatalogo();
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error en backend al crear evento:', err);
+        this.loadCatalogo();
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  openEditCatalogModal(item: CatalogoEventoItem): void {
+    this.guardandoCatalogo = false;
+    this.editCatalogData = { ...item };
+    this.selectedImageFile = null;
+    this.imagePreviewUrl = item.imagen || null;
+    this.showEditCatalogModal = true;
+    this.cdr.detectChanges();
+  }
+
+  saveEditCatalogEvent(): void {
+    if (!this.editCatalogData || !this.editCatalogData.nombre) return;
+
+    this.guardandoCatalogo = true;
+    this.cdr.detectChanges();
+
+    if (this.selectedImageFile) {
+      this.catalogoService.subirImagenEvento(this.selectedImageFile).subscribe({
+        next: (uploadRes) => {
+          this.submitUpdateCatalogEvent(uploadRes.imageUrl);
+        },
+        error: (err) => {
+          console.error('Error al subir imagen:', err);
+          this.submitUpdateCatalogEvent(this.editCatalogData?.imagenUrl || null);
+        }
+      });
+    } else {
+      this.submitUpdateCatalogEvent(this.editCatalogData.imagenUrl || null);
+    }
+  }
+
+  private submitUpdateCatalogEvent(imagenUrl: string | null): void {
+    if (!this.editCatalogData) return;
+
+    const id = this.editCatalogData.id;
+    const request = {
+      nombre: this.editCatalogData.nombre,
+      descripcion: this.editCatalogData.descripcion || null,
+      precioBase: Number(this.editCatalogData.precioBase) || 0,
+      duracionHoras: Math.max(1, Number(this.editCatalogData.duracionHoras) || 1),
+      activo: this.editCatalogData.activo,
+      imagenUrl: imagenUrl
+    };
+
+    // Actualización local inmediata
+    const index = this.catalogo.findIndex((item) => item.id === id);
+    if (index !== -1) {
+      let img = this.imagePreviewUrl || this.getEventImage(request.nombre);
+      if (imagenUrl) {
+        img = imagenUrl.startsWith('http') ? imagenUrl : `${environment.apiUrl}${imagenUrl}`;
+      } else if (this.catalogo[index].imagen) {
+        img = this.catalogo[index].imagen!;
+      }
+
+      this.catalogo[index] = {
+        ...this.catalogo[index],
+        nombre: request.nombre,
+        descripcion: request.descripcion,
+        precioBase: request.precioBase,
+        duracionHoras: request.duracionHoras,
+        activo: request.activo,
+        imagenUrl: imagenUrl ?? this.catalogo[index].imagenUrl,
+        categoria: this.assignCategory(request.nombre),
+        imagen: img,
+      };
+      this.catalogo = [...this.catalogo];
+    }
+
+    // Cierre de modal e interfaz desinterrumpida al instante
+    this.guardandoCatalogo = false;
+    this.showEditCatalogModal = false;
+    this.selectedImageFile = null;
+    this.imagePreviewUrl = null;
+    this.cdr.detectChanges();
+
+    this.catalogoService.actualizarCatalogoEvento(id, request).subscribe({
+      next: () => {
+        this.loadCatalogo();
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error en backend al actualizar evento:', err);
+        this.loadCatalogo();
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  onCatalogSaved(): void {
+    this.showNewCatalogModal = false;
+    this.showEditCatalogModal = false;
+    this.loadCatalogo();
+    this.cdr.detectChanges();
+  }
+
+  deleteCatalogEvent(id: number): void {
+    if (!confirm('¿Estás seguro de eliminar este paquete/evento del catálogo?')) return;
+
+    this.catalogo = this.catalogo.filter((item) => item.id !== id);
+    this.cdr.detectChanges();
+
+    this.catalogoService.eliminarCatalogoEvento(id).subscribe({
+      next: () => {
+        this.toastService.showError('¡Evento eliminado con éxito!');
+        this.loadCatalogo();
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error en backend al eliminar evento:', err);
+        this.toastService.showError('No se pudo eliminar el evento del catálogo.');
+        this.loadCatalogo();
+        this.cdr.detectChanges();
+      }
     });
   }
 

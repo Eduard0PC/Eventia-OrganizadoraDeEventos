@@ -29,6 +29,7 @@ public class AppDbContext : DbContext
             e.Property(c => c.PrecioBase).HasColumnName("precio_base");
             e.Property(c => c.DuracionHoras).HasColumnName("duracion_horas");
             e.Property(c => c.Activo).HasColumnName("activo");
+            e.Property(c => c.ImagenUrl).HasColumnName("imagen_url");
             e.Property(c => c.CreatedAt).HasColumnName("created_at");
             e.Property(c => c.UpdatedAt).HasColumnName("updated_at");
         });

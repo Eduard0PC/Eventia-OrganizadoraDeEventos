@@ -10,6 +10,7 @@ public class CatalogoEvento
     public decimal PrecioBase { get; set; }
     public short DuracionHoras { get; set; }
     public bool Activo { get; set; }
+    public string? ImagenUrl { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 }

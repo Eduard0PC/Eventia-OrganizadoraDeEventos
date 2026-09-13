@@ -23,6 +23,15 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("AngularClient");
+
+// Ensure wwwroot/uploads/eventos directory exists before UseStaticFiles
+var wwwrootPath = System.IO.Path.Combine(app.Environment.ContentRootPath, "wwwroot", "uploads", "eventos");
+if (!System.IO.Directory.Exists(wwwrootPath))
+{
+    System.IO.Directory.CreateDirectory(wwwrootPath);
+}
+
+app.UseStaticFiles();
 app.UseHttpsRedirection();
 
 // 4. Map API Endpoints
