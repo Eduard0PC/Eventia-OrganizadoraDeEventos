@@ -69,13 +69,13 @@
           <div class="flex justify-between items-center mb-3">
 
             <span
-              class="bg-red-100 text-red-600 text-sm font-semibold px-3 py-1 rounded-full"
+              class="bg-red-100 text-red-600 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider"
             >
-              Destacado
+              {{ evento.categoria || 'Sociales' }}
             </span>
 
-            <span class="font-bold text-red-500">
-              ${{ evento.precioBase | number:'1.0-2' }}
+            <span class="font-bold text-red-500 text-lg">
+              ${{ evento.precioBase | number:'1.0-0' }} MXN
             </span>
 
           </div>
@@ -84,7 +84,13 @@
             {{ evento.nombre }}
           </h3>
 
-          <p class="text-gray-500 mb-5">
+          <div class="flex items-center gap-2 text-xs text-gray-500 mb-4 font-medium">
+            <span class="bg-gray-100 px-2.5 py-1 rounded-lg">{{ evento.duracionHoras }} hrs</span>
+            <span>•</span>
+            <span class="bg-gray-100 px-2.5 py-1 rounded-lg">Capacidad: {{ evento.capacidadPersonas || 50 }} personas</span>
+          </div>
+
+          <p class="text-gray-500 mb-5 text-sm line-clamp-2">
             {{ evento.descripcion }}
           </p>
 
@@ -129,7 +135,7 @@
 
         <div class="absolute bottom-6 left-6 right-6 text-white">
           <span class="bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-            Detalles del Evento
+            {{ selectedEvento.categoria || 'Sociales' }}
           </span>
           <h2 class="text-3xl md:text-4xl font-extrabold mt-2 tracking-tight">
             {{ selectedEvento.nombre }}
@@ -137,16 +143,28 @@
         </div>
       </div>
       <div class="p-6 md:p-8 space-y-6 overflow-y-auto grow">
-        <div class="grid grid-cols-2 gap-4">
-          <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100 flex flex-col justify-between">
-            <span class="text-xs text-gray-400 font-semibold uppercase tracking-wider">Precio Base</span>
-            <span class="text-2xl font-bold text-red-500 mt-1">
-              ${{ selectedEvento.precioBase | number:'1.0-2' }}
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div class="bg-gray-50 rounded-2xl p-3 border border-gray-100 flex flex-col justify-between">
+            <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Precio Base</span>
+            <span class="text-lg font-extrabold text-red-500 mt-1">
+              ${{ selectedEvento.precioBase | number:'1.0-0' }}
             </span>
           </div>
-          <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100 flex flex-col justify-between">
-            <span class="text-xs text-gray-400 font-semibold uppercase tracking-wider">Duración Estándar</span>
-            <span class="text-2xl font-bold text-gray-800 mt-1">
+          <div class="bg-gray-50 rounded-2xl p-3 border border-gray-100 flex flex-col justify-between">
+            <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Categoría</span>
+            <span class="text-sm font-bold text-gray-800 mt-1">
+              {{ selectedEvento.categoria || 'Sociales' }}
+            </span>
+          </div>
+          <div class="bg-gray-50 rounded-2xl p-3 border border-gray-100 flex flex-col justify-between">
+            <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Capacidad</span>
+            <span class="text-sm font-bold text-gray-800 mt-1">
+              {{ selectedEvento.capacidadPersonas || 50 }} pers.
+            </span>
+          </div>
+          <div class="bg-gray-50 rounded-2xl p-3 border border-gray-100 flex flex-col justify-between">
+            <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Duración</span>
+            <span class="text-sm font-bold text-gray-800 mt-1">
               {{ selectedEvento.duracionHoras }} horas
             </span>
           </div>

@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
@@ -12,6 +12,8 @@ export interface CatalogoEvento {
   descripcion: string | null;
   precioBase: number;
   duracionHoras: number;
+  categoria?: string;
+  capacidadPersonas?: number;
   activo: boolean;
   imagenUrl?: string | null;
   imagen?: string;
@@ -26,6 +28,7 @@ export interface CatalogoEvento {
 export class Home implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly cotizacionesService = inject(CotizacionesService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   eventos: CatalogoEvento[] = [];
 
@@ -41,21 +44,29 @@ export class Home implements OnInit {
   enviandoCotizacion = false;
 
   ngOnInit(): void {
+    this.cargarEventos();
+  }
+
+  cargarEventos(): void {
     this.http.get<CatalogoEvento[]>(`${environment.apiUrl}/api/catalogo-eventos`).subscribe({
       next: (data) => {
-        this.eventos = data.map(evento => {
-          let fullImg = this.getEventImage(evento.nombre);
-          if (evento.imagenUrl) {
-            fullImg = evento.imagenUrl.startsWith('http') ? evento.imagenUrl : `${environment.apiUrl}${evento.imagenUrl}`;
-          }
-          return {
-            ...evento,
-            imagen: fullImg
-          };
-        });
+        if (data) {
+          this.eventos = data.map(evento => {
+            let fullImg = this.getEventImage(evento.nombre);
+            if (evento.imagenUrl) {
+              fullImg = evento.imagenUrl.startsWith('http') ? evento.imagenUrl : `${environment.apiUrl}${evento.imagenUrl}`;
+            }
+            return {
+              ...evento,
+              imagen: fullImg
+            };
+          });
+        }
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Error fetching events:', err);
+        this.cdr.detectChanges();
       }
     });
   }

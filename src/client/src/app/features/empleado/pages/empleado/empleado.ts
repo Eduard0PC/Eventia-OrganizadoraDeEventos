@@ -271,10 +271,15 @@ export class Empleado implements OnInit {
   setActiveTab(tab: EmployeeTab): void {
     this.activeTab = tab;
     this.sidebarOpen = false; // Auto close mobile sidebar
+    if (tab === 'catalogo') {
+      this.loadCatalogo();
+    }
+    this.cdr.detectChanges();
   }
 
   loadCatalogo(): void {
     this.loadingCatalogo = true;
+    this.cdr.detectChanges();
     this.catalogoService.getCatalogoEventos(true).subscribe({
       next: (data) => {
         if (data && data.length > 0) {
@@ -289,17 +294,14 @@ export class Empleado implements OnInit {
               imagen: img,
             };
           });
-        } else if (this.catalogo.length === 0) {
-          this.initMockCatalogo();
         }
         this.loadingCatalogo = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Error al cargar catálogo de la base de datos:', err);
-        if (this.catalogo.length === 0) {
-          this.initMockCatalogo();
-        }
         this.loadingCatalogo = false;
+        this.cdr.detectChanges();
       },
     });
   }
