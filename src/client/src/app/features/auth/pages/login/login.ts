@@ -38,7 +38,7 @@ export class Login {
     ).subscribe({
       next: (session) => {
         const role = session?.rol?.toLowerCase();
-        if (role === 'empleado' || role === 'organizador' || role === 'admin') {
+        if (role === 'empleado' || role === 'admin') {
           this.router.navigateByUrl('/empleado');
         } else {
           this.router.navigateByUrl('/home');

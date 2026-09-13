@@ -28,10 +28,11 @@ public class AuthService : IAuthService
 
         var usuario = await _db.Usuarios
             .Include(u => u.Cliente)
+            .Include(u => u.Empleado)
             .FirstOrDefaultAsync(u =>
                 u.Email.ToLower() == email &&
                 u.Activo &&
-                (u.Rol == "organizador" || u.Rol == "admin" || (u.ClienteId != null && u.Cliente != null && u.Cliente.Activo)),
+                (u.Rol == "empleado" || u.Rol == "admin" || (u.ClienteId != null && u.Cliente != null && u.Cliente.Activo)),
                 cancellationToken);
 
         if (usuario is null || !_passwordHasher.VerifyPassword(request.Password, usuario.PasswordHash))
@@ -53,7 +54,16 @@ public class AuthService : IAuthService
                     usuario.Cliente.Nombre,
                     usuario.Cliente.Apellido,
                     usuario.Cliente.Email,
-                    usuario.Cliente.Telefono));
+                    usuario.Cliente.Telefono),
+            usuario.Empleado is null
+                ? null
+                : new EmpleadoResponse(
+                    usuario.Empleado.Id,
+                    usuario.Empleado.Nombre,
+                    usuario.Empleado.Apellido,
+                    usuario.Empleado.Email,
+                    usuario.Empleado.Telefono,
+                    usuario.Empleado.Cargo));
     }
 
     public async Task<(UsuarioResponse? Result, string? Error)> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default)
@@ -106,27 +116,30 @@ public class AuthService : IAuthService
     {
         var usuarios = await _db.Usuarios
             .Include(u => u.Cliente)
+            .Include(u => u.Empleado)
             .OrderByDescending(u => u.Id)
             .ToListAsync(cancellationToken);
 
-        return usuarios.Select(u => MapToUsuarioResponse(u, u.Cliente));
+        return usuarios.Select(u => MapToUsuarioResponse(u, u.Cliente, u.Empleado));
     }
 
     public async Task<UsuarioResponse?> GetUsuarioByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         var usuario = await _db.Usuarios
             .Include(u => u.Cliente)
+            .Include(u => u.Empleado)
             .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
 
         if (usuario is null) return null;
 
-        return MapToUsuarioResponse(usuario, usuario.Cliente);
+        return MapToUsuarioResponse(usuario, usuario.Cliente, usuario.Empleado);
     }
 
     public async Task<(UsuarioResponse? Result, string? Error)> ActualizarUsuarioAsync(int id, ActualizarUsuarioRequest request, CancellationToken cancellationToken = default)
     {
         var usuario = await _db.Usuarios
             .Include(u => u.Cliente)
+            .Include(u => u.Empleado)
             .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
 
         if (usuario is null)
@@ -172,6 +185,7 @@ public class AuthService : IAuthService
     {
         var usuario = await _db.Usuarios
             .Include(u => u.Cliente)
+            .Include(u => u.Empleado)
             .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
 
         if (usuario is null) return false;
@@ -186,7 +200,7 @@ public class AuthService : IAuthService
         return true;
     }
 
-    private static UsuarioResponse MapToUsuarioResponse(Usuario u, Cliente? cliente)
+    private static UsuarioResponse MapToUsuarioResponse(Usuario u, Cliente? cliente, Empleado? empleado = null)
     {
         return new UsuarioResponse(
             u.Id,
@@ -203,7 +217,16 @@ public class AuthService : IAuthService
                     cliente.Nombre,
                     cliente.Apellido,
                     cliente.Email,
-                    cliente.Telefono));
+                    cliente.Telefono),
+            empleado is null
+                ? null
+                : new EmpleadoResponse(
+                    empleado.Id,
+                    empleado.Nombre,
+                    empleado.Apellido,
+                    empleado.Email,
+                    empleado.Telefono,
+                    empleado.Cargo));
     }
 }
 

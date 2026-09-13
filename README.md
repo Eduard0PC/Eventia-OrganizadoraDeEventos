@@ -106,7 +106,7 @@ Backend (ASP.NET Core Web API)
 
 ### Recursos y Personal
 
-- Registro de organizadores.
+- Registro de empleados.
 - Asignación de personal a eventos.
 - Gestión de actividades.
 - Seguimiento de tareas.

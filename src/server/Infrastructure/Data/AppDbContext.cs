@@ -9,6 +9,7 @@ public class AppDbContext : DbContext
 
     public DbSet<Usuario> Usuarios => Set<Usuario>();
     public DbSet<Cliente> Clientes => Set<Cliente>();
+    public DbSet<Empleado> Empleados => Set<Empleado>();
     public DbSet<CatalogoEvento> CatalogoEventos => Set<CatalogoEvento>();
     public DbSet<CatalogoServicio> CatalogoServicios => Set<CatalogoServicio>();
     public DbSet<Cotizacion> Cotizaciones => Set<Cotizacion>();
@@ -66,6 +67,9 @@ public class AppDbContext : DbContext
             e.HasOne(u => u.Cliente)
                 .WithMany()
                 .HasForeignKey(u => u.ClienteId);
+            e.HasOne(u => u.Empleado)
+                .WithMany()
+                .HasForeignKey(u => u.EmpleadoId);
         });
 
         modelBuilder.Entity<Cliente>(e =>
@@ -78,6 +82,19 @@ public class AppDbContext : DbContext
             e.Property(c => c.Email).HasColumnName("email");
             e.Property(c => c.Telefono).HasColumnName("telefono");
             e.Property(c => c.Activo).HasColumnName("activo");
+        });
+
+        modelBuilder.Entity<Empleado>(e =>
+        {
+            e.ToTable("empleados");
+            e.HasKey(em => em.Id);
+            e.Property(em => em.Id).HasColumnName("id");
+            e.Property(em => em.Nombre).HasColumnName("nombre");
+            e.Property(em => em.Apellido).HasColumnName("apellido");
+            e.Property(em => em.Email).HasColumnName("email");
+            e.Property(em => em.Telefono).HasColumnName("telefono");
+            e.Property(em => em.Cargo).HasColumnName("cargo");
+            e.Property(em => em.Disponible).HasColumnName("disponible");
         });
 
         modelBuilder.Entity<Cotizacion>(e =>

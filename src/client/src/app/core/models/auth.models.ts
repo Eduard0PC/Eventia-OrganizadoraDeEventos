@@ -3,17 +3,29 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface ClienteInfo {
+  id: number;
+  nombre: string;
+  apellido: string;
+  email: string;
+  telefono?: string | null;
+}
+
+export interface EmpleadoInfo {
+  id: number;
+  nombre: string;
+  apellido: string;
+  email: string;
+  telefono?: string | null;
+  cargo?: string | null;
+}
+
 export interface LoginResponse {
   id: number;
   email: string;
   rol: string;
-  cliente: {
-    id: number;
-    nombre: string;
-    apellido: string;
-    email: string;
-    telefono?: string | null;
-  } | null;
+  cliente?: ClienteInfo | null;
+  empleado?: EmpleadoInfo | null;
 }
 
 export interface RegisterRequest {
@@ -25,14 +37,6 @@ export interface RegisterRequest {
   rol?: string;
 }
 
-export interface ClienteInfo {
-  id: number;
-  nombre: string;
-  apellido: string;
-  email: string;
-  telefono?: string | null;
-}
-
 export interface UsuarioResponse {
   id: number;
   email: string;
@@ -42,6 +46,7 @@ export interface UsuarioResponse {
   empleadoId?: number | null;
   ultimoAcceso?: string | null;
   cliente?: ClienteInfo | null;
+  empleado?: EmpleadoInfo | null;
 }
 
 export interface ActualizarUsuarioRequest {
@@ -53,4 +58,3 @@ export interface ActualizarUsuarioRequest {
 export interface CambiarEstadoUsuarioRequest {
   activo: boolean;
 }
-

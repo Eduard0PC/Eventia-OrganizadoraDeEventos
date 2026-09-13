@@ -13,4 +13,5 @@ public class Usuario
     public bool Activo { get; set; }
     public DateTime? UltimoAcceso { get; set; }
     public Cliente? Cliente { get; set; }
+    public Empleado? Empleado { get; set; }
 }

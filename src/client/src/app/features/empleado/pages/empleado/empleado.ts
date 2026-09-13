@@ -13,6 +13,7 @@ import { ToastComponent } from '@shared/components/toast/toast.component';
 import { ToastService } from '@shared/components/toast/toast.service';
 import { CatalogoCardComponent } from '@features/catalogo/components/catalogo-card/catalogo-card.component';
 import { CatalogoFormModalComponent } from '@features/catalogo/components/catalogo-form-modal/catalogo-form-modal.component';
+import { UserCard } from '@shared/components/user-card/user-card';
 
 export type EmployeeTab =
   | 'inicio'
@@ -93,6 +94,7 @@ export interface ProveedorItem {
     ToastComponent,
     CatalogoCardComponent,
     CatalogoFormModalComponent,
+    UserCard,
   ],
   templateUrl: './empleado.html',
   styleUrl: './empleado.css',
@@ -254,13 +256,19 @@ export class Empleado implements OnInit {
     if (sessionStr) {
       try {
         const session = JSON.parse(sessionStr);
-        if (session?.email) {
+        if (session?.empleado?.nombre) {
+          const apellido = session.empleado.apellido ? ` ${session.empleado.apellido}` : '';
+          this.empleadoNombre = `${session.empleado.nombre}${apellido}`;
+        } else if (session?.email) {
           this.empleadoEmail = session.email;
           const namePart = session.email.split('@')[0];
           this.empleadoNombre = namePart.charAt(0).toUpperCase() + namePart.slice(1);
         }
         if (session?.rol) {
-          this.empleadoRol = session.rol === 'empleado' ? 'Coordinador Senior' : session.rol;
+          const lower = session.rol.toLowerCase();
+          if (lower === 'empleado') this.empleadoRol = 'Empleado';
+          else if (lower === 'admin' || lower === 'administrador') this.empleadoRol = 'Administrador';
+          else this.empleadoRol = session.rol.charAt(0).toUpperCase() + session.rol.slice(1);
         }
       } catch (e) {
         console.error('Error parsing session', e);
