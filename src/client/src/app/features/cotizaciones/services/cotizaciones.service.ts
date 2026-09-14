@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { environment } from '@env/environment';
 import { Cotizacion, CrearCotizacionRequest } from '@core/models/cotizacion.models';
 
@@ -11,7 +12,12 @@ export class CotizacionesService {
 
   getCotizaciones(clienteId?: number): Observable<Cotizacion[]> {
     const url = clienteId ? `${this.apiUrl}?clienteId=${clienteId}` : this.apiUrl;
-    return this.http.get<Cotizacion[]>(url);
+    return this.http.get<Cotizacion[]>(url).pipe(
+      catchError((err) => {
+        console.error('Error fetching cotizaciones:', err);
+        return of([]);
+      })
+    );
   }
 
   getCotizacionById(id: number): Observable<Cotizacion> {
@@ -20,6 +26,10 @@ export class CotizacionesService {
 
   crearCotizacion(data: CrearCotizacionRequest): Observable<Cotizacion> {
     return this.http.post<Cotizacion>(this.apiUrl, data);
+  }
+
+  actualizarCotizacion(id: number, data: CrearCotizacionRequest): Observable<Cotizacion> {
+    return this.http.put<Cotizacion>(`${this.apiUrl}/${id}`, data);
   }
 
   eliminarCotizacion(id: number): Observable<void> {

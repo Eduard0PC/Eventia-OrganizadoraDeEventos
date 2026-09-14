@@ -1,22 +1,35 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NavbarClient } from '@shared/components/navbar-client/navbar-client';
+import { ToastComponent } from '@shared/components/toast/toast.component';
+import { ToastService } from '@shared/components/toast/toast.service';
 import { Cotizacion, EstatusCotizacion } from '@core/models/cotizacion.models';
 import { CotizacionesService } from '@features/cotizaciones/services/cotizaciones.service';
 
 @Component({
   selector: 'app-cotizaciones',
   standalone: true,
-  imports: [CommonModule, FormsModule, NavbarClient],
+  imports: [CommonModule, FormsModule, NavbarClient, ToastComponent],
   templateUrl: './cotizaciones.html'
 })
 export class Cotizaciones implements OnInit {
   private readonly cotizacionesService = inject(CotizacionesService);
+  private readonly toastService = inject(ToastService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   busqueda = '';
   filtroEstatus: EstatusCotizacion | 'todos' = 'todos';
   cotizacionSeleccionada: Cotizacion | null = null;
+  cotizacionEditando: Cotizacion | null = null;
+
+  editFechaEvento = '';
+  editInvitados = 50;
+  editHorasAdicionales = 0;
+  editNotas = '';
+  guardandoEdicion = false;
+  invitadosPresets = [50, 100, 150, 200];
+
   cotizaciones: Cotizacion[] = [];
   cargando = true;
 
@@ -26,6 +39,8 @@ export class Cotizaciones implements OnInit {
 
   cargarCotizaciones(): void {
     this.cargando = true;
+    this.cdr.detectChanges();
+
     let clienteId: number | undefined = undefined;
     const sessionStr = localStorage.getItem('session');
     if (sessionStr) {
@@ -33,6 +48,8 @@ export class Cotizaciones implements OnInit {
         const session = JSON.parse(sessionStr);
         if (session?.cliente?.id) {
           clienteId = session.cliente.id;
+        } else if (session?.clienteId) {
+          clienteId = session.clienteId;
         }
       } catch (e) {
         console.error('Error reading session from localStorage:', e);
@@ -41,12 +58,15 @@ export class Cotizaciones implements OnInit {
 
     this.cotizacionesService.getCotizaciones(clienteId).subscribe({
       next: (data) => {
-        this.cotizaciones = data;
+        this.cotizaciones = data || [];
         this.cargando = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Error al cargar cotizaciones:', err);
+        this.cotizaciones = [];
         this.cargando = false;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -84,6 +104,115 @@ export class Cotizaciones implements OnInit {
     this.cotizacionSeleccionada = null;
   }
 
+  abrirEditarBorrador(cotizacion: Cotizacion): void {
+    if (cotizacion.estatus !== 'borrador') {
+      this.toastService.showError('Las cotizaciones enviadas solo pueden ser consultadas.');
+      return;
+    }
+    this.cotizacionEditando = cotizacion;
+    this.editFechaEvento = cotizacion.fechaEvento || '';
+    this.editInvitados = cotizacion.invitados || 50;
+
+    const itemHoras = cotizacion.items.find(i => i.descripcion.toLowerCase().includes('horas adicionales'));
+    this.editHorasAdicionales = itemHoras ? (itemHoras.cantidad || 0) : 0;
+    this.editNotas = cotizacion.notas || '';
+  }
+
+  cerrarEdicion(): void {
+    this.cotizacionEditando = null;
+  }
+
+  selectEditInvitadosPreset(cantidad: number): void {
+    this.editInvitados = cantidad;
+  }
+
+  incrementarEditHoras(): void {
+    if (this.editHorasAdicionales < 8) {
+      this.editHorasAdicionales++;
+    }
+  }
+
+  decrementarEditHoras(): void {
+    if (this.editHorasAdicionales > 0) {
+      this.editHorasAdicionales--;
+    }
+  }
+
+  getCapacidadBaseEdicion(): number {
+    return 50;
+  }
+
+  getInvitadosAdicionalesEdicion(): number {
+    return Math.max(0, (this.editInvitados || 0) - this.getCapacidadBaseEdicion());
+  }
+
+  getCostoExtraInvitadosEdicion(): number {
+    return this.getInvitadosAdicionalesEdicion() * 150;
+  }
+
+  getCostoHorasExtraEdicion(): number {
+    return (this.editHorasAdicionales || 0) * 1000;
+  }
+
+  getPrecioBaseEdicion(): number {
+    if (!this.cotizacionEditando) return 0;
+    const baseItem = this.cotizacionEditando.items.find(i => i.tipo === 'evento');
+    return baseItem ? baseItem.precioUnitario || 0 : this.cotizacionEditando.total;
+  }
+
+  getEstimatedTotalEdicion(): number {
+    if (!this.cotizacionEditando) return 0;
+    return this.getPrecioBaseEdicion() + this.getCostoExtraInvitadosEdicion() + this.getCostoHorasExtraEdicion();
+  }
+
+  guardarEdicion(estatus: 'borrador' | 'enviada'): void {
+    if (!this.cotizacionEditando || !this.editFechaEvento || !this.editInvitados || this.guardandoEdicion) {
+      return;
+    }
+
+    let clienteId: number | undefined = undefined;
+    const sessionStr = localStorage.getItem('session');
+    if (sessionStr) {
+      try {
+        const session = JSON.parse(sessionStr);
+        if (session?.cliente?.id) {
+          clienteId = session.cliente.id;
+        }
+      } catch (e) {
+        console.error('Error parsing session:', e);
+      }
+    }
+
+    const catalogoId = this.cotizacionEditando.catalogoEventoId || 1;
+    this.guardandoEdicion = true;
+
+    this.cotizacionesService.actualizarCotizacion(this.cotizacionEditando.id, {
+      clienteId: clienteId,
+      catalogoEventoId: catalogoId,
+      fechaEvento: this.editFechaEvento,
+      invitados: this.editInvitados,
+      horasAdicionales: this.editHorasAdicionales,
+      notas: this.editNotas,
+      estatus: estatus
+    }).subscribe({
+      next: (response) => {
+        this.guardandoEdicion = false;
+        this.cerrarEdicion();
+        this.cargarCotizaciones();
+        if (estatus === 'borrador') {
+          this.toastService.showSuccess('Borrador actualizado exitosamente');
+        } else {
+          this.toastService.showSuccess('Cotización enviada a revisión exitosamente');
+        }
+      },
+      error: (err) => {
+        this.guardandoEdicion = false;
+        console.error('Error al actualizar cotización:', err);
+        this.toastService.showError('Error al actualizar la cotización. Reintenta.');
+      }
+    });
+  }
+
   getEstatusLabel(estatus: EstatusCotizacion): string {
     const labels: Record<EstatusCotizacion, string> = {
       borrador: 'Borrador',
@@ -97,11 +226,11 @@ export class Cotizaciones implements OnInit {
 
   getEstatusClasses(estatus: EstatusCotizacion): string {
     const classes: Record<EstatusCotizacion, string> = {
-      borrador: 'bg-gray-100 text-gray-700',
-      enviada: 'bg-blue-100 text-blue-700',
-      aceptada: 'bg-green-100 text-green-700',
-      rechazada: 'bg-red-100 text-red-700',
-      vencida: 'bg-orange-100 text-orange-700'
+      borrador: 'bg-gray-100 text-gray-700 border border-gray-300',
+      enviada: 'bg-blue-100 text-blue-800 border border-blue-200 font-bold',
+      aceptada: 'bg-green-100 text-green-700 border border-green-200',
+      rechazada: 'bg-red-100 text-red-700 border border-red-200',
+      vencida: 'bg-orange-100 text-orange-700 border border-orange-200'
     };
     return classes[estatus] || 'bg-gray-100 text-gray-700';
   }

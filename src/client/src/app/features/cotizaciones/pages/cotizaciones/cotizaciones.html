@@ -1,4 +1,5 @@
 <div class="min-h-screen bg-linear-to-br from-gray-100 via-gray-50 to-gray-200">
+  <app-toast></app-toast>
 
   <app-navbar></app-navbar>
 
@@ -7,7 +8,7 @@
     <div class="mb-10">
       <h2 class="text-5xl font-bold text-gray-900">Cotizaciones</h2>
       <p class="text-gray-500 mt-2">
-        Revisa el historial y el estado de tus presupuestos solicitados.
+        Revisa tus borradores o da seguimiento a tus presupuestos enviados.
       </p>
     </div>
 
@@ -17,7 +18,7 @@
         <p class="text-4xl font-extrabold text-gray-900 mt-2">{{ cotizaciones.length }}</p>
       </div>
       <div class="bg-white rounded-3xl shadow-lg p-6">
-        <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Pendientes</span>
+        <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Pendientes / Borradores</span>
         <p class="text-4xl font-extrabold text-blue-600 mt-2">{{ totalPendientes }}</p>
       </div>
       <div class="bg-white rounded-3xl shadow-lg p-6">
@@ -68,7 +69,9 @@
     <div class="space-y-4">
       <div
         *ngFor="let cot of cotizacionesFiltradas"
-        class="bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-300 p-6 md:p-8"
+        class="bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-300 p-6 md:p-8 border border-transparent"
+        [class.border-blue-200]="cot.estatus === 'enviada'"
+        [class.border-amber-200]="cot.estatus === 'borrador'"
       >
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div class="flex-1">
@@ -89,20 +92,34 @@
             </div>
           </div>
 
-          <div class="flex items-center gap-6">
-            <div class="text-right">
-              <span class="text-xs text-gray-400 font-semibold uppercase tracking-wider block">Total</span>
+          <div class="flex items-center gap-4">
+            <div class="text-right mr-2">
+              <span class="text-xs text-gray-400 font-semibold uppercase tracking-wider block">Total {{ cot.estatus === 'borrador' ? 'Estimado' : '' }}</span>
               <span class="text-3xl font-extrabold text-red-500">${{ cot.totalFinal | number:'1.0-2' }}</span>
               <span *ngIf="cot.descuento > 0" class="text-sm text-green-600 block">
                 Descuento: -${{ cot.descuento | number:'1.0-2' }}
               </span>
             </div>
-            <button
-              (click)="abrirDetalle(cot)"
-              class="bg-gray-900 hover:bg-black text-white px-6 py-3 rounded-xl font-semibold transition cursor-pointer shrink-0"
-            >
-              Ver detalle
-            </button>
+
+            <div class="flex items-center gap-2">
+              <button
+                *ngIf="cot.estatus === 'borrador'"
+                (click)="abrirEditarBorrador(cot)"
+                class="bg-amber-500 hover:bg-amber-600 text-white px-5 py-3 rounded-xl font-semibold transition cursor-pointer shrink-0 shadow-sm hover:shadow-md flex items-center gap-1 text-sm"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                </svg>
+                Editar borrador
+              </button>
+
+              <button
+                (click)="abrirDetalle(cot)"
+                class="bg-gray-900 hover:bg-black text-white px-5 py-3 rounded-xl font-semibold transition cursor-pointer shrink-0 text-sm"
+              >
+                Ver detalle
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -110,6 +127,7 @@
 
   </main>
 
+  <!-- Modal de Detalle (Solo Lectura) -->
   <div
     *ngIf="cotizacionSeleccionada"
     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
@@ -117,7 +135,7 @@
     <div class="relative bg-white rounded-3xl overflow-hidden shadow-2xl max-w-xl w-full max-h-[90vh] flex flex-col">
       <div class="p-6 border-b border-gray-100 flex items-center justify-between shrink-0">
         <div>
-          <span class="text-xs text-red-500 font-bold uppercase tracking-wider">Detalle de cotización</span>
+          <span class="text-xs text-red-500 font-bold uppercase tracking-wider">Detalle de cotización (Solo lectura)</span>
           <h3 class="text-2xl font-extrabold text-gray-900 mt-1">{{ cotizacionSeleccionada.folio }}</h3>
         </div>
         <button
@@ -131,6 +149,16 @@
       </div>
 
       <div class="grow overflow-y-auto p-6 space-y-6">
+        <div *ngIf="cotizacionSeleccionada.estatus === 'enviada'" class="bg-blue-50 border border-blue-200 rounded-2xl p-4 flex items-start space-x-3 text-blue-800 text-xs">
+          <svg class="w-5 h-5 text-blue-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <div>
+            <strong class="font-bold block text-sm mb-0.5">Cotización Enviada a Revisión</strong>
+            Esta cotización ha sido enviada al equipo planificador. No puede ser editada directamente mientras se procesan los proveedores.
+          </div>
+        </div>
+
         <div class="flex items-center justify-between">
           <h4 class="text-xl font-bold text-gray-900">{{ cotizacionSeleccionada.evento }}</h4>
           <span
@@ -191,6 +219,172 @@
           class="w-full py-3.5 px-4 bg-gray-900 hover:bg-black text-white rounded-xl font-semibold transition cursor-pointer"
         >
           Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Edición de Borrador -->
+  <div
+    *ngIf="cotizacionEditando"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+  >
+    <div class="relative bg-white rounded-3xl overflow-hidden shadow-2xl max-w-xl w-full max-h-[90vh] flex flex-col">
+      <div class="p-6 border-b border-gray-100 flex items-center justify-between shrink-0">
+        <div>
+          <span class="text-xs text-amber-600 font-bold uppercase tracking-wider">Editar Borrador</span>
+          <h3 class="text-2xl font-extrabold text-gray-900 mt-1">{{ cotizacionEditando.folio }} - {{ cotizacionEditando.evento }}</h3>
+        </div>
+        <button
+          (click)="cerrarEdicion()"
+          class="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition cursor-pointer"
+        >
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="grow overflow-y-auto p-6 space-y-6">
+        <div class="space-y-2">
+          <label class="block text-sm font-semibold text-gray-700">Fecha del Evento *</label>
+          <input
+            type="date"
+            [(ngModel)]="editFechaEvento"
+            class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500 transition"
+            required
+          />
+        </div>
+
+        <div class="space-y-4">
+          <div class="space-y-2">
+            <label class="block text-sm font-semibold text-gray-700">Cantidad de Invitados *</label>
+            <div class="flex flex-wrap gap-2 mb-2">
+              <button
+                *ngFor="let preset of invitadosPresets"
+                type="button"
+                (click)="selectEditInvitadosPreset(preset)"
+                [class.bg-amber-500]="editInvitados === preset"
+                [class.text-white]="editInvitados === preset"
+                [class.bg-gray-100]="editInvitados !== preset"
+                [class.text-gray-700]="editInvitados !== preset"
+                class="px-3 py-1.5 rounded-lg text-xs font-bold transition hover:bg-amber-500 hover:text-white cursor-pointer"
+              >
+                {{ preset }} personas
+              </button>
+            </div>
+            <input
+              type="number"
+              min="1"
+              [(ngModel)]="editInvitados"
+              class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500 transition"
+              required
+            />
+            <p class="text-xs text-gray-500">
+              Base del paquete: <strong class="text-gray-700">50 pers.</strong>
+              <span *ngIf="getInvitadosAdicionalesEdicion() > 0" class="text-amber-600 font-semibold ml-1">
+                (+{{ getInvitadosAdicionalesEdicion() }} extras a $150 c/u)
+              </span>
+            </p>
+          </div>
+
+          <div class="space-y-2">
+            <label class="block text-sm font-semibold text-gray-700">Horas Adicionales</label>
+            <div class="flex items-center space-x-3">
+              <button
+                type="button"
+                (click)="decrementarEditHoras()"
+                [disabled]="editHorasAdicionales <= 0"
+                class="w-11 h-11 rounded-xl bg-gray-100 hover:bg-gray-200 disabled:opacity-40 font-bold text-gray-700 text-lg flex items-center justify-center transition cursor-pointer"
+              >
+                -
+              </button>
+              <div class="flex-1 bg-gray-50 border border-gray-200 rounded-xl py-2.5 text-center font-bold text-gray-900">
+                {{ editHorasAdicionales }} {{ editHorasAdicionales === 1 ? 'hora extra' : 'horas extra' }}
+              </div>
+              <button
+                type="button"
+                (click)="incrementarEditHoras()"
+                [disabled]="editHorasAdicionales >= 8"
+                class="w-11 h-11 rounded-xl bg-gray-100 hover:bg-gray-200 disabled:opacity-40 font-bold text-gray-700 text-lg flex items-center justify-center transition cursor-pointer"
+              >
+                +
+              </button>
+            </div>
+            <p class="text-xs text-gray-500 mt-1">$1,000 MXN por cada hora adicional.</p>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <label class="block text-sm font-semibold text-gray-700">Notas Especiales</label>
+          <textarea
+            rows="3"
+            [(ngModel)]="editNotas"
+            placeholder="Detalles o peticiones especiales..."
+            class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500 transition resize-none"
+          ></textarea>
+        </div>
+
+        <div class="bg-gray-50 rounded-2xl p-5 border border-gray-100 space-y-3">
+          <div class="flex items-center justify-between">
+            <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Desglose de Total Estimado</h4>
+            <span class="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full">Sujeto a Proveedores</span>
+          </div>
+
+          <div class="space-y-2 text-sm text-gray-600">
+            <div class="flex justify-between">
+              <span>Precio Base de Evento (hasta {{ getCapacidadBaseEdicion() }} pers.):</span>
+              <span class="font-semibold text-gray-800">${{ getPrecioBaseEdicion() | number:'1.0-2' }}</span>
+            </div>
+
+            <div *ngIf="getInvitadosAdicionalesEdicion() > 0" class="flex justify-between text-amber-700">
+              <span>Personas Adicionales ({{ getInvitadosAdicionalesEdicion() }} pers. x $150):</span>
+              <span class="font-semibold">+${{ getCostoExtraInvitadosEdicion() | number:'1.0-2' }}</span>
+            </div>
+
+            <div *ngIf="editHorasAdicionales > 0" class="flex justify-between text-amber-700">
+              <span>Horas Extra ({{ editHorasAdicionales }} hrs x $1,000):</span>
+              <span class="font-semibold">+${{ (editHorasAdicionales * 1000) | number:'1.0-2' }}</span>
+            </div>
+          </div>
+
+          <div class="border-t border-gray-200 pt-3 flex justify-between items-center">
+            <div>
+              <span class="text-base font-bold text-gray-900 block">Total Estimado:</span>
+              <span class="text-[11px] text-gray-500">Estimación preliminar</span>
+            </div>
+            <span class="text-2xl font-extrabold text-red-500">${{ getEstimatedTotalEdicion() | number:'1.0-2' }}</span>
+          </div>
+
+          <div class="bg-amber-50/80 border border-amber-200/80 rounded-xl p-3 flex items-start space-x-2 text-xs text-amber-800">
+            <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <span>Este presupuesto es una <strong>estimación preliminar</strong>. Al enviar a revisión, un planificador validará la disponibilidad exacta y tarifas de proveedores.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="border-t border-gray-100 p-6 bg-gray-50/50 flex space-x-3 shrink-0">
+        <button
+          (click)="cerrarEdicion()"
+          class="py-3 px-4 border border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-100 transition cursor-pointer text-sm"
+        >
+          Cancelar
+        </button>
+        <button
+          (click)="guardarEdicion('borrador')"
+          [disabled]="!editFechaEvento || !editInvitados || editInvitados <= 0 || guardandoEdicion"
+          class="flex-1 py-3 px-4 bg-gray-100 hover:bg-gray-200 border border-gray-300 disabled:opacity-50 text-gray-800 rounded-xl font-semibold transition cursor-pointer text-sm"
+        >
+          Guardar cambios
+        </button>
+        <button
+          (click)="guardarEdicion('enviada')"
+          [disabled]="!editFechaEvento || !editInvitados || editInvitados <= 0 || guardandoEdicion"
+          class="flex-1 py-3 px-4 bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white rounded-xl font-semibold transition shadow-md hover:shadow-lg cursor-pointer text-sm"
+        >
+          Enviar a revisión
         </button>
       </div>
     </div>

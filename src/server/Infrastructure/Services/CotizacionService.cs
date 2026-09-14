@@ -22,6 +22,8 @@ public class CotizacionService : ICotizacionService
 
     public async Task<List<CotizacionResponse>> GetCotizacionesAsync(int? clienteId, CancellationToken cancellationToken = default)
     {
+        await ExpirarBorradoresAntiguosAsync(cancellationToken);
+
         var query = _db.Cotizaciones
             .Include(c => c.Cliente)
             .Include(c => c.Items)
@@ -42,6 +44,8 @@ public class CotizacionService : ICotizacionService
 
     public async Task<CotizacionResponse?> GetCotizacionByIdAsync(int id, CancellationToken cancellationToken = default)
     {
+        await ExpirarBorradoresAntiguosAsync(cancellationToken);
+
         var c = await _db.Cotizaciones
             .Include(c => c.Cliente)
             .Include(c => c.Items)
@@ -55,6 +59,8 @@ public class CotizacionService : ICotizacionService
 
     public async Task<(CotizacionResponse? Result, string? Error)> CrearCotizacionAsync(CrearCotizacionRequest request, CancellationToken cancellationToken = default)
     {
+        await ExpirarBorradoresAntiguosAsync(cancellationToken);
+
         var evento = await _db.CatalogoEventos.FindAsync(new object[] { request.CatalogoEventoId }, cancellationToken);
         if (evento is null)
         {
@@ -76,12 +82,13 @@ public class CotizacionService : ICotizacionService
         }
 
         decimal totalBase = evento.PrecioBase;
+        int capacidadBase = evento.CapacidadPersonas > 0 ? evento.CapacidadPersonas : 50;
+        int extraInvitados = Math.Max(0, request.Invitados - capacidadBase);
+        decimal extraInvitadosMonto = extraInvitados * 150m;
         decimal extraHorasMonto = request.HorasAdicionales > 0 ? request.HorasAdicionales * 1000m : 0m;
-        decimal totalCotizacion = totalBase + extraHorasMonto;
+        decimal totalCotizacion = totalBase + extraHorasMonto + extraInvitadosMonto;
 
-        // Generar un folio único: COT-YYYY-XXXX
-        int randomNum = Random.Shared.Next(1000, 9999);
-        string folio = $"COT-{DateTime.UtcNow.Year}-{randomNum}";
+        string estatusFinal = !string.IsNullOrWhiteSpace(request.Estatus) ? request.Estatus.ToLower() : "enviada";
 
         DateTime? fechaEventoParsed = null;
         if (DateTime.TryParse(request.FechaEvento, out var parsedDate))
@@ -89,32 +96,78 @@ public class CotizacionService : ICotizacionService
             fechaEventoParsed = DateTime.SpecifyKind(parsedDate, DateTimeKind.Utc);
         }
 
-        var nuevaCotizacion = new Cotizacion
-        {
-            ClienteId = targetClienteId,
-            Folio = folio,
-            Total = totalCotizacion,
-            Descuento = 0m,
-            Estatus = "enviada",
-            FechaVigencia = DateTime.UtcNow.AddDays(30),
-            FechaEvento = fechaEventoParsed,
-            Invitados = request.Invitados,
-            Notas = request.Notas,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
+        Cotizacion cotizacionDestino;
 
-        _db.Cotizaciones.Add(nuevaCotizacion);
+        if (estatusFinal == "borrador")
+        {
+            var borradorExistente = await _db.Cotizaciones
+                .Include(c => c.Items)
+                .FirstOrDefaultAsync(c => c.ClienteId == targetClienteId && c.Estatus == "borrador" && c.Items.Any(i => i.CatalogoEventoId == request.CatalogoEventoId), cancellationToken);
+
+            if (borradorExistente != null)
+            {
+                cotizacionDestino = borradorExistente;
+                cotizacionDestino.Total = totalCotizacion;
+                cotizacionDestino.FechaEvento = fechaEventoParsed;
+                cotizacionDestino.Invitados = request.Invitados;
+                cotizacionDestino.Notas = request.Notas;
+                cotizacionDestino.UpdatedAt = DateTime.UtcNow;
+
+                _db.CotizacionItems.RemoveRange(cotizacionDestino.Items);
+                cotizacionDestino.Items.Clear();
+            }
+            else
+            {
+                int randomNum = Random.Shared.Next(1000, 9999);
+                string folio = $"COT-{DateTime.UtcNow.Year}-{randomNum}";
+                cotizacionDestino = new Cotizacion
+                {
+                    ClienteId = targetClienteId,
+                    Folio = folio,
+                    Total = totalCotizacion,
+                    Descuento = 0m,
+                    Estatus = estatusFinal,
+                    FechaVigencia = DateTime.UtcNow.AddDays(30),
+                    FechaEvento = fechaEventoParsed,
+                    Invitados = request.Invitados,
+                    Notas = request.Notas,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                _db.Cotizaciones.Add(cotizacionDestino);
+            }
+        }
+        else
+        {
+            int randomNum = Random.Shared.Next(1000, 9999);
+            string folio = $"COT-{DateTime.UtcNow.Year}-{randomNum}";
+            cotizacionDestino = new Cotizacion
+            {
+                ClienteId = targetClienteId,
+                Folio = folio,
+                Total = totalCotizacion,
+                Descuento = 0m,
+                Estatus = estatusFinal,
+                FechaVigencia = DateTime.UtcNow.AddDays(30),
+                FechaEvento = fechaEventoParsed,
+                Invitados = request.Invitados,
+                Notas = request.Notas,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            _db.Cotizaciones.Add(cotizacionDestino);
+        }
+
         await _db.SaveChangesAsync(cancellationToken);
 
         var itemEvento = new CotizacionItem
         {
-            CotizacionId = nuevaCotizacion.Id,
+            CotizacionId = cotizacionDestino.Id,
             Tipo = "evento",
             Cantidad = 1,
             PrecioUnitario = evento.PrecioBase,
             DescuentoItem = 0m,
-            Notas = $"Paquete {evento.Nombre} - Invitados: {request.Invitados}" + (request.HorasAdicionales > 0 ? $", Horas extra: {request.HorasAdicionales}" : ""),
+            Notas = $"Paquete {evento.Nombre} - Base: {capacidadBase} personas",
             CatalogoEventoId = evento.Id,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -122,12 +175,29 @@ public class CotizacionService : ICotizacionService
 
         _db.CotizacionItems.Add(itemEvento);
 
+        if (extraInvitados > 0)
+        {
+            var itemExtraInvitados = new CotizacionItem
+            {
+                CotizacionId = cotizacionDestino.Id,
+                Tipo = "servicio",
+                Cantidad = (short)extraInvitados,
+                PrecioUnitario = 150m,
+                DescuentoItem = 0m,
+                Notas = $"Invitados adicionales ({extraInvitados} personas)",
+                CatalogoEventoId = evento.Id,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            _db.CotizacionItems.Add(itemExtraInvitados);
+        }
+
         if (request.HorasAdicionales > 0)
         {
             var itemHoras = new CotizacionItem
             {
-                CotizacionId = nuevaCotizacion.Id,
-                Tipo = "evento",
+                CotizacionId = cotizacionDestino.Id,
+                Tipo = "servicio",
                 Cantidad = (short)request.HorasAdicionales,
                 PrecioUnitario = 1000m,
                 DescuentoItem = 0m,
@@ -143,31 +213,169 @@ public class CotizacionService : ICotizacionService
 
         var itemsDto = new List<CotizacionItemDto>
         {
-            new CotizacionItemDto(itemEvento.Id, "evento", $"Paquete {evento.Nombre}", evento.PrecioBase, 1, 0m, evento.PrecioBase, null)
+            new CotizacionItemDto(itemEvento.Id, "evento", $"Paquete {evento.Nombre} (Base {capacidadBase} pers.)", evento.PrecioBase, 1, 0m, evento.PrecioBase, null)
         };
+        if (extraInvitados > 0)
+        {
+            itemsDto.Add(new CotizacionItemDto(0, "servicio", $"Invitados adicionales ({extraInvitados} pers.)", 150m, extraInvitados, 0m, extraInvitadosMonto, null));
+        }
         if (request.HorasAdicionales > 0)
         {
             itemsDto.Add(new CotizacionItemDto(0, "servicio", $"Horas adicionales ({request.HorasAdicionales} hrs)", 1000m, request.HorasAdicionales, 0m, extraHorasMonto, null));
         }
 
         var responseDto = new CotizacionResponse(
-            nuevaCotizacion.Id,
-            nuevaCotizacion.Folio,
+            cotizacionDestino.Id,
+            cotizacionDestino.Folio,
             evento.Nombre,
             evento.Id,
-            nuevaCotizacion.FechaEvento?.ToString("yyyy-MM-dd"),
-            nuevaCotizacion.Invitados,
-            nuevaCotizacion.Total,
-            nuevaCotizacion.Descuento,
-            nuevaCotizacion.Total,
-            nuevaCotizacion.Estatus,
-            nuevaCotizacion.FechaVigencia.ToString("yyyy-MM-dd"),
-            nuevaCotizacion.CreatedAt.ToString("yyyy-MM-dd"),
-            nuevaCotizacion.Notas ?? "",
+            cotizacionDestino.FechaEvento?.ToString("yyyy-MM-dd"),
+            cotizacionDestino.Invitados,
+            cotizacionDestino.Total,
+            cotizacionDestino.Descuento,
+            cotizacionDestino.Total,
+            cotizacionDestino.Estatus,
+            cotizacionDestino.FechaVigencia.ToString("yyyy-MM-dd"),
+            cotizacionDestino.CreatedAt.ToString("yyyy-MM-dd"),
+            cotizacionDestino.Notas ?? "",
             itemsDto
         );
 
         return (responseDto, null);
+    }
+
+    private async Task ExpirarBorradoresAntiguosAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var fechaLimite = DateTime.UtcNow.AddDays(-30);
+            var borradoresVencidos = await _db.Cotizaciones
+                .Where(c => c.Estatus == "borrador" && c.UpdatedAt < fechaLimite)
+                .ToListAsync(cancellationToken);
+
+            if (borradoresVencidos.Count > 0)
+            {
+                foreach (var cot in borradoresVencidos)
+                {
+                    cot.Estatus = "vencida";
+                    cot.UpdatedAt = DateTime.UtcNow;
+                }
+                await _db.SaveChangesAsync(cancellationToken);
+            }
+        }
+        catch (Exception ex)
+        {
+            // Log expiration error silently without failing the main request
+            System.Diagnostics.Debug.WriteLine($"Error en ExpirarBorradoresAntiguos: {ex.Message}");
+        }
+    }
+
+    public async Task<(CotizacionResponse? Result, string? Error)> ActualizarCotizacionAsync(int id, CrearCotizacionRequest request, CancellationToken cancellationToken = default)
+    {
+        await ExpirarBorradoresAntiguosAsync(cancellationToken);
+
+        var cotizacion = await _db.Cotizaciones
+            .Include(c => c.Items)
+            .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+
+        if (cotizacion is null)
+        {
+            return (null, "La cotización especificada no existe.");
+        }
+
+        if (cotizacion.Estatus != "borrador")
+        {
+            return (null, "Solo se pueden editar cotizaciones que estén en estatus borrador.");
+        }
+
+        var evento = await _db.CatalogoEventos.FindAsync(new object[] { request.CatalogoEventoId }, cancellationToken);
+        if (evento is null)
+        {
+            return (null, "El evento especificado no existe en el catálogo.");
+        }
+
+        decimal totalBase = evento.PrecioBase;
+        int capacidadBase = evento.CapacidadPersonas > 0 ? evento.CapacidadPersonas : 50;
+        int extraInvitados = Math.Max(0, request.Invitados - capacidadBase);
+        decimal extraInvitadosMonto = extraInvitados * 150m;
+        decimal extraHorasMonto = request.HorasAdicionales > 0 ? request.HorasAdicionales * 1000m : 0m;
+        decimal totalCotizacion = totalBase + extraHorasMonto + extraInvitadosMonto;
+
+        string estatusFinal = !string.IsNullOrWhiteSpace(request.Estatus) ? request.Estatus.ToLower() : cotizacion.Estatus;
+
+        DateTime? fechaEventoParsed = null;
+        if (DateTime.TryParse(request.FechaEvento, out var parsedDate))
+        {
+            fechaEventoParsed = DateTime.SpecifyKind(parsedDate, DateTimeKind.Utc);
+        }
+
+        cotizacion.Total = totalCotizacion;
+        cotizacion.Estatus = estatusFinal;
+        cotizacion.FechaEvento = fechaEventoParsed;
+        cotizacion.Invitados = request.Invitados;
+        cotizacion.Notas = request.Notas;
+        cotizacion.UpdatedAt = DateTime.UtcNow;
+
+        _db.CotizacionItems.RemoveRange(cotizacion.Items);
+        cotizacion.Items.Clear();
+
+        var itemEvento = new CotizacionItem
+        {
+            CotizacionId = cotizacion.Id,
+            Tipo = "evento",
+            Cantidad = 1,
+            PrecioUnitario = evento.PrecioBase,
+            DescuentoItem = 0m,
+            Notas = $"Paquete {evento.Nombre} - Base: {capacidadBase} personas",
+            CatalogoEventoId = evento.Id,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+        _db.CotizacionItems.Add(itemEvento);
+
+        if (extraInvitados > 0)
+        {
+            var itemExtraInvitados = new CotizacionItem
+            {
+                CotizacionId = cotizacion.Id,
+                Tipo = "servicio",
+                Cantidad = (short)extraInvitados,
+                PrecioUnitario = 150m,
+                DescuentoItem = 0m,
+                Notas = $"Invitados adicionales ({extraInvitados} personas)",
+                CatalogoEventoId = evento.Id,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            _db.CotizacionItems.Add(itemExtraInvitados);
+        }
+
+        if (request.HorasAdicionales > 0)
+        {
+            var itemHoras = new CotizacionItem
+            {
+                CotizacionId = cotizacion.Id,
+                Tipo = "servicio",
+                Cantidad = (short)request.HorasAdicionales,
+                PrecioUnitario = 1000m,
+                DescuentoItem = 0m,
+                Notas = $"Horas adicionales ({request.HorasAdicionales} hrs)",
+                CatalogoEventoId = evento.Id,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            _db.CotizacionItems.Add(itemHoras);
+        }
+
+        await _db.SaveChangesAsync(cancellationToken);
+
+        var cActualizada = await _db.Cotizaciones
+            .Include(c => c.Cliente)
+            .Include(c => c.Items)
+                .ThenInclude(i => i.CatalogoEvento)
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+        return (MapToResponse(cActualizada!), null);
     }
 
     public async Task<bool> DeleteCotizacionAsync(int id, CancellationToken cancellationToken = default)

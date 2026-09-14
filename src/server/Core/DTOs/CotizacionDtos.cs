@@ -36,5 +36,6 @@ public record CrearCotizacionRequest(
     string FechaEvento,
     int Invitados,
     int HorasAdicionales,
-    string? Notas
+    string? Notas,
+    string? Estatus
 );

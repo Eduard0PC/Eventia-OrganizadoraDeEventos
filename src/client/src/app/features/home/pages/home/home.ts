@@ -6,6 +6,9 @@ import { NavbarClient } from '@shared/components/navbar-client/navbar-client';
 import { environment } from '@env/environment';
 import { CotizacionesService } from '@features/cotizaciones/services/cotizaciones.service';
 
+import { ToastComponent } from '@shared/components/toast/toast.component';
+import { ToastService } from '@shared/components/toast/toast.service';
+
 export interface CatalogoEvento {
   id: number;
   nombre: string;
@@ -22,12 +25,13 @@ export interface CatalogoEvento {
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, NavbarClient, FormsModule],
+  imports: [CommonModule, NavbarClient, FormsModule, ToastComponent],
   templateUrl: './home.html'
 })
 export class Home implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly cotizacionesService = inject(CotizacionesService);
+  private readonly toastService = inject(ToastService);
   private readonly cdr = inject(ChangeDetectorRef);
 
   eventos: CatalogoEvento[] = [];
@@ -42,6 +46,8 @@ export class Home implements OnInit {
   notasEspeciales = '';
   cotizacionEnviada = false;
   enviandoCotizacion = false;
+  ultimoEstatusGuardado: 'borrador' | 'enviada' = 'enviada';
+  invitadosPresets = [50, 100, 150, 200];
 
   ngOnInit(): void {
     this.cargarEventos();
@@ -88,7 +94,7 @@ export class Home implements OnInit {
     this.cotizacionEnviada = false;
 
     this.fechaEvento = '';
-    this.cantidadInvitados = null;
+    this.cantidadInvitados = this.selectedEvento?.capacidadPersonas || 50;
     this.horasAdicionales = 0;
     this.notasEspeciales = '';
   }
@@ -98,14 +104,52 @@ export class Home implements OnInit {
     this.selectedEvento = null;
   }
 
+  selectInvitadosPreset(cantidad: number): void {
+    this.cantidadInvitados = cantidad;
+  }
+
+  incrementarHoras(): void {
+    if (this.horasAdicionales < 8) {
+      this.horasAdicionales++;
+    }
+  }
+
+  decrementarHoras(): void {
+    if (this.horasAdicionales > 0) {
+      this.horasAdicionales--;
+    }
+  }
+
+  getCapacidadBase(): number {
+    return this.selectedEvento?.capacidadPersonas || 50;
+  }
+
+  getInvitadosAdicionales(): number {
+    if (!this.cantidadInvitados) return 0;
+    return Math.max(0, this.cantidadInvitados - this.getCapacidadBase());
+  }
+
+  getCostoExtraInvitados(): number {
+    return this.getInvitadosAdicionales() * 150;
+  }
+
+  getCostoHorasExtra(): number {
+    return (this.horasAdicionales || 0) * 1000;
+  }
+
   getEstimatedTotal(): number {
     if (!this.selectedEvento) return 0;
     let total = Number(this.selectedEvento.precioBase);
-    total += (this.horasAdicionales || 0) * 1000;
+    total += this.getCostoExtraInvitados();
+    total += this.getCostoHorasExtra();
     return total;
   }
 
-  enviarCotizacion(): void {
+  guardarBorrador(): void {
+    this.enviarCotizacion('borrador');
+  }
+
+  enviarCotizacion(estatus: 'borrador' | 'enviada' = 'enviada'): void {
     if (!this.selectedEvento || !this.fechaEvento || !this.cantidadInvitados || this.enviandoCotizacion) {
       return;
     }
@@ -124,6 +168,7 @@ export class Home implements OnInit {
     }
 
     this.enviandoCotizacion = true;
+    this.ultimoEstatusGuardado = estatus;
 
     this.cotizacionesService.crearCotizacion({
       clienteId: clienteId,
@@ -131,17 +176,23 @@ export class Home implements OnInit {
       fechaEvento: this.fechaEvento,
       invitados: this.cantidadInvitados,
       horasAdicionales: this.horasAdicionales || 0,
-      notas: this.notasEspeciales
+      notas: this.notasEspeciales,
+      estatus: estatus
     }).subscribe({
       next: (response) => {
         this.enviandoCotizacion = false;
         this.cotizacionEnviada = true;
-        console.log('Cotización guardada exitosamente en backend:', response);
+        if (estatus === 'borrador') {
+          this.toastService.showSuccess('Borrador guardado exitosamente');
+        } else {
+          this.toastService.showSuccess('Cotización enviada a revisión exitosamente');
+        }
+        console.log(`Cotización guardada como ${estatus}:`, response);
       },
       error: (err) => {
         this.enviandoCotizacion = false;
         console.error('Error al guardar la cotización:', err);
-        alert('Hubo un error al procesar tu cotización. Por favor reintenta.');
+        this.toastService.showError('Hubo un error al procesar tu cotización. Por favor reintenta.');
       }
     });
   }

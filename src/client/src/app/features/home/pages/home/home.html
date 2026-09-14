@@ -1,4 +1,5 @@
 <div class="min-h-screen bg-linear-to-br from-gray-100 via-gray-50 to-gray-200">
+  <app-toast></app-toast>
 
   <app-navbar></app-navbar>
 
@@ -243,28 +244,65 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="space-y-4">
             <div class="space-y-2">
               <label class="block text-sm font-semibold text-gray-700">Cantidad de Invitados *</label>
-              <input
-                type="number"
-                min="1"
-                placeholder="Ej. 100"
-                [(ngModel)]="cantidadInvitados"
-                class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 transition"
-                required
-              />
+              <div class="flex flex-wrap gap-2 mb-2">
+                <button
+                  *ngFor="let preset of invitadosPresets"
+                  type="button"
+                  (click)="selectInvitadosPreset(preset)"
+                  [class.bg-red-500]="cantidadInvitados === preset"
+                  [class.text-white]="cantidadInvitados === preset"
+                  [class.bg-gray-100]="cantidadInvitados !== preset"
+                  [class.text-gray-700]="cantidadInvitados !== preset"
+                  class="px-3 py-1.5 rounded-lg text-xs font-bold transition hover:bg-red-500 hover:text-white cursor-pointer"
+                >
+                  {{ preset }} personas
+                </button>
+              </div>
+              <div class="relative">
+                <input
+                  type="number"
+                  min="1"
+                  placeholder="Ej. 100"
+                  [(ngModel)]="cantidadInvitados"
+                  class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 transition"
+                  required
+                />
+              </div>
+              <p class="text-xs text-gray-500">
+                Base del paquete: <strong class="text-gray-700">{{ getCapacidadBase() }} pers.</strong>
+                <span *ngIf="getInvitadosAdicionales() > 0" class="text-red-500 font-semibold ml-1">
+                  (+{{ getInvitadosAdicionales() }} extras a $150 c/u)
+                </span>
+              </p>
             </div>
 
             <div class="space-y-2">
               <label class="block text-sm font-semibold text-gray-700">Horas Adicionales</label>
-              <input
-                type="number"
-                min="0"
-                placeholder="0"
-                [(ngModel)]="horasAdicionales"
-                class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 transition"
-              />
+              <div class="flex items-center space-x-3">
+                <button
+                  type="button"
+                  (click)="decrementarHoras()"
+                  [disabled]="horasAdicionales <= 0"
+                  class="w-11 h-11 rounded-xl bg-gray-100 hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed font-bold text-gray-700 text-lg flex items-center justify-center transition cursor-pointer"
+                >
+                  -
+                </button>
+                <div class="flex-1 bg-gray-50 border border-gray-200 rounded-xl py-2.5 text-center font-bold text-gray-900">
+                  {{ horasAdicionales }} {{ horasAdicionales === 1 ? 'hora extra' : 'horas extra' }}
+                </div>
+                <button
+                  type="button"
+                  (click)="incrementarHoras()"
+                  [disabled]="horasAdicionales >= 8"
+                  class="w-11 h-11 rounded-xl bg-gray-100 hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed font-bold text-gray-700 text-lg flex items-center justify-center transition cursor-pointer"
+                >
+                  +
+                </button>
+              </div>
+              <p class="text-xs text-gray-500">$1,000 MXN por cada hora adicional.</p>
             </div>
           </div>
 
@@ -277,40 +315,74 @@
               class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 transition resize-none"
             ></textarea>
           </div>
+
           <div class="bg-gray-50 rounded-2xl p-5 border border-gray-100 space-y-3">
-            <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Desglose Estimado</h4>
+            <div class="flex items-center justify-between">
+              <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Desglose de Total Estimado</h4>
+              <span class="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full">Sujeto a Proveedores</span>
+            </div>
             
             <div class="space-y-2 text-sm text-gray-600">
               <div class="flex justify-between">
-                <span>Precio Base de Evento:</span>
+                <span>Precio Base de Evento (hasta {{ getCapacidadBase() }} pers.):</span>
                 <span class="font-semibold text-gray-800">${{ selectedEvento.precioBase | number:'1.0-2' }}</span>
               </div>
               
-              <div *ngIf="horasAdicionales > 0" class="flex justify-between">
-                <span>Horas Extra ({{ horasAdicionales }} hrs):</span>
-                <span class="font-semibold text-gray-800">+${{ (horasAdicionales * 1000) | number:'1.0-2' }}</span>
+              <div *ngIf="getInvitadosAdicionales() > 0" class="flex justify-between text-amber-700">
+                <span>Personas Adicionales ({{ getInvitadosAdicionales() }} pers. x $150):</span>
+                <span class="font-semibold">+${{ getCostoExtraInvitados() | number:'1.0-2' }}</span>
+              </div>
+
+              <div *ngIf="horasAdicionales > 0" class="flex justify-between text-amber-700">
+                <span>Horas Extra ({{ horasAdicionales }} hrs x $1,000):</span>
+                <span class="font-semibold">+${{ getCostoHorasExtra() | number:'1.0-2' }}</span>
               </div>
             </div>
 
             <div class="border-t border-gray-200 pt-3 flex justify-between items-center">
-              <span class="text-base font-bold text-gray-900">Total Estimado:</span>
+              <div>
+                <span class="text-base font-bold text-gray-900 block">Total Estimado:</span>
+                <span class="text-[11px] text-gray-500">Estimación preliminar</span>
+              </div>
               <span class="text-2xl font-extrabold text-red-500">
                 ${{ getEstimatedTotal() | number:'1.0-2' }}
               </span>
+            </div>
+
+            <div class="bg-amber-50/80 border border-amber-200/80 rounded-xl p-3 flex items-start space-x-2 text-xs text-amber-800">
+              <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <span>Este presupuesto es una <strong>estimación preliminar</strong>. Al enviar a revisión, un planificador validará la disponibilidad exacta y tarifas de proveedores.</span>
             </div>
           </div>
         </ng-container>
 
         <ng-template #successTemplate>
           <div class="py-8 flex flex-col items-center text-center space-y-4">
-            <div class="bg-green-100 text-green-600 p-4 rounded-full">
+            <div
+              [class.bg-green-100]="ultimoEstatusGuardado === 'enviada'"
+              [class.text-green-600]="ultimoEstatusGuardado === 'enviada'"
+              [class.bg-blue-100]="ultimoEstatusGuardado === 'borrador'"
+              [class.text-blue-600]="ultimoEstatusGuardado === 'borrador'"
+              class="p-4 rounded-full"
+            >
               <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
               </svg>
             </div>
-            <h3 class="text-2xl font-extrabold text-gray-900">¡Cotización Registrada!</h3>
+            
+            <h3 class="text-2xl font-extrabold text-gray-900">
+              {{ ultimoEstatusGuardado === 'borrador' ? '¡Guardada como Borrador!' : '¡Cotización Enviada a Revisión!' }}
+            </h3>
+            
             <p class="text-gray-500 max-w-sm">
-              Tu cotización para el evento <strong>{{ selectedEvento.nombre }}</strong> se ha registrado exitosamente en el sistema.
+              <ng-container *ngIf="ultimoEstatusGuardado === 'borrador'; else enviadaText">
+                Tu cotización para el evento <strong>{{ selectedEvento.nombre }}</strong> se guardó como borrador. Podrás consultarla o solicitar su revisión más adelante.
+              </ng-container>
+              <ng-template #enviadaText>
+                Tu solicitud para el evento <strong>{{ selectedEvento.nombre }}</strong> fue enviada. Un planificador revisará la disponibilidad con los proveedores y formalizará tu cotización.
+              </ng-template>
             </p>
             
             <div class="bg-gray-50 rounded-2xl p-5 border border-gray-100 text-left w-full space-y-3">
@@ -325,6 +397,10 @@
                   <span class="font-bold text-gray-800">{{ cantidadInvitados }} personas</span>
                 </div>
                 <div class="flex justify-between">
+                  <span>Horas Extra:</span>
+                  <span class="font-bold text-gray-800">{{ horasAdicionales }} hrs</span>
+                </div>
+                <div class="flex justify-between">
                   <span>Total Estimado:</span>
                   <span class="font-extrabold text-red-500 text-lg">${{ getEstimatedTotal() | number:'1.0-2' }}</span>
                 </div>
@@ -335,20 +411,27 @@
 
       </div>
 
-      <div class="border-t border-gray-100 p-6 bg-gray-50/50 flex space-x-4 shrink-0">
+      <div class="border-t border-gray-100 p-6 bg-gray-50/50 flex space-x-3 shrink-0">
         <ng-container *ngIf="!cotizacionEnviada; else successFooter">
           <button
             (click)="openDetails(selectedEvento)"
-            class="flex-1 py-3.5 px-4 border border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-100 transition cursor-pointer"
+            class="py-3 px-3 border border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-100 transition cursor-pointer text-sm"
           >
             Atrás
           </button>
           <button
-            (click)="enviarCotizacion()"
-            [disabled]="!fechaEvento || !cantidadInvitados || cantidadInvitados <= 0"
-            class="flex-1 py-3.5 px-4 bg-red-500 hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-semibold transition shadow-md hover:shadow-lg cursor-pointer"
+            (click)="guardarBorrador()"
+            [disabled]="!fechaEvento || !cantidadInvitados || cantidadInvitados <= 0 || enviandoCotizacion"
+            class="flex-1 py-3 px-3 bg-gray-100 hover:bg-gray-200 border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed text-gray-800 rounded-xl font-semibold transition cursor-pointer text-sm"
           >
-            Enviar cotización
+            Guardar como borrador
+          </button>
+          <button
+            (click)="enviarCotizacion('enviada')"
+            [disabled]="!fechaEvento || !cantidadInvitados || cantidadInvitados <= 0 || enviandoCotizacion"
+            class="flex-1 py-3 px-3 bg-red-500 hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-semibold transition shadow-md hover:shadow-lg cursor-pointer text-sm"
+          >
+            Enviar a revisión
           </button>
         </ng-container>
         

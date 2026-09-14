@@ -38,6 +38,18 @@ public static class CotizacionEndpoints
         })
         .WithName("CrearCotizacion");
 
+        endpoints.MapPut("/api/cotizaciones/{id:int}", async (int id, CrearCotizacionRequest request, ICotizacionService cotizacionService, CancellationToken cancellationToken) =>
+        {
+            var (result, error) = await cotizacionService.ActualizarCotizacionAsync(id, request, cancellationToken);
+            if (error != null)
+            {
+                return Results.BadRequest(new { error });
+            }
+
+            return Results.Ok(result);
+        })
+        .WithName("ActualizarCotizacion");
+
         endpoints.MapDelete("/api/cotizaciones/{id:int}", async (int id, ICotizacionService cotizacionService, CancellationToken cancellationToken) =>
         {
             var success = await cotizacionService.DeleteCotizacionAsync(id, cancellationToken);

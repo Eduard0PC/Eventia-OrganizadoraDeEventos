@@ -35,4 +35,5 @@ export interface CrearCotizacionRequest {
   invitados: number;
   horasAdicionales: number;
   notas?: string;
+  estatus?: EstatusCotizacion;
 }
