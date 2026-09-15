@@ -3,7 +3,8 @@
 
 ALTER TABLE public.catalogo_eventos
 ADD COLUMN IF NOT EXISTS categoria VARCHAR(50) NOT NULL DEFAULT 'Sociales',
-ADD COLUMN IF NOT EXISTS capacidad_personas INT NOT NULL DEFAULT 50;
+ADD COLUMN IF NOT EXISTS capacidad_personas INT NOT NULL DEFAULT 50,
+ADD COLUMN IF NOT EXISTS imagen_url TEXT;
 
 -- Opcional: Clasificación inicial para registros existentes según su nombre
 UPDATE public.catalogo_eventos SET categoria = 'Bodas' WHERE LOWER(nombre) LIKE '%boda%';

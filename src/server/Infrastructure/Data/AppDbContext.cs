@@ -65,6 +65,37 @@ public class AppDbContext : DbContext
             e.Property(em => em.Disponible).HasColumnName("disponible");
         });
 
+        modelBuilder.Entity<CatalogoEvento>(e =>
+        {
+            e.ToTable("catalogo_eventos");
+            e.HasKey(ce => ce.Id);
+            e.Property(ce => ce.Id).HasColumnName("id");
+            e.Property(ce => ce.Nombre).HasColumnName("nombre");
+            e.Property(ce => ce.Descripcion).HasColumnName("descripcion");
+            e.Property(ce => ce.PrecioBase).HasColumnName("precio_base");
+            e.Property(ce => ce.DuracionHoras).HasColumnName("duracion_horas");
+            e.Property(ce => ce.Categoria).HasColumnName("categoria");
+            e.Property(ce => ce.CapacidadPersonas).HasColumnName("capacidad_personas");
+            e.Property(ce => ce.Activo).HasColumnName("activo");
+            e.Property(ce => ce.ImagenUrl).HasColumnName("imagen_url");
+            e.Property(ce => ce.CreatedAt).HasColumnName("created_at");
+            e.Property(ce => ce.UpdatedAt).HasColumnName("updated_at");
+        });
+
+        modelBuilder.Entity<CatalogoServicio>(e =>
+        {
+            e.ToTable("catalogo_servicios");
+            e.HasKey(cs => cs.Id);
+            e.Property(cs => cs.Id).HasColumnName("id");
+            e.Property(cs => cs.Nombre).HasColumnName("nombre");
+            e.Property(cs => cs.Descripcion).HasColumnName("descripcion");
+            e.Property(cs => cs.PrecioBase).HasColumnName("precio_base");
+            e.Property(cs => cs.Unidad).HasColumnName("unidad");
+            e.Property(cs => cs.Activo).HasColumnName("activo");
+            e.Property(cs => cs.CreatedAt).HasColumnName("created_at");
+            e.Property(cs => cs.UpdatedAt).HasColumnName("updated_at");
+        });
+
         modelBuilder.Entity<Cotizacion>(e =>
         {
             e.ToTable("cotizaciones");
