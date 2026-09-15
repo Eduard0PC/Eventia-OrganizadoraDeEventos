@@ -153,7 +153,7 @@ public class ClienteService : IClienteService
 
         var serviciosList = cotizaciones.Select(cot =>
         {
-            var primerItemEvento = cot.Items.FirstOrDefault(i => i.Tipo == "evento");
+            var primerItemEvento = cot.Items.FirstOrDefault(i => i.Tipo != null && string.Equals(i.Tipo, "evento", StringComparison.OrdinalIgnoreCase));
             string nombrePrincipal = primerItemEvento?.CatalogoEvento?.Nombre
                 ?? cot.Items.FirstOrDefault(i => i.CatalogoServicio != null)?.CatalogoServicio?.Nombre
                 ?? cot.Items.FirstOrDefault()?.Notas
@@ -194,9 +194,9 @@ public class ClienteService : IClienteService
         // Also add upcoming cotizaciones if no active event is recorded in contratos
         if (!eventosActivosList.Any())
         {
-            foreach (var cot in cotizaciones.Where(c => c.Estatus.ToLower() != "rechazada"))
+            foreach (var cot in cotizaciones.Where(c => c.Estatus == null || !string.Equals(c.Estatus, "rechazada", StringComparison.OrdinalIgnoreCase)))
             {
-                var itemEvento = cot.Items.FirstOrDefault(i => i.Tipo.ToLower() == "evento");
+                var itemEvento = cot.Items.FirstOrDefault(i => i.Tipo != null && string.Equals(i.Tipo, "evento", StringComparison.OrdinalIgnoreCase));
                 if (itemEvento != null)
                 {
                     eventosActivosList.Add(new EventoActivoDto
@@ -206,7 +206,7 @@ public class ClienteService : IClienteService
                         FechaEvento = cot.FechaEvento?.ToString("yyyy-MM-dd") ?? cot.CreatedAt.ToString("yyyy-MM-dd"),
                         Lugar = null,
                         Aforo = cot.Invitados,
-                        Estatus = cot.Estatus,
+                        Estatus = cot.Estatus ?? "Pendiente",
                         FolioContrato = cot.Folio
                     });
                 }

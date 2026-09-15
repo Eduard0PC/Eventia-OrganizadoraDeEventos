@@ -14,6 +14,9 @@ import { ToastService } from '@shared/components/toast/toast.service';
 import { CatalogoCardComponent } from '@features/catalogo/components/catalogo-card/catalogo-card.component';
 import { CatalogoFormModalComponent } from '@features/catalogo/components/catalogo-form-modal/catalogo-form-modal.component';
 import { UserCard } from '@shared/components/user-card/user-card';
+import { ClienteFichaModalComponent } from '@features/clientes/components/cliente-ficha-modal/cliente-ficha-modal.component';
+import { CotizacionDesgloseModalComponent } from '@features/cotizaciones/components/cotizacion-desglose-modal/cotizacion-desglose-modal.component';
+import { FolioDesgloseButtonComponent } from '@shared/components/folio-desglose-button/folio-desglose-button.component';
 
 export type EmployeeTab =
   | 'inicio'
@@ -95,6 +98,8 @@ export interface ProveedorItem {
     CatalogoCardComponent,
     CatalogoFormModalComponent,
     UserCard,
+    ClienteFichaModalComponent,
+    CotizacionDesgloseModalComponent,
   ],
   templateUrl: './empleado.html',
   styleUrl: './empleado.css',
@@ -103,6 +108,9 @@ export class Empleado implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly cotizacionesService = inject(CotizacionesService);
   private readonly clientesService = inject(ClientesService);
+  private readonly catalogoService = inject(CatalogoService);
+  private readonly toastService = inject(ToastService);
+  private readonly cdr = inject(ChangeDetectorRef);
   private readonly router = inject(Router);
 
   // Tab State
@@ -138,8 +146,15 @@ export class Empleado implements OnInit {
 
   // Ficha de cliente modal state
   showFichaClienteModal = false;
+  selectedClienteId: number | null = null;
+  selectedClienteSummary: ClienteSummary | null = null;
   clienteFicha: ClienteDetalle | null = null;
   fichaActiveTab: 'pagos' | 'servicios' | 'eventos' = 'pagos';
+
+  // Desglose cotizacion modal state
+  showCotizacionDetailModal = false;
+  selectedCotizacionDetail: Cotizacion | null = null;
+  selectedCotizacionFolio: string | null = null;
 
   // Modals State
   showNewClientModal = false;
@@ -176,17 +191,13 @@ export class Empleado implements OnInit {
   };
 
   showNewPaymentModal = false;
-  newPaymentData: Partial<PagoItem> = {
+  newPaymentData = {
     folioCotizacion: '',
     clienteNombre: '',
     monto: 0,
-    metodo: 'Transferencia',
-    estatus: 'Completado',
+    metodo: 'Transferencia' as const,
+    estatus: 'Completado' as const,
   };
-
-  private readonly catalogoService = inject(CatalogoService);
-  private readonly toastService = inject(ToastService);
-  private readonly cdr = inject(ChangeDetectorRef);
 
   showNewCatalogModal = false;
   showEditCatalogModal = false;
@@ -202,8 +213,6 @@ export class Empleado implements OnInit {
   selectedImageFile: File | null = null;
   imagePreviewUrl: string | null = null;
   guardandoCatalogo = false;
-
-  selectedCotizacionDetail: Cotizacion | null = null;
   selectedPlanDetail: PlanificadorEvento | null = null;
 
   ngOnInit(): void {
@@ -228,27 +237,21 @@ export class Empleado implements OnInit {
     });
   }
 
-  abrirFichaCliente(clienteId: number): void {
+  abrirFichaCliente(cliente: number | ClienteSummary): void {
+    if (typeof cliente === 'number') {
+      this.selectedClienteId = cliente;
+      this.selectedClienteSummary = this.clientes.find(c => c.id === cliente) || null;
+    } else {
+      this.selectedClienteId = cliente.id;
+      this.selectedClienteSummary = cliente;
+    }
     this.showFichaClienteModal = true;
-    this.loadingFicha = true;
-    this.clienteFicha = null;
-    this.fichaActiveTab = 'pagos';
-
-    this.clientesService.getFichaCliente(clienteId).subscribe({
-      next: (ficha) => {
-        this.clienteFicha = ficha;
-        this.loadingFicha = false;
-      },
-      error: (err) => {
-        console.error('Error al cargar ficha del cliente:', err);
-        this.loadingFicha = false;
-      },
-    });
   }
 
   cerrarFichaCliente(): void {
     this.showFichaClienteModal = false;
-    this.clienteFicha = null;
+    this.selectedClienteId = null;
+    this.selectedClienteSummary = null;
   }
 
   checkSession(): void {
@@ -1016,10 +1019,14 @@ export class Empleado implements OnInit {
     const found = this.cotizaciones.find((c) => c.id === cotizacionId);
     if (found) {
       this.selectedCotizacionDetail = found;
+      this.selectedCotizacionFolio = found.folio;
+      this.showCotizacionDetailModal = true;
     } else {
       this.cotizacionesService.getCotizacionById(cotizacionId).subscribe({
         next: (cot) => {
           this.selectedCotizacionDetail = cot;
+          this.selectedCotizacionFolio = cot.folio;
+          this.showCotizacionDetailModal = true;
         },
         error: (err) => {
           console.error('Error al cargar desglose de la cotización:', err);
@@ -1030,21 +1037,17 @@ export class Empleado implements OnInit {
 
   verDesgloseCotizacionPorFolio(folio: string): void {
     if (!folio) return;
+    this.showFichaClienteModal = false;
+    this.selectedCotizacionFolio = folio;
     const found = this.cotizaciones.find((c) => c.folio.toLowerCase() === folio.toLowerCase());
-    if (found) {
-      this.selectedCotizacionDetail = found;
-    } else {
-      // Find quote by loading all
-      this.cotizacionesService.getCotizaciones().subscribe({
-        next: (cots) => {
-          this.cotizaciones = cots;
-          const matched = cots.find((c) => c.folio.toLowerCase() === folio.toLowerCase());
-          if (matched) {
-            this.selectedCotizacionDetail = matched;
-          }
-        },
-      });
-    }
+    this.selectedCotizacionDetail = found || null;
+    this.showCotizacionDetailModal = true;
+  }
+
+  cerrarDesgloseCotizacion(): void {
+    this.showCotizacionDetailModal = false;
+    this.selectedCotizacionDetail = null;
+    this.selectedCotizacionFolio = null;
   }
 
   logout(): void {

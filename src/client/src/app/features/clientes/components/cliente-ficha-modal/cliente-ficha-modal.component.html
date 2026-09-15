@@ -1,0 +1,239 @@
+<div
+  *ngIf="show"
+  class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs animate-fade-in"
+  (click)="closeModal()"
+>
+  <div
+    class="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl border border-gray-100"
+    (click)="$event.stopPropagation()"
+  >
+    <!-- Header Modal -->
+    <div class="bg-gray-900 text-white p-6 flex justify-between items-start">
+      <div class="flex items-center gap-4">
+        <div class="w-14 h-14 rounded-2xl bg-red-600/20 text-red-500 border border-red-500/30 flex items-center justify-center text-xl font-black shadow-inner">
+          {{ displayInitial }}
+        </div>
+        <div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <h3 class="text-2xl font-black text-white">{{ displayName }}</h3>
+            <span
+              *ngIf="displayStatus"
+              [class]="getStatusBadgeClass(displayStatus)"
+              class="px-2.5 py-0.5 rounded-full text-xs font-bold border"
+            >
+              {{ displayStatus }}
+            </span>
+          </div>
+          <p class="text-xs text-gray-400 mt-1 flex flex-wrap items-center gap-x-4 gap-y-1">
+            <span>Email: <strong class="text-gray-200 font-semibold">{{ displayEmail }}</strong></span>
+            <span>Tel: <strong class="text-gray-200 font-semibold">{{ displayPhone }}</strong></span>
+          </p>
+        </div>
+      </div>
+      <button
+        type="button"
+        (click)="closeModal()"
+        class="text-gray-400 hover:text-white text-xl font-bold p-1 transition cursor-pointer"
+      >
+        ✕
+      </button>
+    </div>
+
+    <!-- Quick Metrics Header -->
+    <div *ngIf="clienteFicha || clienteSummary" class="bg-gray-800 border-b border-gray-700 p-4 grid grid-cols-1 sm:grid-cols-3 gap-4 text-white">
+      <div class="bg-gray-900/80 p-3 rounded-2xl border border-gray-700 flex flex-col">
+        <span class="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Total Pagado</span>
+        <span class="text-xl font-black text-emerald-400">${{ (clienteFicha?.totalPagado || 0) | number:'1.2-2' }} MXN</span>
+      </div>
+      <div class="bg-gray-900/80 p-3 rounded-2xl border border-gray-700 flex flex-col">
+        <span class="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Último Evento</span>
+        <span class="text-xs font-bold text-gray-200 truncate mt-1">{{ clienteFicha?.ultimoEventoContratado || clienteSummary?.ultimoEventoContratado || 'Sin eventos' }}</span>
+      </div>
+      <div class="bg-gray-900/80 p-3 rounded-2xl border border-gray-700 flex flex-col">
+        <span class="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Total Eventos</span>
+        <span class="text-xl font-black text-red-400">{{ clienteFicha?.totalEventos ?? clienteSummary?.totalEventos ?? 0 }}</span>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs Inside Modal -->
+    <div class="flex border-b border-gray-200 bg-gray-50 px-6 pt-2">
+      <button
+        type="button"
+        (click)="fichaActiveTab = 'pagos'"
+        [class]="fichaActiveTab === 'pagos' ? 'border-red-600 text-red-600 font-bold border-b-2' : 'text-gray-500 hover:text-gray-900 font-medium'"
+        class="px-4 py-3 text-sm transition cursor-pointer"
+      >
+        Historial de Pagos
+      </button>
+      <button
+        type="button"
+        (click)="fichaActiveTab = 'servicios'"
+        [class]="fichaActiveTab === 'servicios' ? 'border-red-600 text-red-600 font-bold border-b-2' : 'text-gray-500 hover:text-gray-900 font-medium'"
+        class="px-4 py-3 text-sm transition cursor-pointer"
+      >
+        Servicios Contratados
+      </button>
+      <button
+        type="button"
+        (click)="fichaActiveTab = 'eventos'"
+        [class]="fichaActiveTab === 'eventos' ? 'border-red-600 text-red-600 font-bold border-b-2' : 'text-gray-500 hover:text-gray-900 font-medium'"
+        class="px-4 py-3 text-sm transition cursor-pointer"
+      >
+        Eventos Activos
+      </button>
+    </div>
+
+    <!-- Modal Body Content -->
+    <div class="p-6 overflow-y-auto flex-1 space-y-4 max-h-[500px]">
+      <!-- Spinner Loading -->
+      <div *ngIf="loadingFicha" class="py-12 flex flex-col items-center justify-center text-gray-400 space-y-3">
+        <div class="w-9 h-9 border-4 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+        <p class="text-xs font-semibold text-gray-600">Cargando información detallada del cliente...</p>
+      </div>
+
+      <!-- Error State -->
+      <div *ngIf="!loadingFicha && errorMessage" class="p-8 rounded-2xl bg-red-50 border border-red-200 text-center space-y-3">
+        <div class="w-12 h-12 rounded-full bg-red-100 text-red-600 mx-auto flex items-center justify-center font-bold text-xl">
+          !
+        </div>
+        <p class="text-sm font-bold text-red-900">{{ errorMessage }}</p>
+        <p class="text-xs text-red-600">No fue posible recuperar el historial o los contratos de este cliente.</p>
+        <button
+          type="button"
+          (click)="loadFicha()"
+          class="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition shadow-sm cursor-pointer inline-flex items-center gap-2"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+          </svg>
+          Reintentar Carga
+        </button>
+      </div>
+
+      <!-- Loaded Content -->
+      <div *ngIf="!loadingFicha && !errorMessage && clienteFicha">
+        <!-- TAB 1: HISTORIAL DE PAGOS -->
+        <div *ngIf="fichaActiveTab === 'pagos'">
+          <div *ngIf="clienteFicha.historialPagos.length === 0" class="py-12 text-center text-gray-400 text-sm">
+            No hay registros de pagos para este cliente.
+          </div>
+          <div *ngIf="clienteFicha.historialPagos.length > 0" class="overflow-x-auto border border-gray-200 rounded-2xl shadow-2xs">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr class="bg-gray-50 text-gray-600 font-bold border-b border-gray-200 uppercase tracking-wider text-[11px]">
+                  <th class="py-3 px-4">Folio Contrato</th>
+                  <th class="py-3 px-4">Monto</th>
+                  <th class="py-3 px-4">Método</th>
+                  <th class="py-3 px-4">Tipo</th>
+                  <th class="py-3 px-4">Fecha</th>
+                  <th class="py-3 px-4">Estatus</th>
+                  <th class="py-3 px-4">Referencia</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100">
+                <tr *ngFor="let pago of clienteFicha.historialPagos" class="hover:bg-gray-50/80 transition-colors">
+                  <td class="py-3 px-4 font-bold text-gray-900">{{ pago.folioContrato }}</td>
+                  <td class="py-3 px-4 font-extrabold text-emerald-600">${{ pago.monto | number:'1.2-2' }} MXN</td>
+                  <td class="py-3 px-4 font-medium text-gray-700 capitalize">{{ pago.metodoPago }}</td>
+                  <td class="py-3 px-4 text-gray-500 capitalize">{{ pago.tipoTransaccion }}</td>
+                  <td class="py-3 px-4 text-gray-500">{{ pago.fechaPago }}</td>
+                  <td class="py-3 px-4">
+                    <span [class]="getStatusBadgeClass(pago.estatus)" class="px-2 py-0.5 rounded-full text-[10px] font-bold border">
+                      {{ pago.estatus }}
+                    </span>
+                  </td>
+                  <td class="py-3 px-4 text-gray-400">{{ pago.referencia || '-' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TAB 2: SERVICIOS CONTRATADOS (AGRUPADOS POR COTIZACIÓN) -->
+        <div *ngIf="fichaActiveTab === 'servicios'">
+          <div *ngIf="clienteFicha.serviciosContratados.length === 0" class="py-12 text-center text-gray-400 text-sm">
+            No hay cotizaciones o eventos contratados registrados.
+          </div>
+          <div *ngIf="clienteFicha.serviciosContratados.length > 0" class="overflow-x-auto border border-gray-200 rounded-2xl shadow-2xs">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr class="bg-gray-50 text-gray-600 font-bold border-b border-gray-200 uppercase tracking-wider text-[11px]">
+                  <th class="py-3 px-4">Paquete / Evento Cotizado</th>
+                  <th class="py-3 px-4">Tipo</th>
+                  <th class="py-3 px-4">Ítems</th>
+                  <th class="py-3 px-4">Total Cotizado</th>
+                  <th class="py-3 px-4">Folio (Ver Desglose)</th>
+                  <th class="py-3 px-4">Fecha</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100">
+                <tr *ngFor="let srv of clienteFicha.serviciosContratados" class="hover:bg-gray-50/80 transition-colors">
+                  <td class="py-3 px-4 font-bold text-gray-900">{{ srv.nombre }}</td>
+                  <td class="py-3 px-4">
+                    <span class="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full text-[10px] uppercase font-semibold">
+                      {{ srv.tipo }}
+                    </span>
+                  </td>
+                  <td class="py-3 px-4 font-bold text-gray-800">{{ srv.cantidad }} conceptos</td>
+                  <td class="py-3 px-4 font-extrabold text-red-600">${{ srv.subtotal | number:'1.2-2' }} MXN</td>
+                  <td class="py-3 px-4">
+                    <app-folio-desglose-button
+                      [folio]="srv.folioCotizacion"
+                      (onDesgloseClick)="onVerDesgloseFolio.emit($event)"
+                    ></app-folio-desglose-button>
+                  </td>
+                  <td class="py-3 px-4 text-gray-400">{{ srv.fechaCotizacion }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TAB 3: EVENTOS ACTIVOS -->
+        <div *ngIf="fichaActiveTab === 'eventos'">
+          <div *ngIf="clienteFicha.eventosActivos.length === 0" class="py-12 text-center text-gray-400 text-sm">
+            No hay eventos activos para este cliente.
+          </div>
+          <div *ngIf="clienteFicha.eventosActivos.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div *ngFor="let ev of clienteFicha.eventosActivos" class="bg-linear-to-br from-gray-50 to-white p-5 rounded-2xl border border-gray-200 shadow-2xs space-y-3 hover:shadow-md transition">
+              <div class="flex justify-between items-start">
+                <div>
+                  <span class="text-[10px] uppercase tracking-wider font-extrabold text-red-600">Folio: {{ ev.folioContrato }}</span>
+                  <h4 class="font-bold text-gray-900 text-base">{{ ev.nombreEvento }}</h4>
+                </div>
+                <span [class]="getStatusBadgeClass(ev.estatus)" class="px-2.5 py-0.5 rounded-full text-xs font-bold border">
+                  {{ ev.estatus }}
+                </span>
+              </div>
+              <div class="grid grid-cols-2 gap-2 text-xs text-gray-600 pt-2 border-t border-gray-100">
+                <div>
+                  <p class="text-[10px] text-gray-400 uppercase font-semibold">Fecha Evento</p>
+                  <p class="font-bold text-gray-800">{{ ev.fechaEvento }}</p>
+                </div>
+                <div>
+                  <p class="text-[10px] text-gray-400 uppercase font-semibold">Lugar</p>
+                  <p class="font-bold text-gray-800">{{ ev.lugar || 'No especificado' }}</p>
+                </div>
+                <div *ngIf="ev.aforo">
+                  <p class="text-[10px] text-gray-400 uppercase font-semibold">Aforo Invitados</p>
+                  <p class="font-bold text-gray-800">{{ ev.aforo }} personas</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer Modal -->
+    <div class="p-4 bg-gray-50 border-t border-gray-100 flex justify-end">
+      <button
+        type="button"
+        (click)="closeModal()"
+        class="px-6 py-2.5 bg-gray-900 hover:bg-black text-white rounded-xl font-bold text-xs shadow-md transition cursor-pointer"
+      >
+        Cerrar Ficha
+      </button>
+    </div>
+  </div>
+</div>
