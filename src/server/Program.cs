@@ -32,12 +32,17 @@ if (!System.IO.Directory.Exists(wwwrootPath))
 }
 
 app.UseStaticFiles();
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 // 4. Map API Endpoints
 app.MapAuthEndpoints();
 app.MapCatalogoEndpoints();
 app.MapCotizacionEndpoints();
 app.MapClienteEndpoints();
+
+await app.EnsureDatabaseCastsAsync();
 
 app.Run();

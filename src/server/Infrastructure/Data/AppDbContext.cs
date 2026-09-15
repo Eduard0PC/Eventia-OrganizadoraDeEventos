@@ -20,37 +20,6 @@ public class AppDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<CatalogoEvento>(e =>
-        {
-            e.ToTable("catalogo_eventos");
-            e.HasKey(c => c.Id);
-            e.Property(c => c.Id).HasColumnName("id");
-            e.Property(c => c.Nombre).HasColumnName("nombre");
-            e.Property(c => c.Descripcion).HasColumnName("descripcion");
-            e.Property(c => c.PrecioBase).HasColumnName("precio_base");
-            e.Property(c => c.DuracionHoras).HasColumnName("duracion_horas");
-            e.Property(c => c.Categoria).HasColumnName("categoria");
-            e.Property(c => c.CapacidadPersonas).HasColumnName("capacidad_personas");
-            e.Property(c => c.Activo).HasColumnName("activo");
-            e.Property(c => c.ImagenUrl).HasColumnName("imagen_url");
-            e.Property(c => c.CreatedAt).HasColumnName("created_at");
-            e.Property(c => c.UpdatedAt).HasColumnName("updated_at");
-        });
-
-        modelBuilder.Entity<CatalogoServicio>(e =>
-        {
-            e.ToTable("catalogo_servicios");
-            e.HasKey(s => s.Id);
-            e.Property(s => s.Id).HasColumnName("id");
-            e.Property(s => s.Nombre).HasColumnName("nombre");
-            e.Property(s => s.Descripcion).HasColumnName("descripcion");
-            e.Property(s => s.PrecioBase).HasColumnName("precio_base");
-            e.Property(s => s.Unidad).HasColumnName("unidad");
-            e.Property(s => s.Activo).HasColumnName("activo");
-            e.Property(s => s.CreatedAt).HasColumnName("created_at");
-            e.Property(s => s.UpdatedAt).HasColumnName("updated_at");
-        });
-
         modelBuilder.Entity<Usuario>(e =>
         {
             e.ToTable("usuarios");
@@ -58,8 +27,7 @@ public class AppDbContext : DbContext
             e.Property(u => u.Id).HasColumnName("id");
             e.Property(u => u.Email).HasColumnName("email");
             e.Property(u => u.PasswordHash).HasColumnName("password_hash");
-            e.Property(u => u.Rol).HasColumnName("rol")
-                .HasConversion<string>(); 
+            e.Property(u => u.Rol).HasColumnName("rol");
             e.Property(u => u.ClienteId).HasColumnName("cliente_id");
             e.Property(u => u.EmpleadoId).HasColumnName("empleado_id");
             e.Property(u => u.Activo).HasColumnName("activo");
@@ -107,8 +75,7 @@ public class AppDbContext : DbContext
             e.Property(c => c.Folio).HasColumnName("folio");
             e.Property(c => c.Total).HasColumnName("total");
             e.Property(c => c.Descuento).HasColumnName("descuento");
-            e.Property(c => c.Estatus).HasColumnName("estatus")
-                .HasColumnType("estatus_cotizacion");
+            e.Property(c => c.Estatus).HasColumnName("estatus");
             e.Property(c => c.FechaVigencia).HasColumnName("fecha_vigencia");
             e.Property(c => c.FechaEvento).HasColumnName("fecha_evento");
             e.Property(c => c.Invitados).HasColumnName("invitados");
@@ -132,8 +99,7 @@ public class AppDbContext : DbContext
             e.HasKey(i => i.Id);
             e.Property(i => i.Id).HasColumnName("id");
             e.Property(i => i.CotizacionId).HasColumnName("cotizacion_id");
-            e.Property(i => i.Tipo).HasColumnName("tipo")
-                .HasColumnType("tipo_item_cotizacion");
+            e.Property(i => i.Tipo).HasColumnName("tipo");
             e.Property(i => i.Cantidad).HasColumnName("cantidad");
             e.Property(i => i.PrecioUnitario).HasColumnName("precio_unitario");
             e.Property(i => i.DescuentoItem).HasColumnName("descuento_item");

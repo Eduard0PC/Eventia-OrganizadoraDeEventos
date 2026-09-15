@@ -68,20 +68,22 @@ public class AuthService : IAuthService
 
     public async Task<(UsuarioResponse? Result, string? Error)> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default)
     {
-        var email = request.Email.Trim().ToLowerInvariant();
-
-        var existe = await _db.Usuarios.AnyAsync(u => u.Email.ToLower() == email, cancellationToken);
-        if (existe)
+        try
         {
-            return (null, "El correo electrónico ya se encuentra registrado.");
-        }
+            var email = request.Email.Trim().ToLowerInvariant();
 
-        var rol = string.IsNullOrWhiteSpace(request.Rol) ? "cliente" : request.Rol.Trim().ToLowerInvariant();
+            var existeEnUsuarios = await _db.Usuarios.AnyAsync(u => u.Email.ToLower() == email, cancellationToken);
+            var existeEnClientes = await _db.Clientes.AnyAsync(c => c.Email.ToLower() == email, cancellationToken);
+            var existeEnEmpleados = await _db.Empleados.AnyAsync(e => e.Email.ToLower() == email, cancellationToken);
 
-        Cliente? cliente = null;
-        if (rol == "cliente")
-        {
-            cliente = new Cliente
+            if (existeEnUsuarios || existeEnClientes || existeEnEmpleados)
+            {
+                return (null, "El correo electrónico ya se encuentra registrado.");
+            }
+
+            const string rol = "cliente";
+
+            var cliente = new Cliente
             {
                 Nombre = request.Nombre.Trim(),
                 Apellido = request.Apellido.Trim(),
@@ -89,27 +91,30 @@ public class AuthService : IAuthService
                 Telefono = request.Telefono?.Trim(),
                 Activo = true
             };
-            _db.Clientes.Add(cliente);
+
+            var passwordHash = _passwordHasher.HashPassword(request.Password);
+
+            var usuario = new Usuario
+            {
+                Email = email,
+                PasswordHash = passwordHash,
+                Rol = rol,
+                Cliente = cliente,
+                Activo = true,
+                UltimoAcceso = null
+            };
+            _db.Usuarios.Add(usuario);
             await _db.SaveChangesAsync(cancellationToken);
+
+            var response = MapToUsuarioResponse(usuario, cliente);
+            return (response, null);
         }
-
-        var passwordHash = _passwordHasher.HashPassword(request.Password);
-
-        var usuario = new Usuario
+        catch (Exception ex)
         {
-            Email = email,
-            PasswordHash = passwordHash,
-            Rol = rol,
-            ClienteId = cliente?.Id,
-            Activo = true,
-            UltimoAcceso = null
-        };
-
-        _db.Usuarios.Add(usuario);
-        await _db.SaveChangesAsync(cancellationToken);
-
-        var response = MapToUsuarioResponse(usuario, cliente);
-        return (response, null);
+            var errorMsg = ex.InnerException?.Message ?? ex.Message;
+            Console.WriteLine($"[ERROR RegisterAsync]: {errorMsg}");
+            return (null, $"Error al guardar el usuario en la base de datos: {errorMsg}");
+        }
     }
 
     public async Task<IEnumerable<UsuarioResponse>> GetUsuariosAsync(CancellationToken cancellationToken = default)

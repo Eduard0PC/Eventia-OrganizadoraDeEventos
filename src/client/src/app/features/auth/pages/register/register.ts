@@ -1,10 +1,10 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthLayout } from '@shared/components/auth-layout/auth-layout';
 import { AuthService } from '@features/auth/services/auth.service';
-import { finalize, TimeoutError } from 'rxjs';
+import { finalize, switchMap, TimeoutError } from 'rxjs';
 
 @Component({
   selector: 'app-register',
@@ -28,6 +28,7 @@ export class Register {
   constructor(
     private readonly authService: AuthService,
     private readonly router: Router,
+    private readonly cdr: ChangeDetectorRef,
   ) {}
 
   submit(): void {
@@ -61,26 +62,29 @@ export class Register {
       rol: 'cliente',
     };
 
-    this.authService.register(registerReq).subscribe({
-      next: () => {
-        this.exito = '¡Registro exitoso! Iniciando sesión...';
-        // Auto login right after registration
-        this.authService.login({ email: registerReq.email, password: registerReq.password }).pipe(
-          finalize(() => {
-            this.loading = false;
-          })
-        ).subscribe({
-          next: () => {
-            this.router.navigateByUrl('/home');
-          },
-          error: () => {
-            this.router.navigateByUrl('/login');
-          }
-        });
+    this.authService.register(registerReq).pipe(
+      switchMap(() => {
+        this.exito = '¡Registro exitoso! Accediendo al sistema...';
+        this.cdr.detectChanges();
+        return this.authService.login({ email: registerReq.email, password: registerReq.password });
+      }),
+      finalize(() => {
+        this.loading = false;
+        this.cdr.detectChanges();
+      })
+    ).subscribe({
+      next: (session) => {
+        const role = session?.rol?.toLowerCase();
+        if (role === 'empleado' || role === 'admin') {
+          this.router.navigateByUrl('/empleado');
+        } else {
+          this.router.navigateByUrl('/home');
+        }
       },
       error: (err) => {
-        this.loading = false;
-        if (err instanceof TimeoutError) {
+        console.error('Error al registrar usuario:', err);
+
+        if (err?.name === 'TimeoutError' || err instanceof TimeoutError) {
           this.error = 'El servidor tardó demasiado en responder. Intenta de nuevo.';
           return;
         }
@@ -92,6 +96,21 @@ export class Register {
 
         if (err?.error?.error) {
           this.error = err.error.error;
+          return;
+        }
+
+        if (typeof err?.error === 'string') {
+          this.error = err.error;
+          return;
+        }
+
+        if (err?.error?.title) {
+          this.error = err.error.title;
+          return;
+        }
+
+        if (err?.message) {
+          this.error = err.message;
           return;
         }
 

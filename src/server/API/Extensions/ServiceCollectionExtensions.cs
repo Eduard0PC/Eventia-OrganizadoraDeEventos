@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Npgsql;
 using Server.Core.Interfaces;
 using Server.Infrastructure.Data;
 using Server.Infrastructure.Services;
@@ -35,6 +36,44 @@ public static class ServiceCollectionExtensions
                 npgsqlOptions => npgsqlOptions.CommandTimeout(10)));
 
         return services;
+    }
+
+    public static async Task EnsureDatabaseCastsAsync(this WebApplication app)
+    {
+        try
+        {
+            using var scope = app.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            await db.Database.ExecuteSqlRawAsync(@"
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (SELECT 1 FROM pg_cast JOIN pg_type s ON pg_cast.castsource = s.oid JOIN pg_type t ON pg_cast.casttarget = t.oid WHERE s.typname = 'text' AND t.typname = 'rol_usuario') THEN
+                        CREATE CAST (text AS rol_usuario) WITH INOUT AS IMPLICIT;
+                    END IF;
+                    IF NOT EXISTS (SELECT 1 FROM pg_cast JOIN pg_type s ON pg_cast.castsource = s.oid JOIN pg_type t ON pg_cast.casttarget = t.oid WHERE s.typname = 'varchar' AND t.typname = 'rol_usuario') THEN
+                        CREATE CAST (varchar AS rol_usuario) WITH INOUT AS IMPLICIT;
+                    END IF;
+
+                    IF NOT EXISTS (SELECT 1 FROM pg_cast JOIN pg_type s ON pg_cast.castsource = s.oid JOIN pg_type t ON pg_cast.casttarget = t.oid WHERE s.typname = 'text' AND t.typname = 'estatus_cotizacion') THEN
+                        CREATE CAST (text AS estatus_cotizacion) WITH INOUT AS IMPLICIT;
+                    END IF;
+                    IF NOT EXISTS (SELECT 1 FROM pg_cast JOIN pg_type s ON pg_cast.castsource = s.oid JOIN pg_type t ON pg_cast.casttarget = t.oid WHERE s.typname = 'varchar' AND t.typname = 'estatus_cotizacion') THEN
+                        CREATE CAST (varchar AS estatus_cotizacion) WITH INOUT AS IMPLICIT;
+                    END IF;
+
+                    IF NOT EXISTS (SELECT 1 FROM pg_cast JOIN pg_type s ON pg_cast.castsource = s.oid JOIN pg_type t ON pg_cast.casttarget = t.oid WHERE s.typname = 'text' AND t.typname = 'tipo_item_cotizacion') THEN
+                        CREATE CAST (text AS tipo_item_cotizacion) WITH INOUT AS IMPLICIT;
+                    END IF;
+                    IF NOT EXISTS (SELECT 1 FROM pg_cast JOIN pg_type s ON pg_cast.castsource = s.oid JOIN pg_type t ON pg_cast.casttarget = t.oid WHERE s.typname = 'varchar' AND t.typname = 'tipo_item_cotizacion') THEN
+                        CREATE CAST (varchar AS tipo_item_cotizacion) WITH INOUT AS IMPLICIT;
+                    END IF;
+                END $$;
+            ");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[EnsureDatabaseCasts]: {ex.Message}");
+        }
     }
 
     public static IServiceCollection AddApplicationServices(this IServiceCollection services)
