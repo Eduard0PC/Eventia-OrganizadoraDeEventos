@@ -42,6 +42,7 @@ app.MapAuthEndpoints();
 app.MapCatalogoEndpoints();
 app.MapCotizacionEndpoints();
 app.MapClienteEndpoints();
+app.MapProveedorEndpoints();
 
 await app.EnsureDatabaseCastsAsync();
 

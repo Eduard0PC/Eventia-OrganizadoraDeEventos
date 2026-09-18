@@ -83,6 +83,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICatalogoService, CatalogoService>();
         services.AddScoped<ICotizacionService, CotizacionService>();
         services.AddScoped<IClienteService, ClienteService>();
+        services.AddScoped<IProveedorService, ProveedorService>();
 
         return services;
     }

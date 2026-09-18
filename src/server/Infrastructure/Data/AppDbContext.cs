@@ -17,6 +17,9 @@ public class AppDbContext : DbContext
     public DbSet<Contrato> Contratos => Set<Contrato>();
     public DbSet<EventoContratado> EventosContratados => Set<EventoContratado>();
     public DbSet<Pago> Pagos => Set<Pago>();
+    public DbSet<CategoriaProveedor> CategoriasProveedores => Set<CategoriaProveedor>();
+    public DbSet<Proveedor> Proveedores => Set<Proveedor>();
+    public DbSet<ProveedorServicio> ProveedorServicios => Set<ProveedorServicio>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -222,6 +225,61 @@ public class AppDbContext : DbContext
             e.HasOne(p => p.Contrato)
                 .WithMany(c => c.Pagos)
                 .HasForeignKey(p => p.ContratoId);
+        });
+
+        modelBuilder.Entity<CategoriaProveedor>(e =>
+        {
+            e.ToTable("categorias_proveedores");
+            e.HasKey(c => c.Id);
+            e.Property(c => c.Id).HasColumnName("id");
+            e.Property(c => c.Nombre).HasColumnName("nombre");
+            e.Property(c => c.Descripcion).HasColumnName("descripcion");
+            e.Property(c => c.Activo).HasColumnName("activo");
+            e.Property(c => c.CreatedAt).HasColumnName("created_at");
+            e.Property(c => c.UpdatedAt).HasColumnName("updated_at");
+        });
+
+        modelBuilder.Entity<Proveedor>(e =>
+        {
+            e.ToTable("proveedores");
+            e.HasKey(p => p.Id);
+            e.Property(p => p.Id).HasColumnName("id");
+            e.Property(p => p.CategoriaId).HasColumnName("categoria_id");
+            e.Property(p => p.Nombre).HasColumnName("nombre");
+            e.Property(p => p.Contacto).HasColumnName("contacto");
+            e.Property(p => p.Email).HasColumnName("email");
+            e.Property(p => p.Telefono).HasColumnName("telefono");
+            e.Property(p => p.Direccion).HasColumnName("direccion");
+            e.Property(p => p.SitioWeb).HasColumnName("sitio_web");
+            e.Property(p => p.Rfc).HasColumnName("rfc");
+            e.Property(p => p.Rating).HasColumnName("rating");
+            e.Property(p => p.PrecioPromedio).HasColumnName("precio_promedio");
+            e.Property(p => p.Activo).HasColumnName("activo");
+            e.Property(p => p.CreatedAt).HasColumnName("created_at");
+            e.Property(p => p.UpdatedAt).HasColumnName("updated_at");
+
+            e.HasOne(p => p.Categoria)
+                .WithMany(c => c.Proveedores)
+                .HasForeignKey(p => p.CategoriaId);
+        });
+
+        modelBuilder.Entity<ProveedorServicio>(e =>
+        {
+            e.ToTable("proveedor_servicios");
+            e.HasKey(ps => ps.Id);
+            e.Property(ps => ps.Id).HasColumnName("id");
+            e.Property(ps => ps.ProveedorId).HasColumnName("proveedor_id");
+            e.Property(ps => ps.NombreServicio).HasColumnName("nombre_servicio");
+            e.Property(ps => ps.Descripcion).HasColumnName("descripcion");
+            e.Property(ps => ps.Costo).HasColumnName("costo");
+            e.Property(ps => ps.Unidad).HasColumnName("unidad");
+            e.Property(ps => ps.Activo).HasColumnName("activo");
+            e.Property(ps => ps.CreatedAt).HasColumnName("created_at");
+            e.Property(ps => ps.UpdatedAt).HasColumnName("updated_at");
+
+            e.HasOne(ps => ps.Proveedor)
+                .WithMany(p => p.Servicios)
+                .HasForeignKey(ps => ps.ProveedorId);
         });
     }
 }
