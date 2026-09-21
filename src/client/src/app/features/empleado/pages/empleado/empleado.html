@@ -715,43 +715,45 @@
             <p class="text-xs text-gray-500">Gestión de convenios, catering, música, iluminación y mobiliario</p>
           </div>
           <div class="flex gap-2">
-            <button (click)="showNewSupplierModal = true" class="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition flex items-center gap-2 shadow-md shadow-red-600/20">
+            <button (click)="abrirNuevoProveedorForm()" class="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition flex items-center gap-2 shadow-md shadow-red-600/20">
               <span>+ Agregar Proveedor</span>
             </button>
           </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div
-            *ngFor="let pv of filteredProveedores"
-            class="bg-white rounded-3xl p-6 shadow-md border border-gray-100 hover:shadow-xl transition space-y-4 flex flex-col justify-between"
-          >
-            <div>
-              <div class="flex justify-between items-start">
-                <span class="bg-red-50 text-red-600 text-xs font-extrabold px-3 py-1 rounded-full border border-red-100 uppercase">
-                  {{ pv.categoria }}
-                </span>
-                <span class="text-amber-400 font-bold text-sm">★ {{ pv.rating }}.0</span>
-              </div>
-              <h4 class="text-xl font-bold text-gray-900 mt-3">{{ pv.nombreEmpresa }}</h4>
-              <p class="text-xs text-gray-500 mt-1">Contacto: <strong class="text-gray-800">{{ pv.contacto }}</strong></p>
+        <!-- Indicador de Carga (Spinner Reutilizable) -->
+        <app-loading-spinner
+          *ngIf="loadingProveedores"
+          message="Cargando proveedores..."
+          subtext="Obteniendo directorio y servicios de la base de datos"
+          theme="light"
+          size="md">
+        </app-loading-spinner>
 
-              <div class="mt-4 pt-4 border-t border-gray-100 space-y-1.5 text-xs text-gray-600">
-                <p>📞 {{ pv.telefono }}</p>
-                <p>✉️ {{ pv.email }}</p>
-                <p>Rango de precios: <strong class="text-gray-900">{{ pv.precioPromedio }}</strong></p>
-              </div>
-            </div>
+        <!-- Grid de Tarjetas de Proveedores -->
+        <div *ngIf="!loadingProveedores && filteredProveedores.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <app-proveedor-card
+            *ngFor="let prov of filteredProveedores"
+            [proveedor]="prov"
+            [esEmpleado]="true"
+            (verServicios)="abrirVerServicios($event)"
+            (editarProveedor)="abrirEditarProveedor($event)"
+            (eliminarProveedor)="eliminarProveedor($event)">
+          </app-proveedor-card>
+        </div>
 
-            <div class="pt-4 border-t border-gray-100 flex items-center justify-between">
-              <span [class]="getStatusBadgeClass(pv.estatus)" class="px-2.5 py-0.5 rounded-full text-xs font-bold border">
-                {{ pv.estatus }}
-              </span>
-              <a [href]="'mailto:' + pv.email" class="text-xs bg-gray-900 hover:bg-black text-white px-4 py-2 rounded-xl font-semibold transition">
-                Contactar
-              </a>
-            </div>
+        <!-- Sin Proveedores / Problemas de Conexión -->
+        <div *ngIf="!loadingProveedores && filteredProveedores.length === 0" class="text-center py-12 bg-white rounded-3xl border border-gray-100 p-8 shadow-sm space-y-3">
+          <div class="w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto text-xl font-bold">
+            !
           </div>
+          <h4 class="text-base font-bold text-gray-900 mb-1">No se encontraron proveedores</h4>
+          <p class="text-xs text-gray-500 max-w-sm mx-auto">
+            Verifica tu conexión a internet o la disponibilidad del servidor.
+          </p>
+          <button (click)="loadProveedores()" class="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition shadow-xs">
+            <span>Reintentar carga</span>
+          </button>
         </div>
       </div>
 
@@ -812,7 +814,7 @@
       <div class="space-y-4 text-sm">
         <div>
           <label class="block text-xs font-bold text-gray-700 mb-1">Nombre de la Empresa</label>
-          <input type="text" [(ngModel)]="newSupplierData.nombreEmpresa" placeholder="ej. Sonido & Iluminación Pro" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-red-500" />
+          <input type="text" [(ngModel)]="newSupplierData.nombre" placeholder="ej. Sonido & Iluminación Pro" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-red-500" />
         </div>
         <div class="grid grid-cols-2 gap-4">
           <div>
@@ -821,13 +823,8 @@
           </div>
           <div>
             <label class="block text-xs font-bold text-gray-700 mb-1">Categoría</label>
-            <select [(ngModel)]="newSupplierData.categoria" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-red-500">
-              <option value="Catering">Catering</option>
-              <option value="Floristería">Floristería</option>
-              <option value="Música & DJ">Música & DJ</option>
-              <option value="Mobiliario">Mobiliario</option>
-              <option value="Fotografía">Fotografía</option>
-              <option value="Iluminación">Iluminación</option>
+            <select [(ngModel)]="newSupplierData.categoriaId" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-red-500">
+              <option *ngFor="let cat of categoriasProveedores" [value]="cat.id">{{ cat.nombre }}</option>
             </select>
           </div>
         </div>
@@ -919,5 +916,23 @@
     (onClose)="showEditCatalogModal = false"
     (onSavedSuccess)="onCatalogSaved()"
   ></app-catalogo-form-modal>
+
+  <!-- MODAL PROVEEDOR SERVICIOS / DETALLES -->
+  <app-proveedor-servicios-modal
+    *ngIf="proveedorVerServicios"
+    [proveedor]="proveedorVerServicios"
+    [esEmpleado]="true"
+    (cerrar)="cerrarVerServicios()"
+    (serviciosActualizados)="recargarServiciosProveedor()">
+  </app-proveedor-servicios-modal>
+
+  <!-- MODAL CREAR / EDITAR PROVEEDOR -->
+  <app-proveedor-form-modal
+    *ngIf="mostrandoFormModal"
+    [proveedorEditando]="proveedorEditando"
+    [categorias]="categoriasProveedores"
+    (cerrar)="cerrarFormModal()"
+    (guardado)="onProveedorGuardado()">
+  </app-proveedor-form-modal>
 
 </div>

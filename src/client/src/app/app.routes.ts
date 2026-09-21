@@ -6,6 +6,7 @@ import { MisEventos } from '@features/eventos/pages/mis-eventos/mis-eventos';
 import { Cotizaciones } from '@features/cotizaciones/pages/cotizaciones/cotizaciones';
 import { Pagos } from '@features/pagos/pages/pagos/pagos';
 import { Empleado } from '@features/empleado/pages/empleado/empleado';
+import { ProveedoresListComponent } from '@features/proveedores/pages/proveedores-list/proveedores-list';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -14,6 +15,7 @@ export const routes: Routes = [
   { path: 'home', component: Home },
   { path: 'mis-eventos', component: MisEventos },
   { path: 'cotizaciones', component: Cotizaciones },
+  { path: 'proveedores', component: ProveedoresListComponent },
   { path: 'pagos', component: Pagos },
   { path: 'empleado', component: Empleado },
   { path: '**', redirectTo: 'login' },

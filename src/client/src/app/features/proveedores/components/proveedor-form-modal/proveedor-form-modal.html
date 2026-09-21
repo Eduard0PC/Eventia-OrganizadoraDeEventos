@@ -1,0 +1,160 @@
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fadeIn">
+  <div class="bg-gray-900 border border-gray-700/80 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col">
+    
+    <!-- Modal Header -->
+    <div class="px-6 py-4 bg-gray-800/80 border-b border-gray-700 flex items-center justify-between">
+      <h2 class="text-xl font-bold text-white">
+        {{ proveedorEditando ? 'Editar Proveedor' : 'Registrar Nuevo Proveedor' }}
+      </h2>
+      <button
+        (click)="onCerrar()"
+        class="text-gray-400 hover:text-white p-2 rounded-lg hover:bg-gray-700/50 transition">
+        ✕
+      </button>
+    </div>
+
+    <!-- Modal Body -->
+    <div class="p-6 overflow-y-auto space-y-4 max-h-[75vh]">
+      
+      <!-- Nombre del Proveedor -->
+      <div>
+        <label class="block text-xs font-semibold text-gray-300 mb-1">Nombre Comercial / Empresa *</label>
+        <input
+          type="text"
+          [(ngModel)]="nombre"
+          placeholder="Ej. Banquetes & Eventos Premier"
+          class="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none" />
+      </div>
+
+      <!-- Categoría y Precio Promedio -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-gray-300 mb-1">Categoría *</label>
+          <select
+            [(ngModel)]="categoriaId"
+            class="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none">
+            <option *ngFor="let cat of categorias" [value]="cat.id">
+              {{ cat.nombre }}
+            </option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-300 mb-1">Rango de Precio</label>
+          <select
+            [(ngModel)]="precioPromedio"
+            class="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none">
+            <option value="$">$ (Económico)</option>
+            <option value="$$">$$ (Moderado)</option>
+            <option value="$$$">$$$ (Premium)</option>
+            <option value="$$$$">$$$$ (Lujo)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Rating & Contacto -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-gray-300 mb-1">Nombre de Contacto</label>
+          <input
+            type="text"
+            [(ngModel)]="contacto"
+            placeholder="Ej. Lic. Carlos Mendoza"
+            class="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-300 mb-1">Puntuación / Rating (1 a 5)</label>
+          <select
+            [(ngModel)]="rating"
+            class="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none">
+            <option [value]="5">★★★★★ (5 Estrellas)</option>
+            <option [value]="4">★★★★☆ (4 Estrellas)</option>
+            <option [value]="3">★★★☆☆ (3 Estrellas)</option>
+            <option [value]="2">★★☆☆☆ (2 Estrellas)</option>
+            <option [value]="1">★☆☆☆☆ (1 Estrella)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Teléfono & Email -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-gray-300 mb-1">Teléfono</label>
+          <input
+            type="text"
+            [(ngModel)]="telefono"
+            placeholder="Ej. 81 1234 5678"
+            class="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-300 mb-1">Correo Electrónico</label>
+          <input
+            type="email"
+            [(ngModel)]="email"
+            placeholder="contacto@empresa.com"
+            class="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none" />
+        </div>
+      </div>
+
+      <!-- Dirección & Sitio Web -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-gray-300 mb-1">Dirección Física / Zona</label>
+          <input
+            type="text"
+            [(ngModel)]="direccion"
+            placeholder="Ej. Monterrey, N.L."
+            class="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-300 mb-1">Sitio Web / Red Social</label>
+          <input
+            type="text"
+            [(ngModel)]="sitioWeb"
+            placeholder="www.banquetespremier.com"
+            class="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none" />
+        </div>
+      </div>
+
+      <!-- RFC y Estado (en edición) -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-gray-300 mb-1">RFC (Opcional)</label>
+          <input
+            type="text"
+            [(ngModel)]="rfc"
+            placeholder="BPR120510XXX"
+            class="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:border-red-500 focus:outline-none uppercase" />
+        </div>
+
+        <div *ngIf="proveedorEditando" class="flex items-center pt-6">
+          <label class="inline-flex items-center cursor-pointer">
+            <input type="checkbox" [(ngModel)]="activo" class="sr-only peer">
+            <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500"></div>
+            <span class="ml-3 text-sm font-medium text-gray-300">Proveedor Activo</span>
+          </label>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Modal Footer -->
+    <div class="px-6 py-4 bg-gray-800/80 border-t border-gray-700 flex justify-end gap-3">
+      <button
+        (click)="onCerrar()"
+        class="bg-gray-700 hover:bg-gray-600 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition">
+        Cancelar
+      </button>
+      <button
+        (click)="guardar()"
+        [disabled]="guardando"
+        class="bg-red-500 hover:bg-red-600 text-white text-sm font-semibold px-6 py-2.5 rounded-xl transition">
+        {{ guardando ? 'Guardando...' : 'Guardar Proveedor' }}
+      </button>
+    </div>
+
+  </div>
+</div>

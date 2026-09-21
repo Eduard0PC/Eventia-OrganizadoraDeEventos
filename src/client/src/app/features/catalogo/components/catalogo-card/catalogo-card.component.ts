@@ -1,11 +1,12 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CatalogoEventoItem } from '../../models/catalogo.models';
+import { IconEditComponent, IconTrashComponent } from '@shared/components/icons';
 
 @Component({
   selector: 'app-catalogo-card',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, IconEditComponent, IconTrashComponent],
   template: `
     <div class="bg-white rounded-3xl overflow-hidden shadow-md hover:shadow-xl transition border border-gray-100 flex flex-col justify-between h-full">
       <div>
@@ -38,20 +39,22 @@ import { CatalogoEventoItem } from '../../models/catalogo.models';
         >
           {{ item.activo ? '● Activo' : '○ Inactivo' }}
         </span>
-        <div class="flex gap-1">
+        <div class="flex items-center gap-1.5">
           <button
             type="button"
             (click)="onEdit.emit(item)"
-            class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-800 px-3 py-1.5 rounded-lg font-semibold transition cursor-pointer"
+            class="text-xs bg-blue-600/90 hover:bg-blue-600 text-white px-3 py-2 rounded-xl font-semibold transition cursor-pointer flex items-center gap-1 shadow-xs"
           >
-            Editar
+            <app-icon-edit cssClass="w-4 h-4"></app-icon-edit>
+            <span>Editar</span>
           </button>
           <button
             type="button"
             (click)="onDelete.emit(item.id)"
-            class="text-xs bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1.5 rounded-lg font-semibold transition cursor-pointer"
+            class="text-xs bg-red-900/80 hover:bg-red-800 text-red-200 border border-red-700/50 px-3 py-2 rounded-xl font-semibold transition cursor-pointer flex items-center gap-1 shadow-xs"
           >
-            Eliminar
+            <app-icon-trash cssClass="w-4 h-4 text-red-400"></app-icon-trash>
+            <span>Eliminar</span>
           </button>
         </div>
       </div>

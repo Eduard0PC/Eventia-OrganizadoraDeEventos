@@ -17,6 +17,12 @@ import { UserCard } from '@shared/components/user-card/user-card';
 import { ClienteFichaModalComponent } from '@features/clientes/components/cliente-ficha-modal/cliente-ficha-modal.component';
 import { CotizacionDesgloseModalComponent } from '@features/cotizaciones/components/cotizacion-desglose-modal/cotizacion-desglose-modal.component';
 import { FolioDesgloseButtonComponent } from '@shared/components/folio-desglose-button/folio-desglose-button.component';
+import { Proveedor, CategoriaProveedor } from '@core/models/proveedor.model';
+import { ProveedorService } from '@features/proveedores/services/proveedor.service';
+import { ProveedorCardComponent } from '@features/proveedores/components/proveedor-card/proveedor-card';
+import { ProveedorServiciosModalComponent } from '@features/proveedores/components/proveedor-servicios-modal/proveedor-servicios-modal';
+import { ProveedorFormModalComponent } from '@features/proveedores/components/proveedor-form-modal/proveedor-form-modal';
+import { LoadingSpinnerComponent } from '@shared/components/loading-spinner/loading-spinner.component';
 
 export type EmployeeTab =
   | 'inicio'
@@ -100,6 +106,10 @@ export interface ProveedorItem {
     UserCard,
     ClienteFichaModalComponent,
     CotizacionDesgloseModalComponent,
+    ProveedorCardComponent,
+    ProveedorServiciosModalComponent,
+    ProveedorFormModalComponent,
+    LoadingSpinnerComponent,
   ],
   templateUrl: './empleado.html',
   styleUrl: './empleado.css',
@@ -109,6 +119,7 @@ export class Empleado implements OnInit {
   private readonly cotizacionesService = inject(CotizacionesService);
   private readonly clientesService = inject(ClientesService);
   private readonly catalogoService = inject(CatalogoService);
+  private readonly proveedorService = inject(ProveedorService);
   private readonly toastService = inject(ToastService);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly router = inject(Router);
@@ -136,12 +147,14 @@ export class Empleado implements OnInit {
   clientes: ClienteSummary[] = [];
   planificador: PlanificadorEvento[] = [];
   pagos: PagoItem[] = [];
-  proveedores: ProveedorItem[] = [];
+  proveedores: Proveedor[] = [];
+  categoriasProveedores: CategoriaProveedor[] = [];
 
   // Loading States
   loadingCatalogo = false;
   loadingCotizaciones = false;
   loadingClientes = false;
+  loadingProveedores = false;
   loadingFicha = false;
 
   // Ficha de cliente modal state
@@ -155,6 +168,11 @@ export class Empleado implements OnInit {
   showCotizacionDetailModal = false;
   selectedCotizacionDetail: Cotizacion | null = null;
   selectedCotizacionFolio: string | null = null;
+
+  // Modals Proveedor state
+  proveedorVerServicios: Proveedor | null = null;
+  proveedorEditando: Proveedor | null = null;
+  mostrandoFormModal = false;
 
   // Modals State
   showNewClientModal = false;
@@ -179,14 +197,16 @@ export class Empleado implements OnInit {
   };
 
   showNewSupplierModal = false;
-  newSupplierData: Partial<ProveedorItem> = {
-    nombreEmpresa: '',
+  newSupplierData = {
+    nombre: '',
     contacto: '',
-    categoria: 'Catering',
+    categoriaId: 1,
     telefono: '',
     email: '',
+    direccion: '',
+    sitioWeb: '',
+    rfc: '',
     rating: 5,
-    estatus: 'Activo',
     precioPromedio: '$$$',
   };
 
@@ -220,7 +240,37 @@ export class Empleado implements OnInit {
     this.loadCatalogo();
     this.loadCotizaciones();
     this.loadClientes();
+    this.loadProveedores();
+    this.loadCategoriasProveedores();
     this.initMockData();
+  }
+
+  loadProveedores(): void {
+    this.loadingProveedores = true;
+    this.cdr.detectChanges();
+    this.proveedorService.getProveedores(undefined, true).subscribe({
+      next: (data) => {
+        this.proveedores = data || [];
+        this.loadingProveedores = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error al cargar proveedores:', err);
+        this.proveedores = [];
+        this.loadingProveedores = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  loadCategoriasProveedores(): void {
+    this.proveedorService.getCategorias(false).subscribe({
+      next: (data) => {
+        this.categoriasProveedores = data || [];
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Error al cargar categorías de proveedores:', err)
+    });
   }
 
   loadClientes(): void {
@@ -284,6 +334,8 @@ export class Empleado implements OnInit {
     this.sidebarOpen = false; // Auto close mobile sidebar
     if (tab === 'catalogo') {
       this.loadCatalogo();
+    } else if (tab === 'proveedores') {
+      this.loadProveedores();
     }
     this.cdr.detectChanges();
   }
@@ -758,65 +810,6 @@ export class Empleado implements OnInit {
         estatus: 'Pendiente',
       },
     ];
-
-    // Proveedores
-    this.proveedores = [
-      {
-        id: 1,
-        nombreEmpresa: 'Gourmet Catering & Co.',
-        contacto: 'Chef Laura Prieto',
-        categoria: 'Catering',
-        telefono: '+52 55 4433 2211',
-        email: 'contacto@gourmetcatering.mx',
-        rating: 5,
-        estatus: 'Activo',
-        precioPromedio: '$$$$',
-      },
-      {
-        id: 2,
-        nombreEmpresa: 'Flores & Armonía Floral Design',
-        contacto: 'Beatriz Solís',
-        categoria: 'Floristería',
-        telefono: '+52 55 9988 7766',
-        email: 'ventas@floresyarmonia.com',
-        rating: 4,
-        estatus: 'Activo',
-        precioPromedio: '$$$',
-      },
-      {
-        id: 3,
-        nombreEmpresa: 'Audiovisuales & Sound Pro',
-        contacto: 'Ing. Fernando Ramos',
-        categoria: 'Música & DJ',
-        telefono: '+52 81 1122 3344',
-        email: 'soporte@soundpro.mx',
-        rating: 5,
-        estatus: 'Activo',
-        precioPromedio: '$$$',
-      },
-      {
-        id: 4,
-        nombreEmpresa: 'Mobiliario Premier Lounge',
-        contacto: 'Santiago Castro',
-        categoria: 'Mobiliario',
-        telefono: '+52 33 6677 8899',
-        email: 'rentas@mobiliariopremier.com',
-        rating: 4,
-        estatus: 'Activo',
-        precioPromedio: '$$',
-      },
-      {
-        id: 5,
-        nombreEmpresa: 'Lumina FX Light Show',
-        contacto: 'Jorge Rivas',
-        categoria: 'Iluminación',
-        telefono: '+52 55 7766 5544',
-        email: 'info@luminafx.com',
-        rating: 4,
-        estatus: 'En revisión',
-        precioPromedio: '$$$',
-      },
-    ];
   }
 
   // Calculated Metrics for Dashboard (Inicio)
@@ -879,13 +872,16 @@ export class Empleado implements OnInit {
     });
   }
 
-  get filteredProveedores(): ProveedorItem[] {
+  get filteredProveedores(): Proveedor[] {
     return this.proveedores.filter((pv) => {
       const matchesSearch =
-        pv.nombreEmpresa.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-        pv.contacto.toLowerCase().includes(this.searchQuery.toLowerCase());
+        pv.nombre.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+        (pv.contacto && pv.contacto.toLowerCase().includes(this.searchQuery.toLowerCase())) ||
+        (pv.categoriaNombre && pv.categoriaNombre.toLowerCase().includes(this.searchQuery.toLowerCase()));
       const matchesCat =
-        this.proveedoresCategoryFilter === 'Todos' || pv.categoria === this.proveedoresCategoryFilter;
+        this.proveedoresCategoryFilter === 'Todos' ||
+        pv.categoriaNombre === this.proveedoresCategoryFilter ||
+        pv.categoriaId.toString() === this.proveedoresCategoryFilter;
       return matchesSearch && matchesCat;
     });
   }
@@ -981,22 +977,112 @@ export class Empleado implements OnInit {
   }
 
   saveNewSupplier(): void {
-    if (!this.newSupplierData.nombreEmpresa || !this.newSupplierData.contacto) return;
-    const newId = this.proveedores.length + 1;
-    const supp: ProveedorItem = {
-      id: newId,
-      nombreEmpresa: this.newSupplierData.nombreEmpresa || '',
-      contacto: this.newSupplierData.contacto || '',
-      categoria: (this.newSupplierData.categoria as any) || 'Catering',
-      telefono: this.newSupplierData.telefono || '',
-      email: this.newSupplierData.email || '',
-      rating: this.newSupplierData.rating || 5,
-      estatus: 'Activo',
+    if (!this.newSupplierData.nombre || !this.newSupplierData.contacto) {
+      alert('Por favor completa el nombre de la empresa y la persona de contacto.');
+      return;
+    }
+    this.proveedorService.crearProveedor({
+      categoriaId: Number(this.newSupplierData.categoriaId) || 1,
+      nombre: this.newSupplierData.nombre,
+      contacto: this.newSupplierData.contacto,
+      email: this.newSupplierData.email,
+      telefono: this.newSupplierData.telefono,
+      direccion: this.newSupplierData.direccion,
+      sitioWeb: this.newSupplierData.sitioWeb,
+      rfc: this.newSupplierData.rfc,
+      rating: Number(this.newSupplierData.rating) || 5,
       precioPromedio: this.newSupplierData.precioPromedio || '$$$',
-    };
-    this.proveedores.unshift(supp);
-    this.showNewSupplierModal = false;
-    this.newSupplierData = { nombreEmpresa: '', contacto: '', categoria: 'Catering', telefono: '', email: '', rating: 5, estatus: 'Activo', precioPromedio: '$$$' };
+      activo: true,
+    }).subscribe({
+      next: () => {
+        this.toastService.showSuccess('Proveedor guardado correctamente en la base de datos');
+        this.showNewSupplierModal = false;
+        this.newSupplierData = {
+          nombre: '',
+          contacto: '',
+          categoriaId: 1,
+          telefono: '',
+          email: '',
+          direccion: '',
+          sitioWeb: '',
+          rfc: '',
+          rating: 5,
+          precioPromedio: '$$$',
+        };
+        this.loadProveedores();
+      },
+      error: (err) => {
+        console.error('Error al guardar proveedor:', err);
+        this.toastService.showError('Error al guardar el proveedor.');
+      },
+    });
+  }
+
+  abrirVerServicios(proveedor: Proveedor): void {
+    if (proveedor && !proveedor.servicios) {
+      proveedor.servicios = [];
+    }
+    this.proveedorVerServicios = proveedor;
+    this.cdr.detectChanges();
+  }
+
+  cerrarVerServicios(): void {
+    this.proveedorVerServicios = null;
+    this.cdr.detectChanges();
+  }
+
+  recargarServiciosProveedor(): void {
+    if (!this.proveedorVerServicios) return;
+    const id = this.proveedorVerServicios.id;
+    this.proveedorService.getProveedorById(id).subscribe({
+      next: (prov) => {
+        if (prov) {
+          if (!prov.servicios) prov.servicios = [];
+          this.proveedorVerServicios = prov;
+          const idx = this.proveedores.findIndex(p => p.id === prov.id);
+          if (idx !== -1) this.proveedores[idx] = prov;
+          this.cdr.detectChanges();
+        }
+      }
+    });
+  }
+
+  abrirNuevoProveedorForm(): void {
+    this.proveedorEditando = null;
+    this.mostrandoFormModal = true;
+    this.cdr.detectChanges();
+  }
+
+  abrirEditarProveedor(proveedor: Proveedor): void {
+    this.proveedorEditando = proveedor;
+    this.mostrandoFormModal = true;
+    this.cdr.detectChanges();
+  }
+
+  cerrarFormModal(): void {
+    this.mostrandoFormModal = false;
+    this.proveedorEditando = null;
+    this.cdr.detectChanges();
+  }
+
+  onProveedorGuardado(): void {
+    this.cerrarFormModal();
+    this.loadProveedores();
+  }
+
+  eliminarProveedor(proveedor: Proveedor): void {
+    if (!confirm(`¿Estás seguro de eliminar el proveedor "${proveedor.nombre}"?`)) return;
+
+    this.proveedorService.eliminarProveedor(proveedor.id).subscribe({
+      next: () => {
+        this.toastService.showSuccess('Proveedor eliminado correctamente');
+        this.loadProveedores();
+      },
+      error: (err) => {
+        console.error('Error al eliminar proveedor:', err);
+        this.toastService.showError('No se pudo eliminar el proveedor.');
+      }
+    });
   }
 
   saveNewPayment(): void {
