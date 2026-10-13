@@ -7,7 +7,7 @@ public class Cotizacion
 {
     public int Id { get; set; }
     public int ClienteId { get; set; }
-    public int? RecursoId { get; set; }
+    public int? EmpleadoId { get; set; }
     public string Folio { get; set; } = null!;
     public decimal Total { get; set; }
     public decimal Descuento { get; set; }

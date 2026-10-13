@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { NavbarClient } from '@shared/components/navbar-client/navbar-client';
 import { ToastComponent } from '@shared/components/toast/toast.component';
 import { ToastService } from '@shared/components/toast/toast.service';
@@ -30,6 +31,7 @@ export class ProveedoresListComponent implements OnInit {
   private readonly proveedorService = inject(ProveedorService);
   private readonly toastService = inject(ToastService);
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly router = inject(Router);
 
   proveedores: Proveedor[] = [];
   categorias: CategoriaProveedor[] = [];
@@ -52,6 +54,10 @@ export class ProveedoresListComponent implements OnInit {
 
   ngOnInit(): void {
     this.detectarRolUsuario();
+    if (!this.esEmpleado) {
+      this.router.navigate(['/home']);
+      return;
+    }
     this.cargarCategorias();
     this.cargarProveedores();
   }

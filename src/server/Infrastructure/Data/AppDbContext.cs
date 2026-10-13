@@ -95,6 +95,9 @@ public class AppDbContext : DbContext
             e.Property(cs => cs.PrecioBase).HasColumnName("precio_base");
             e.Property(cs => cs.Unidad).HasColumnName("unidad");
             e.Property(cs => cs.Activo).HasColumnName("activo");
+            e.Property(cs => cs.Categoria).HasColumnName("categoria");
+            e.Property(cs => cs.CategoriaProveedorId).HasColumnName("categoria_proveedor_id");
+            e.Property(cs => cs.VisibleCliente).HasColumnName("visible_cliente");
             e.Property(cs => cs.CreatedAt).HasColumnName("created_at");
             e.Property(cs => cs.UpdatedAt).HasColumnName("updated_at");
         });
@@ -105,7 +108,7 @@ public class AppDbContext : DbContext
             e.HasKey(c => c.Id);
             e.Property(c => c.Id).HasColumnName("id");
             e.Property(c => c.ClienteId).HasColumnName("cliente_id");
-            e.Property(c => c.RecursoId).HasColumnName("recurso_id");
+            e.Property(c => c.EmpleadoId).HasColumnName("empleado_id");
             e.Property(c => c.Folio).HasColumnName("folio");
             e.Property(c => c.Total).HasColumnName("total");
             e.Property(c => c.Descuento).HasColumnName("descuento");

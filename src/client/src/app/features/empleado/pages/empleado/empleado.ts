@@ -336,6 +336,7 @@ export class Empleado implements OnInit {
       this.loadCatalogo();
     } else if (tab === 'proveedores') {
       this.loadProveedores();
+      this.loadCategoriasProveedores();
     }
     this.cdr.detectChanges();
   }
@@ -872,6 +873,25 @@ export class Empleado implements OnInit {
     });
   }
 
+  get categoriasFiltroProveedores(): string[] {
+    const list: string[] = [];
+    if (this.categoriasProveedores && this.categoriasProveedores.length > 0) {
+      for (const cat of this.categoriasProveedores) {
+        if (cat.nombre && !list.includes(cat.nombre)) {
+          list.push(cat.nombre);
+        }
+      }
+    }
+    if (this.proveedores && this.proveedores.length > 0) {
+      for (const prov of this.proveedores) {
+        if (prov.categoriaNombre && !list.includes(prov.categoriaNombre)) {
+          list.push(prov.categoriaNombre);
+        }
+      }
+    }
+    return list;
+  }
+
   get filteredProveedores(): Proveedor[] {
     return this.proveedores.filter((pv) => {
       const matchesSearch =
@@ -880,8 +900,8 @@ export class Empleado implements OnInit {
         (pv.categoriaNombre && pv.categoriaNombre.toLowerCase().includes(this.searchQuery.toLowerCase()));
       const matchesCat =
         this.proveedoresCategoryFilter === 'Todos' ||
-        pv.categoriaNombre === this.proveedoresCategoryFilter ||
-        pv.categoriaId.toString() === this.proveedoresCategoryFilter;
+        (pv.categoriaNombre && pv.categoriaNombre.toLowerCase() === this.proveedoresCategoryFilter.toLowerCase()) ||
+        pv.categoriaId?.toString() === this.proveedoresCategoryFilter;
       return matchesSearch && matchesCat;
     });
   }

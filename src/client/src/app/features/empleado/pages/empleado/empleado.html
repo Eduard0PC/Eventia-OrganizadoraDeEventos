@@ -709,13 +709,33 @@
 
       <!-- ================= TAB 7: PROVEEDORES ================= -->
       <div *ngIf="activeTab === 'proveedores'" class="space-y-6 animate-fade-in">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
           <div>
             <h3 class="text-xl font-bold text-gray-900">Directorio de Proveedores y Aliados</h3>
             <p class="text-xs text-gray-500">Gestión de convenios, catering, música, iluminación y mobiliario</p>
           </div>
-          <div class="flex gap-2">
-            <button (click)="abrirNuevoProveedorForm()" class="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition flex items-center gap-2 shadow-md shadow-red-600/20">
+          <div class="flex flex-wrap items-center gap-3">
+            <div class="flex flex-wrap gap-2">
+              <button
+                (click)="proveedoresCategoryFilter = 'Todos'"
+                [class]="proveedoresCategoryFilter === 'Todos' ? 'bg-red-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'"
+                class="px-3.5 py-1.5 rounded-xl text-xs font-semibold transition border border-gray-200 cursor-pointer"
+              >
+                Todos
+              </button>
+              <button
+                *ngFor="let cat of categoriasFiltroProveedores"
+                (click)="proveedoresCategoryFilter = cat"
+                [class]="proveedoresCategoryFilter === cat ? 'bg-red-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'"
+                class="px-3.5 py-1.5 rounded-xl text-xs font-semibold transition border border-gray-200 cursor-pointer"
+              >
+                {{ cat }}
+              </button>
+            </div>
+            <button
+              (click)="abrirNuevoProveedorForm()"
+              class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl font-bold text-xs shadow-md transition flex items-center gap-1.5 cursor-pointer"
+            >
               <span>+ Agregar Proveedor</span>
             </button>
           </div>
