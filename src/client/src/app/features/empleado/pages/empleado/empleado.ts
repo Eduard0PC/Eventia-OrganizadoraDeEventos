@@ -616,18 +616,20 @@ export class Empleado implements OnInit {
   deleteCatalogEvent(id: number): void {
     if (!confirm('¿Estás seguro de eliminar este paquete/evento del catálogo?')) return;
 
-    this.catalogo = this.catalogo.filter((item) => item.id !== id);
-    this.cdr.detectChanges();
-
     this.catalogoService.eliminarCatalogoEvento(id).subscribe({
-      next: () => {
-        this.toastService.showError('¡Evento eliminado con éxito!');
+      next: (res) => {
+        if (res?.desactivado) {
+          this.toastService.showInfo(res.mensaje || 'El evento se desactivó porque tiene historial.');
+        } else {
+          this.toastService.showSuccess('¡Evento eliminado con éxito!');
+        }
         this.loadCatalogo();
         this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Error en backend al eliminar evento:', err);
-        this.toastService.showError('No se pudo eliminar el evento del catálogo.');
+        const mensaje = err?.error?.error || 'No se pudo eliminar el evento del catálogo.';
+        this.toastService.showError(mensaje, 6000);
         this.loadCatalogo();
         this.cdr.detectChanges();
       }

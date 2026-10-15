@@ -9,6 +9,9 @@ export interface CotizacionItem {
   descuentoItem?: number;
   monto: number;
   notas?: string;
+  catalogoServicioId?: number;
+  esServicioExtra?: boolean;
+  categoriaProveedor?: string;
 }
 
 export interface Cotizacion {
@@ -16,6 +19,7 @@ export interface Cotizacion {
   folio: string;
   evento: string;
   catalogoEventoId?: number;
+  categoriaEvento?: string;
   fechaEvento?: string;
   invitados: number;
   total: number;
@@ -36,4 +40,16 @@ export interface CrearCotizacionRequest {
   horasAdicionales: number;
   notas?: string;
   estatus?: EstatusCotizacion;
+  serviciosExtraIds?: number[];
+}
+
+export interface ServicioExtraItem {
+  id: number;
+  nombre: string;
+  descripcion?: string;
+  precioBase: number;
+  unidad: string;
+  categoria?: string;
+  categoriaProveedor?: string;
+  seleccionado?: boolean;
 }

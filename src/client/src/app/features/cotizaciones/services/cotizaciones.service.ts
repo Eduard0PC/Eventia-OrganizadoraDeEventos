@@ -35,4 +35,16 @@ export class CotizacionesService {
   eliminarCotizacion(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
+
+  getServiciosExtra(categoria?: string): Observable<import('@core/models/cotizacion.models').ServicioExtraItem[]> {
+    const url = categoria
+      ? `${environment.apiUrl}/api/catalogo-servicios/extras?categoria=${encodeURIComponent(categoria)}`
+      : `${environment.apiUrl}/api/catalogo-servicios/extras`;
+    return this.http.get<import('@core/models/cotizacion.models').ServicioExtraItem[]>(url).pipe(
+      catchError((err) => {
+        console.error('Error fetching servicios extra:', err);
+        return of([]);
+      })
+    );
+  }
 }

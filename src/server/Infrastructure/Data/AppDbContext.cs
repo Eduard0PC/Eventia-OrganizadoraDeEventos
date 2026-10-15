@@ -100,6 +100,11 @@ public class AppDbContext : DbContext
             e.Property(cs => cs.VisibleCliente).HasColumnName("visible_cliente");
             e.Property(cs => cs.CreatedAt).HasColumnName("created_at");
             e.Property(cs => cs.UpdatedAt).HasColumnName("updated_at");
+
+            e.HasOne(cs => cs.CategoriaProveedor)
+                .WithMany()
+                .HasForeignKey(cs => cs.CategoriaProveedorId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         modelBuilder.Entity<Cotizacion>(e =>

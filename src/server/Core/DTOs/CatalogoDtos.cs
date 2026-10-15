@@ -37,5 +37,13 @@ public record ActualizarCatalogoServicioRequest(
     string? Unidad,
     bool? Activo
 );
-
-
+/// <summary>Servicio extra ofrecido al cliente según la categoría del evento.</summary>
+public record ServicioExtraDto(
+    int Id,
+    string Nombre,
+    string? Descripcion,
+    decimal PrecioBase,
+    string Unidad,
+    string? Categoria,
+    string? CategoriaProveedor
+);

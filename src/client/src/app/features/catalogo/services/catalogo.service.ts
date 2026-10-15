@@ -31,8 +31,14 @@ export class CatalogoService {
     return this.http.put<CatalogoEventoItem>(`${this.apiUrl}/${id}`, data);
   }
 
-  eliminarCatalogoEvento(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  /**
+   * Elimina un evento del catálogo.
+   * - 204 (null): eliminado físicamente.
+   * - 200 { desactivado, mensaje }: tenía historial, se desactivó.
+   * - 409 { error }: tiene cotizaciones pendientes.
+   */
+  eliminarCatalogoEvento(id: number): Observable<{ desactivado?: boolean; mensaje?: string } | null> {
+    return this.http.delete<{ desactivado?: boolean; mensaje?: string } | null>(`${this.apiUrl}/${id}`);
   }
 
   subirImagenEvento(file: File): Observable<UploadImagenResponse> {

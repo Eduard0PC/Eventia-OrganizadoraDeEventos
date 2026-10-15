@@ -306,6 +306,61 @@
             </div>
           </div>
 
+          <!-- SERVICIOS EXTRA POR CATEGORÍA -->
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <label class="block text-sm font-semibold text-gray-700">
+                Servicios Extra Recomendados
+                <span *ngIf="selectedEvento.categoria" class="ml-1 text-xs font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full">
+                  {{ selectedEvento.categoria }}
+                </span>
+              </label>
+              <span *ngIf="serviciosExtra.length > 0" class="text-xs text-gray-400 font-medium">
+                {{ getServiciosExtraSeleccionados().length }} seleccionado(s)
+              </span>
+            </div>
+
+            <div *ngIf="cargandoServiciosExtra" class="py-4 flex items-center justify-center space-x-2 text-xs text-gray-400">
+              <div class="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
+              <span>Cargando servicios extra...</span>
+            </div>
+
+            <div *ngIf="!cargandoServiciosExtra && serviciosExtra.length === 0" class="text-xs text-gray-400 bg-gray-50 p-3 rounded-xl border border-gray-100 text-center">
+              No hay servicios extra opcionales disponibles para esta categoría.
+            </div>
+
+            <div *ngIf="!cargandoServiciosExtra && serviciosExtra.length > 0" class="space-y-2 max-h-56 overflow-y-auto pr-1">
+              <div
+                *ngFor="let servicio of serviciosExtra"
+                (click)="toggleServicioExtra(servicio)"
+                [class.border-red-500]="servicio.seleccionado"
+                [class.bg-red-50/40]="servicio.seleccionado"
+                [class.border-gray-200]="!servicio.seleccionado"
+                [class.bg-white]="!servicio.seleccionado"
+                class="border rounded-2xl p-3 flex items-start space-x-3 cursor-pointer hover:border-red-400 transition shadow-2xs"
+              >
+                <input
+                  type="checkbox"
+                  [checked]="servicio.seleccionado"
+                  (change)="$event.stopPropagation(); toggleServicioExtra(servicio)"
+                  class="mt-1 h-4 w-4 rounded text-red-600 focus:ring-red-500 border-gray-300 cursor-pointer"
+                />
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center justify-between gap-2">
+                    <p class="text-xs font-bold text-gray-900 truncate">{{ servicio.nombre }}</p>
+                    <span class="text-xs font-extrabold text-red-600 shrink-0">+${{ servicio.precioBase | number:'1.0-2' }}</span>
+                  </div>
+                  <p *ngIf="servicio.descripcion" class="text-[11px] text-gray-500 line-clamp-2 mt-0.5">{{ servicio.descripcion }}</p>
+                  <div class="mt-1 flex items-center gap-1.5" *ngIf="servicio.categoriaProveedor">
+                    <span class="text-[10px] bg-gray-100 text-gray-600 font-semibold px-2 py-0.5 rounded-md">
+                      {{ servicio.categoriaProveedor }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="space-y-2">
             <label class="block text-sm font-semibold text-gray-700">Peticiones o Notas Especiales</label>
             <textarea
@@ -336,6 +391,14 @@
               <div *ngIf="horasAdicionales > 0" class="flex justify-between text-amber-700">
                 <span>Horas Extra ({{ horasAdicionales }} hrs x $1,000):</span>
                 <span class="font-semibold">+${{ getCostoHorasExtra() | number:'1.0-2' }}</span>
+              </div>
+
+              <div *ngIf="getCostoServiciosExtra() > 0" class="space-y-1.5 pt-1 border-t border-gray-200/60">
+                <span class="text-[11px] font-bold text-gray-500 uppercase tracking-wider block">Servicios Extra Seleccionados:</span>
+                <div *ngFor="let s of getServiciosExtraSeleccionados()" class="flex justify-between text-xs text-red-600">
+                  <span class="truncate pr-2">• {{ s.nombre }}</span>
+                  <span class="font-semibold shrink-0">+${{ s.precioBase | number:'1.0-2' }}</span>
+                </div>
               </div>
             </div>
 
@@ -400,7 +463,14 @@
                   <span>Horas Extra:</span>
                   <span class="font-bold text-gray-800">{{ horasAdicionales }} hrs</span>
                 </div>
-                <div class="flex justify-between">
+                <div *ngIf="getServiciosExtraSeleccionados().length > 0" class="border-t border-gray-200/60 pt-2 space-y-1">
+                  <span class="text-xs font-bold text-gray-700 block">Servicios Extra Seleccionados ({{ getServiciosExtraSeleccionados().length }}):</span>
+                  <div *ngFor="let s of getServiciosExtraSeleccionados()" class="flex justify-between text-xs text-red-600">
+                    <span class="truncate pr-2">• {{ s.nombre }}</span>
+                    <span class="font-bold shrink-0">+${{ s.precioBase | number:'1.0-2' }}</span>
+                  </div>
+                </div>
+                <div class="flex justify-between border-t border-gray-200/60 pt-2">
                   <span>Total Estimado:</span>
                   <span class="font-extrabold text-red-500 text-lg">${{ getEstimatedTotal() | number:'1.0-2' }}</span>
                 </div>

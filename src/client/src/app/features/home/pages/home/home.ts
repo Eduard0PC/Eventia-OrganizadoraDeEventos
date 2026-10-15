@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { NavbarClient } from '@shared/components/navbar-client/navbar-client';
 import { environment } from '@env/environment';
 import { CotizacionesService } from '@features/cotizaciones/services/cotizaciones.service';
+import { Cotizacion, ServicioExtraItem } from '@core/models/cotizacion.models';
 
 import { ToastComponent } from '@shared/components/toast/toast.component';
 import { ToastService } from '@shared/components/toast/toast.service';
@@ -48,6 +49,8 @@ export class Home implements OnInit {
   enviandoCotizacion = false;
   ultimoEstatusGuardado: 'borrador' | 'enviada' = 'enviada';
   invitadosPresets = [50, 100, 150, 200];
+  serviciosExtra: ServicioExtraItem[] = [];
+  cargandoServiciosExtra = false;
 
   ngOnInit(): void {
     this.cargarEventos();
@@ -97,11 +100,48 @@ export class Home implements OnInit {
     this.cantidadInvitados = this.selectedEvento?.capacidadPersonas || 50;
     this.horasAdicionales = 0;
     this.notasEspeciales = '';
+    this.serviciosExtra = [];
+    this.cargarServiciosExtra();
+  }
+
+  cargarServiciosExtra(): void {
+    if (!this.selectedEvento) return;
+    this.cargandoServiciosExtra = true;
+    this.cdr.detectChanges();
+
+    this.cotizacionesService.getServiciosExtra(this.selectedEvento.categoria).subscribe({
+      next: (servicios) => {
+        this.serviciosExtra = (servicios || []).map(s => ({ ...s, seleccionado: false }));
+        this.cargandoServiciosExtra = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error cargando servicios extra:', err);
+        this.serviciosExtra = [];
+        this.cargandoServiciosExtra = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  toggleServicioExtra(servicio: ServicioExtraItem): void {
+    servicio.seleccionado = !servicio.seleccionado;
+  }
+
+  getCostoServiciosExtra(): number {
+    return this.serviciosExtra
+      .filter(s => s.seleccionado)
+      .reduce((sum, s) => sum + Number(s.precioBase || 0), 0);
+  }
+
+  getServiciosExtraSeleccionados(): ServicioExtraItem[] {
+    return this.serviciosExtra.filter(s => s.seleccionado);
   }
 
   closeQuote(): void {
     this.showQuoteModal = false;
     this.selectedEvento = null;
+    this.serviciosExtra = [];
   }
 
   selectInvitadosPreset(cantidad: number): void {
@@ -142,6 +182,7 @@ export class Home implements OnInit {
     let total = Number(this.selectedEvento.precioBase);
     total += this.getCostoExtraInvitados();
     total += this.getCostoHorasExtra();
+    total += this.getCostoServiciosExtra();
     return total;
   }
 
@@ -170,6 +211,10 @@ export class Home implements OnInit {
     this.enviandoCotizacion = true;
     this.ultimoEstatusGuardado = estatus;
 
+    const serviciosExtraIds = this.serviciosExtra
+      .filter(s => s.seleccionado)
+      .map(s => s.id);
+
     this.cotizacionesService.crearCotizacion({
       clienteId: clienteId,
       catalogoEventoId: this.selectedEvento.id,
@@ -177,7 +222,8 @@ export class Home implements OnInit {
       invitados: this.cantidadInvitados,
       horasAdicionales: this.horasAdicionales || 0,
       notas: this.notasEspeciales,
-      estatus: estatus
+      estatus: estatus,
+      serviciosExtraIds: serviciosExtraIds
     }).subscribe({
       next: (response) => {
         this.enviandoCotizacion = false;

@@ -63,10 +63,22 @@ public static class CatalogoEndpoints
 
         endpoints.MapDelete("/api/catalogo-eventos/{id:int}", async (int id, ICatalogoService catalogoService, CancellationToken cancellationToken) =>
         {
-            var success = await catalogoService.DeleteCatalogoEventoAsync(id, cancellationToken);
-            if (!success)
+            var (encontrado, desactivado, error) = await catalogoService.DeleteCatalogoEventoAsync(id, cancellationToken);
+            if (!encontrado)
             {
                 return Results.NotFound(new { error = "Evento de catálogo no encontrado." });
+            }
+            if (error is not null)
+            {
+                return Results.Conflict(new { error });
+            }
+            if (desactivado)
+            {
+                return Results.Ok(new
+                {
+                    desactivado = true,
+                    mensaje = "El evento tiene historial de cotizaciones o contratos, por lo que se desactivó en lugar de eliminarse."
+                });
             }
             return Results.NoContent();
         })
@@ -118,6 +130,13 @@ public static class CatalogoEndpoints
             return Results.Ok(servicios);
         })
         .WithName("GetCatalogoServicios");
+
+        endpoints.MapGet("/api/catalogo-servicios/extras", async (string? categoria, ICatalogoService catalogoService, CancellationToken cancellationToken) =>
+        {
+            var extras = await catalogoService.GetServiciosExtraAsync(categoria, cancellationToken);
+            return Results.Ok(extras);
+        })
+        .WithName("GetServiciosExtra");
 
         endpoints.MapGet("/api/catalogo-servicios/{id:int}", async (int id, ICatalogoService catalogoService, CancellationToken cancellationToken) =>
         {

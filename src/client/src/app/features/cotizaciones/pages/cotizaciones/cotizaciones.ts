@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { NavbarClient } from '@shared/components/navbar-client/navbar-client';
 import { ToastComponent } from '@shared/components/toast/toast.component';
 import { ToastService } from '@shared/components/toast/toast.service';
-import { Cotizacion, EstatusCotizacion } from '@core/models/cotizacion.models';
+import { Cotizacion, EstatusCotizacion, ServicioExtraItem } from '@core/models/cotizacion.models';
 import { CotizacionesService } from '@features/cotizaciones/services/cotizaciones.service';
 
 @Component({
@@ -29,6 +29,9 @@ export class Cotizaciones implements OnInit {
   editNotas = '';
   guardandoEdicion = false;
   invitadosPresets = [50, 100, 150, 200];
+
+  serviciosExtraEdicion: ServicioExtraItem[] = [];
+  cargandoServiciosExtraEdicion = false;
 
   cotizaciones: Cotizacion[] = [];
   cargando = true;
@@ -116,10 +119,58 @@ export class Cotizaciones implements OnInit {
     const itemHoras = cotizacion.items.find(i => i.descripcion.toLowerCase().includes('horas adicionales'));
     this.editHorasAdicionales = itemHoras ? (itemHoras.cantidad || 0) : 0;
     this.editNotas = cotizacion.notas || '';
+
+    this.serviciosExtraEdicion = [];
+    this.cargarServiciosExtraEdicion(cotizacion);
   }
 
   cerrarEdicion(): void {
     this.cotizacionEditando = null;
+    this.serviciosExtraEdicion = [];
+  }
+
+  cargarServiciosExtraEdicion(cotizacion: Cotizacion): void {
+    this.cargandoServiciosExtraEdicion = true;
+    this.cdr.detectChanges();
+
+    this.cotizacionesService.getServiciosExtra(cotizacion.categoriaEvento).subscribe({
+      next: (servicios) => {
+        const itemsCot = cotizacion.items || [];
+        this.serviciosExtraEdicion = (servicios || []).map(s => {
+          const yaSeleccionado = itemsCot.some(i =>
+            (i.esServicioExtra && i.catalogoServicioId === s.id) ||
+            i.catalogoServicioId === s.id ||
+            (i.tipo === 'servicio' && i.descripcion?.toLowerCase() === s.nombre.toLowerCase())
+          );
+          return {
+            ...s,
+            seleccionado: yaSeleccionado
+          };
+        });
+        this.cargandoServiciosExtraEdicion = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error al cargar servicios extra en edición:', err);
+        this.serviciosExtraEdicion = [];
+        this.cargandoServiciosExtraEdicion = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  toggleServicioExtraEdicion(servicio: ServicioExtraItem): void {
+    servicio.seleccionado = !servicio.seleccionado;
+  }
+
+  getServiciosExtraSeleccionadosEdicion(): ServicioExtraItem[] {
+    return this.serviciosExtraEdicion.filter(s => s.seleccionado);
+  }
+
+  getCostoServiciosExtraEdicion(): number {
+    return this.serviciosExtraEdicion
+      .filter(s => s.seleccionado)
+      .reduce((sum, s) => sum + Number(s.precioBase || 0), 0);
   }
 
   selectEditInvitadosPreset(cantidad: number): void {
@@ -162,7 +213,10 @@ export class Cotizaciones implements OnInit {
 
   getEstimatedTotalEdicion(): number {
     if (!this.cotizacionEditando) return 0;
-    return this.getPrecioBaseEdicion() + this.getCostoExtraInvitadosEdicion() + this.getCostoHorasExtraEdicion();
+    return this.getPrecioBaseEdicion() +
+      this.getCostoExtraInvitadosEdicion() +
+      this.getCostoHorasExtraEdicion() +
+      this.getCostoServiciosExtraEdicion();
   }
 
   guardarEdicion(estatus: 'borrador' | 'enviada'): void {
@@ -184,6 +238,10 @@ export class Cotizaciones implements OnInit {
     }
 
     const catalogoId = this.cotizacionEditando.catalogoEventoId || 1;
+    const serviciosExtraIds = this.serviciosExtraEdicion
+      .filter(s => s.seleccionado)
+      .map(s => s.id);
+
     this.guardandoEdicion = true;
 
     this.cotizacionesService.actualizarCotizacion(this.cotizacionEditando.id, {
@@ -193,7 +251,8 @@ export class Cotizaciones implements OnInit {
       invitados: this.editInvitados,
       horasAdicionales: this.editHorasAdicionales,
       notas: this.editNotas,
-      estatus: estatus
+      estatus: estatus,
+      serviciosExtraIds: serviciosExtraIds
     }).subscribe({
       next: (response) => {
         this.guardandoEdicion = false;

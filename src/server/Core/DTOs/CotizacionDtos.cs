@@ -10,7 +10,12 @@ public record CotizacionItemDto(
     int Cantidad,
     decimal DescuentoItem,
     decimal Monto,
-    string? Notas
+    string? Notas,
+    int? CatalogoServicioId = null,
+    // true = servicio extra elegido por el cliente (no es invitado/hora adicional).
+    bool EsServicioExtra = false,
+    // Tipo de proveedor sugerido para cubrir el servicio (para el planificador).
+    string? CategoriaProveedor = null
 );
 
 public record CotizacionResponse(
@@ -27,7 +32,8 @@ public record CotizacionResponse(
     string FechaVigencia,
     string FechaCreacion,
     string Notas,
-    List<CotizacionItemDto> Items
+    List<CotizacionItemDto> Items,
+    string? CategoriaEvento = null
 );
 
 public record CrearCotizacionRequest(
@@ -37,5 +43,7 @@ public record CrearCotizacionRequest(
     int Invitados,
     int HorasAdicionales,
     string? Notas,
-    string? Estatus
+    string? Estatus,
+    // Ids de catalogo_servicios (servicios extra) elegidos por el cliente.
+    List<int>? ServiciosExtraIds = null
 );

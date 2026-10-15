@@ -94,4 +94,12 @@ export class CotizacionDesgloseModalComponent implements OnChanges {
         return 'bg-gray-50 text-gray-700 border-gray-200';
     }
   }
+
+  get serviciosExtra(): import('@core/models/cotizacion.models').CotizacionItem[] {
+    return (this.activeCotizacion?.items || []).filter(i => i.esServicioExtra);
+  }
+
+  get totalServiciosExtra(): number {
+    return this.serviciosExtra.reduce((acc, i) => acc + (i.monto || 0), 0);
+  }
 }
