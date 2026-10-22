@@ -180,6 +180,42 @@
           </div>
         </div>
 
+        <!-- SERVICIOS INCLUIDOS POR DEFECTO EN EL PAQUETE -->
+        <div *ngIf="cotizacionSeleccionada.serviciosPorDefecto && cotizacionSeleccionada.serviciosPorDefecto.length > 0" class="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
+              <h5 class="text-xs font-bold text-emerald-900 uppercase tracking-wider">
+                Servicios Base Incluidos por Defecto ({{ cotizacionSeleccionada.serviciosPorDefecto.length }})
+              </h5>
+            </div>
+            <span class="text-[10px] font-extrabold text-emerald-700 bg-white border border-emerald-200 px-2.5 py-0.5 rounded-full uppercase">
+              {{ cotizacionSeleccionada.categoriaEvento || 'Base' }}
+            </span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+            <div
+              *ngFor="let def of cotizacionSeleccionada.serviciosPorDefecto"
+              class="bg-white p-2.5 rounded-xl border border-emerald-100 shadow-2xs flex flex-col justify-between"
+            >
+              <div>
+                <div class="flex items-start justify-between gap-1">
+                  <span class="font-bold text-gray-900 text-xs">{{ def.nombre }}</span>
+                  <span class="text-[10px] text-emerald-600 font-extrabold shrink-0">✓ Incluido</span>
+                </div>
+                <p *ngIf="def.descripcion" class="text-[11px] text-gray-500 mt-0.5 line-clamp-2">{{ def.descripcion }}</p>
+              </div>
+              <div class="mt-2 flex items-center justify-between text-[10px]">
+                <span class="text-gray-400">Proveedor:</span>
+                <span class="bg-emerald-50 text-emerald-800 font-bold px-2 py-0.5 rounded-md border border-emerald-100">
+                  {{ def.categoriaProveedor || 'General' }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="bg-gray-50 rounded-2xl p-5 border border-gray-100 space-y-3">
           <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider">Desglose</h4>
           <div *ngFor="let item of cotizacionSeleccionada.items" class="flex justify-between items-center text-sm text-gray-600">

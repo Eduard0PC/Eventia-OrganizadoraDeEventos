@@ -33,7 +33,8 @@ public record CotizacionResponse(
     string FechaCreacion,
     string Notas,
     List<CotizacionItemDto> Items,
-    string? CategoriaEvento = null
+    string? CategoriaEvento = null,
+    List<ServicioDefectoDto>? ServiciosPorDefecto = null
 );
 
 public record CrearCotizacionRequest(
@@ -47,3 +48,43 @@ public record CrearCotizacionRequest(
     // Ids de catalogo_servicios (servicios extra) elegidos por el cliente.
     List<int>? ServiciosExtraIds = null
 );
+
+public record AprobarCotizacionResponse(
+    int CotizacionId,
+    string FolioCotizacion,
+    string EstatusCotizacion,
+    int ContratoId,
+    string FolioContrato,
+    int EventoContratadoId,
+    string Mensaje
+);
+
+public record RechazarCotizacionRequest(
+    string? Motivo
+);
+
+public record EventoContratadoResponse(
+    int Id,
+    int ContratoId,
+    string FolioContrato,
+    int CatalogoEventoId,
+    string NombreEvento,
+    string? CategoriaEvento,
+    int ClienteId,
+    string NombreCliente,
+    string? FechaEvento,
+    string? HoraInicio,
+    string? HoraFin,
+    string? Lugar,
+    short? Aforo,
+    string Estatus,
+    string? Notas,
+    decimal TotalContrato,
+    string? ImagenUrl
+);
+
+public record ActualizarEstatusEventoRequest(
+    string Estatus,
+    string? Notas
+);
+

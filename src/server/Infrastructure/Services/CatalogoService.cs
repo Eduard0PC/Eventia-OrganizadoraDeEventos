@@ -256,6 +256,37 @@ public class CatalogoService : ICatalogoService
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<List<ServicioDefectoDto>> GetServiciosDefectoPorCategoriaAsync(string? categoria, CancellationToken cancellationToken = default)
+    {
+        var query = _db.CatalogoEventoServicios
+            .Include(ces => ces.CatalogoServicio)
+                .ThenInclude(cs => cs!.CategoriaProveedor)
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(categoria))
+        {
+            var cat = categoria.Trim().ToLower();
+            query = query.Where(ces => ces.Categoria.ToLower() == cat);
+        }
+
+        return await query
+            .OrderBy(ces => ces.Categoria)
+            .ThenBy(ces => ces.OrdenPrioridad)
+            .Select(ces => new ServicioDefectoDto(
+                ces.Id,
+                ces.CatalogoServicioId,
+                ces.CatalogoServicio != null ? ces.CatalogoServicio.Nombre : "Servicio",
+                ces.CatalogoServicio != null ? ces.CatalogoServicio.Descripcion : null,
+                ces.Categoria,
+                ces.CatalogoServicio != null && ces.CatalogoServicio.CategoriaProveedor != null ? ces.CatalogoServicio.CategoriaProveedor.Nombre : null,
+                ces.EsObligatorio,
+                ces.IncluidoEnPrecio,
+                ces.OrdenPrioridad,
+                ces.Notas
+            ))
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<CatalogoServicio?> GetCatalogoServicioByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         return await _db.CatalogoServicios

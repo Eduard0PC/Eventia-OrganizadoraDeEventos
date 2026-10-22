@@ -6,6 +6,9 @@ using Server.API.Extensions;
 // 1. Load environment variables from .env file
 EnvironmentExtensions.LoadEnvironmentVariables();
 
+// Enable legacy timestamp behavior in Npgsql to handle both UTC and Unspecified DateTime kinds seamlessly
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
 var builder = WebApplication.CreateBuilder(args);
 
 // 2. Configure Services
@@ -43,6 +46,7 @@ app.MapCatalogoEndpoints();
 app.MapCotizacionEndpoints();
 app.MapClienteEndpoints();
 app.MapProveedorEndpoints();
+app.MapEventoEndpoints();
 
 await app.EnsureDatabaseCastsAsync();
 

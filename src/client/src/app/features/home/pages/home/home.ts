@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { NavbarClient } from '@shared/components/navbar-client/navbar-client';
 import { environment } from '@env/environment';
 import { CotizacionesService } from '@features/cotizaciones/services/cotizaciones.service';
-import { Cotizacion, ServicioExtraItem } from '@core/models/cotizacion.models';
+import { Cotizacion, ServicioExtraItem, ServicioDefectoItem } from '@core/models/cotizacion.models';
 
 import { ToastComponent } from '@shared/components/toast/toast.component';
 import { ToastService } from '@shared/components/toast/toast.service';
@@ -51,6 +51,8 @@ export class Home implements OnInit {
   invitadosPresets = [50, 100, 150, 200];
   serviciosExtra: ServicioExtraItem[] = [];
   cargandoServiciosExtra = false;
+  serviciosDefecto: ServicioDefectoItem[] = [];
+  cargandoServiciosDefecto = false;
 
   ngOnInit(): void {
     this.cargarEventos();
@@ -84,11 +86,14 @@ export class Home implements OnInit {
     this.selectedEvento = evento;
     this.showDetailsModal = true;
     this.cotizacionEnviada = false;
+    this.serviciosDefecto = [];
+    this.cargarServiciosDefecto(evento.categoria);
   }
 
   closeDetails(): void {
     this.showDetailsModal = false;
     this.selectedEvento = null;
+    this.serviciosDefecto = [];
   }
 
   openQuote(): void {
@@ -101,7 +106,33 @@ export class Home implements OnInit {
     this.horasAdicionales = 0;
     this.notasEspeciales = '';
     this.serviciosExtra = [];
+    this.serviciosDefecto = [];
+    this.cargarServiciosDefecto(this.selectedEvento?.categoria);
     this.cargarServiciosExtra();
+  }
+
+  cargarServiciosDefecto(categoria?: string): void {
+    if (!categoria) return;
+    this.cargandoServiciosDefecto = true;
+    this.cdr.detectChanges();
+
+    this.cotizacionesService.getServiciosPorDefecto(categoria).subscribe({
+      next: (servicios) => {
+        this.serviciosDefecto = servicios || [];
+        this.cargandoServiciosDefecto = false;
+        if (this.serviciosExtra.length > 0) {
+          const idsDefecto = new Set(this.serviciosDefecto.map(d => d.catalogoServicioId));
+          this.serviciosExtra = this.serviciosExtra.filter(s => !idsDefecto.has(s.id));
+        }
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error cargando servicios por defecto:', err);
+        this.serviciosDefecto = [];
+        this.cargandoServiciosDefecto = false;
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   cargarServiciosExtra(): void {
@@ -111,7 +142,10 @@ export class Home implements OnInit {
 
     this.cotizacionesService.getServiciosExtra(this.selectedEvento.categoria).subscribe({
       next: (servicios) => {
-        this.serviciosExtra = (servicios || []).map(s => ({ ...s, seleccionado: false }));
+        const idsDefecto = new Set(this.serviciosDefecto.map(d => d.catalogoServicioId));
+        this.serviciosExtra = (servicios || [])
+          .filter(s => !idsDefecto.has(s.id))
+          .map(s => ({ ...s, seleccionado: false }));
         this.cargandoServiciosExtra = false;
         this.cdr.detectChanges();
       },

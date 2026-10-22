@@ -18,6 +18,7 @@ public interface ICatalogoService
     // Servicios de Catálogo
     Task<List<CatalogoServicio>> GetCatalogoServiciosAsync(CancellationToken cancellationToken = default);
     Task<List<ServicioExtraDto>> GetServiciosExtraAsync(string? categoria, CancellationToken cancellationToken = default);
+    Task<List<ServicioDefectoDto>> GetServiciosDefectoPorCategoriaAsync(string? categoria, CancellationToken cancellationToken = default);
     Task<CatalogoServicio?> GetCatalogoServicioByIdAsync(int id, CancellationToken cancellationToken = default);
     Task<(CatalogoServicio? Result, string? Error)> CrearCatalogoServicioAsync(CrearCatalogoServicioRequest request, CancellationToken cancellationToken = default);
     Task<(CatalogoServicio? Result, string? Error)> ActualizarCatalogoServicioAsync(int id, ActualizarCatalogoServicioRequest request, CancellationToken cancellationToken = default);

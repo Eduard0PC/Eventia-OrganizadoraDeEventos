@@ -1,7 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NavbarClient } from '@shared/components/navbar-client/navbar-client';
+import { EventosService } from '@features/eventos/services/eventos.service';
+import { environment } from '@env/environment';
 
 export type EstatusEvento = 'programado' | 'en_curso' | 'completado' | 'cancelado' | 'reprogramado';
 
@@ -25,65 +27,74 @@ export interface EventoContratado {
   imports: [CommonModule, FormsModule, NavbarClient],
   templateUrl: './mis-eventos.html'
 })
-export class MisEventos {
+export class MisEventos implements OnInit {
+  private readonly eventosService = inject(EventosService);
+  private readonly cdr = inject(ChangeDetectorRef);
+
   busqueda = '';
   filtroEstatus: EstatusEvento | 'todos' = 'todos';
   eventoSeleccionado: EventoContratado | null = null;
+  cargando = true;
 
-  readonly eventos: EventoContratado[] = [
-    {
-      id: 1,
-      nombre: 'Boda premium',
-      descripcion: 'Evento nupcial para hasta 300 personas con servicio de banquete y DJ en vivo.',
-      fechaEvento: '2026-08-15',
-      horaInicio: '17:00',
-      horaFin: '03:00',
-      lugar: 'Salón Jardines del Valle, Guadalajara',
-      aforo: 280,
-      estatus: 'programado',
-      imagen: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=600&auto=format&fit=crop&q=80',
-      folioContrato: 'CTR-2026-0042'
-    },
-    {
-      id: 2,
-      nombre: 'XV años',
-      descripcion: 'Celebración de quinceañera con decoración temática y música en vivo.',
-      fechaEvento: '2026-05-20',
-      horaInicio: '19:00',
-      horaFin: '01:00',
-      lugar: 'Salón Crystal, Zapopan',
-      aforo: 150,
-      estatus: 'completado',
-      imagen: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiyRMTv3s0xnDo4619Uh5SBivxzn30mxEqgRRb0Y03suoB99LkglTlmLiEfwk6nlgLEF70Vxearg6R1y9-rXO0effTzdoQKEWd_gdKaUWYfWguZIY9dZ09j_LeN0eyIxgGjKCgKNGq3zRDS/s640/quincea%25C3%25B1era1.jpg',
-      folioContrato: 'CTR-2025-0187'
-    },
-    {
-      id: 3,
-      nombre: 'Evento corporativo',
-      descripcion: 'Conferencia anual de la empresa con coffee break y equipo audiovisual.',
-      fechaEvento: '2026-07-10',
-      horaInicio: '09:00',
-      horaFin: '14:00',
-      lugar: 'Centro de Convenciones Expo Guadalajara',
-      aforo: 80,
-      estatus: 'reprogramado',
-      imagen: 'https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=600&auto=format&fit=crop&q=80',
-      folioContrato: 'CTR-2026-0031'
-    },
-    {
-      id: 4,
-      nombre: 'Graduación',
-      descripcion: 'Celebración de graduación universitaria con banquete y ceremonia.',
-      fechaEvento: '2026-06-28',
-      horaInicio: '18:30',
-      horaFin: '23:00',
-      lugar: 'Hotel Real de Minas, Guadalajara',
-      aforo: 120,
-      estatus: 'programado',
-      imagen: 'https://media.istockphoto.com/id/1480277406/es/foto/la-graduaci%C3%B3n-el-grupo-y-la-vista-trasera-de-los-estudiantes-celebran-el-%C3%A9xito-educativo.jpg?s=612x612&w=0&k=20&c=MX839Ue5i3yXjWLp6Ak-dSHn8OMlwqBLT34QfTKxSfM=',
-      folioContrato: 'CTR-2026-0055'
+  eventos: EventoContratado[] = [];
+
+  ngOnInit(): void {
+    this.cargarEventos();
+  }
+
+  cargarEventos(): void {
+    this.cargando = true;
+    let clienteId: number | undefined = undefined;
+    const sessionStr = localStorage.getItem('session');
+    if (sessionStr) {
+      try {
+        const session = JSON.parse(sessionStr);
+        if (session?.cliente?.id) {
+          clienteId = session.cliente.id;
+        } else if (session?.clienteId) {
+          clienteId = session.clienteId;
+        }
+      } catch (e) {
+        console.error('Error al leer sesion:', e);
+      }
     }
-  ];
+
+    this.eventosService.getEventos(clienteId).subscribe({
+      next: (data) => {
+        if (data && data.length > 0) {
+          this.eventos = data.map((ev) => {
+            let img = this.getImagenFallback(ev.nombreEvento);
+            if (ev.imagenUrl) {
+              img = ev.imagenUrl.startsWith('http') ? ev.imagenUrl : `${environment.apiUrl}${ev.imagenUrl}`;
+            }
+            return {
+              id: ev.id,
+              nombre: ev.nombreEvento || 'Evento Contratado',
+              descripcion: ev.notas || `Evento ${ev.nombreEvento} con contrato ${ev.folioContrato}.`,
+              fechaEvento: ev.fechaEvento || '',
+              horaInicio: ev.horaInicio || '17:00',
+              horaFin: ev.horaFin || '02:00',
+              lugar: ev.lugar || 'Salón por definir',
+              aforo: ev.aforo || 50,
+              estatus: (ev.estatus as EstatusEvento) || 'programado',
+              imagen: img,
+              folioContrato: ev.folioContrato
+            };
+          });
+        } else {
+          this.eventos = [];
+        }
+        this.cargando = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error al cargar eventos contratados:', err);
+        this.eventos = [];
+        this.cargando = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
 
   get eventosFiltrados(): EventoContratado[] {
     const termino = this.busqueda.trim().toLowerCase();
@@ -121,7 +132,7 @@ export class MisEventos {
       cancelado: 'Cancelado',
       reprogramado: 'Reprogramado'
     };
-    return labels[estatus];
+    return labels[estatus] || estatus;
   }
 
   getEstatusClasses(estatus: EstatusEvento): string {
@@ -132,15 +143,30 @@ export class MisEventos {
       cancelado: 'bg-red-100 text-red-700',
       reprogramado: 'bg-purple-100 text-purple-700'
     };
-    return classes[estatus];
+    return classes[estatus] || 'bg-gray-100 text-gray-700';
   }
 
   formatearFecha(fecha: string): string {
+    if (!fecha) return 'Fecha por confirmar';
     return new Date(fecha + 'T12:00:00').toLocaleDateString('es-MX', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
       day: 'numeric'
     });
+  }
+
+  private getImagenFallback(nombre?: string): string {
+    const n = (nombre || '').toLowerCase();
+    if (n.includes('boda')) {
+      return 'https://images.unsplash.com/photo-1519741497674-611481863552?w=600&auto=format&fit=crop&q=80';
+    }
+    if (n.includes('xv') || n.includes('quince')) {
+      return 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiyRMTv3s0xnDo4619Uh5SBivxzn30mxEqgRRb0Y03suoB99LkglTlmLiEfwk6nlgLEF70Vxearg6R1y9-rXO0effTzdoQKEWd_gdKaUWYfWguZIY9dZ09j_LeN0eyIxgGjKCgKNGq3zRDS/s640/quincea%25C3%25B1era1.jpg';
+    }
+    if (n.includes('corp') || n.includes('gala') || n.includes('empresa')) {
+      return 'https://images.unsplash.com/photo-1511578314322-379afb476865?w=600&auto=format&fit=crop&q=80';
+    }
+    return 'https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=600&auto=format&fit=crop&q=80';
   }
 }

@@ -188,9 +188,9 @@ public class CotizacionService : ICotizacionService
             return (null, "La cotización especificada no existe.");
         }
 
-        if (cotizacion.Estatus != "borrador")
+        if (cotizacion.Estatus != "borrador" && cotizacion.Estatus != "enviada" && cotizacion.Estatus != "modificada")
         {
-            return (null, "Solo se pueden editar cotizaciones que estén en estatus borrador.");
+            return (null, "Solo se pueden editar cotizaciones que esten en estatus borrador, enviada o modificada.");
         }
 
         var evento = await _db.CatalogoEventos.FindAsync(new object[] { request.CatalogoEventoId }, cancellationToken);
@@ -226,6 +226,127 @@ public class CotizacionService : ICotizacionService
 
         var cActualizada = await CargarCotizacionCompletaAsync(id, cancellationToken);
         return (MapToResponse(cActualizada!), null);
+    }
+
+    public async Task<(AprobarCotizacionResponse? Result, string? Error)> AprobarCotizacionAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var cotizacion = await _db.Cotizaciones
+            .Include(c => c.Cliente)
+            .Include(c => c.Items)
+            .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+
+        if (cotizacion is null)
+        {
+            return (null, "La cotizacion especificada no existe.");
+        }
+
+        var contratoExistente = await _db.Contratos
+            .Include(c => c.EventosContratados)
+            .FirstOrDefaultAsync(c => c.CotizacionId == cotizacion.Id, cancellationToken);
+
+        if (contratoExistente != null)
+        {
+            var ev = contratoExistente.EventosContratados.FirstOrDefault();
+            return (new AprobarCotizacionResponse(
+                cotizacion.Id,
+                cotizacion.Folio,
+                cotizacion.Estatus,
+                contratoExistente.Id,
+                contratoExistente.Folio,
+                ev?.Id ?? 0,
+                "La cotizacion ya cuenta con un contrato formalizado previamente."
+            ), null);
+        }
+
+        try
+        {
+            await using var tx = await _db.Database.BeginTransactionAsync(cancellationToken);
+
+            cotizacion.Estatus = "aceptada";
+            cotizacion.UpdatedAt = DateTime.UtcNow;
+
+            int anioActual = DateTime.UtcNow.Year;
+            int conteoContratos = await _db.Contratos.CountAsync(c => c.Folio.StartsWith($"CTR-{anioActual}-"), cancellationToken);
+            string folioContrato = $"CTR-{anioActual}-{(conteoContratos + 1):D4}";
+
+            DateTime fechaEv = cotizacion.FechaEvento.HasValue
+                ? DateTime.SpecifyKind(cotizacion.FechaEvento.Value, DateTimeKind.Utc)
+                : DateTime.UtcNow.AddDays(15);
+
+            var contrato = new Contrato
+            {
+                ClienteId = cotizacion.ClienteId,
+                CotizacionId = cotizacion.Id,
+                Folio = folioContrato,
+                FechaFirma = DateTime.UtcNow.Date,
+                FechaInicio = fechaEv.Date,
+                FechaFin = fechaEv.Date,
+                TotalContrato = cotizacion.TotalFinal ?? cotizacion.Total,
+                Estatus = "activo",
+                Condiciones = cotizacion.Notas,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            _db.Contratos.Add(contrato);
+            await _db.SaveChangesAsync(cancellationToken);
+
+            int catalogoEventoId = cotizacion.Items.FirstOrDefault(i => i.CatalogoEventoId.HasValue)?.CatalogoEventoId
+                ?? await _db.CatalogoEventos.Where(e => e.Activo).Select(e => e.Id).FirstOrDefaultAsync(cancellationToken);
+
+            var eventoContratado = new EventoContratado
+            {
+                ContratoId = contrato.Id,
+                CatalogoEventoId = catalogoEventoId,
+                FechaEvento = fechaEv.Date,
+                Lugar = "Por confirmar con cliente",
+                Aforo = (short?)cotizacion.Invitados,
+                Estatus = "programado",
+                Notas = cotizacion.Notas,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            _db.EventosContratados.Add(eventoContratado);
+            await _db.SaveChangesAsync(cancellationToken);
+
+            await tx.CommitAsync(cancellationToken);
+
+            return (new AprobarCotizacionResponse(
+                cotizacion.Id,
+                cotizacion.Folio,
+                cotizacion.Estatus,
+                contrato.Id,
+                contrato.Folio,
+                eventoContratado.Id,
+                "Cotizacion aprobada y contrato formalizado exitosamente."
+            ), null);
+        }
+        catch (Exception ex)
+        {
+            return (null, $"Error al aprobar la cotización y generar contrato: {ex.Message}");
+        }
+    }
+
+    public async Task<(CotizacionResponse? Result, string? Error)> RechazarCotizacionAsync(int id, string? motivo, CancellationToken cancellationToken = default)
+    {
+        var cotizacion = await CargarCotizacionCompletaAsync(id, cancellationToken);
+        if (cotizacion is null)
+        {
+            return (null, "La cotizacion especificada no existe.");
+        }
+
+        cotizacion.Estatus = "rechazada";
+        if (!string.IsNullOrWhiteSpace(motivo))
+        {
+            string textoMotivo = $"[Motivo de rechazo]: {motivo.Trim()}";
+            cotizacion.Notas = string.IsNullOrWhiteSpace(cotizacion.Notas)
+                ? textoMotivo
+                : $"{cotizacion.Notas}\n{textoMotivo}";
+        }
+        cotizacion.UpdatedAt = DateTime.UtcNow;
+
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return (MapToResponse(cotizacion), null);
     }
 
     public async Task<bool> DeleteCotizacionAsync(int id, CancellationToken cancellationToken = default)
@@ -404,7 +525,7 @@ public class CotizacionService : ICotizacionService
         return $"COT-{DateTime.UtcNow.Year}-{randomNum}";
     }
 
-    private static CotizacionResponse MapToResponse(Cotizacion c)
+    private CotizacionResponse MapToResponse(Cotizacion c)
     {
         var primerItemEvento = c.Items.FirstOrDefault(i => i.Tipo == "evento");
         var nombreEvento = primerItemEvento?.CatalogoEvento?.Nombre ?? "Evento personalizado";
@@ -441,6 +562,31 @@ public class CotizacionService : ICotizacionService
             );
         }).ToList();
 
+        List<ServicioDefectoDto>? serviciosDefecto = null;
+        var categoria = primerItemEvento?.CatalogoEvento?.Categoria;
+        if (!string.IsNullOrWhiteSpace(categoria))
+        {
+            var catNorm = categoria.Trim().ToLower();
+            serviciosDefecto = _db.CatalogoEventoServicios
+                .Include(ces => ces.CatalogoServicio)
+                    .ThenInclude(cs => cs!.CategoriaProveedor)
+                .Where(ces => ces.Categoria.ToLower() == catNorm)
+                .OrderBy(ces => ces.OrdenPrioridad)
+                .Select(ces => new ServicioDefectoDto(
+                    ces.Id,
+                    ces.CatalogoServicioId,
+                    ces.CatalogoServicio != null ? ces.CatalogoServicio.Nombre : "Servicio",
+                    ces.CatalogoServicio != null ? ces.CatalogoServicio.Descripcion : null,
+                    ces.Categoria,
+                    ces.CatalogoServicio != null && ces.CatalogoServicio.CategoriaProveedor != null ? ces.CatalogoServicio.CategoriaProveedor.Nombre : null,
+                    ces.EsObligatorio,
+                    ces.IncluidoEnPrecio,
+                    ces.OrdenPrioridad,
+                    ces.Notas
+                ))
+                .ToList();
+        }
+
         return new CotizacionResponse(
             c.Id,
             c.Folio,
@@ -456,7 +602,8 @@ public class CotizacionService : ICotizacionService
             c.CreatedAt.ToString("yyyy-MM-dd"),
             c.Notas ?? "",
             itemsDto,
-            primerItemEvento?.CatalogoEvento?.Categoria
+            primerItemEvento?.CatalogoEvento?.Categoria,
+            serviciosDefecto
         );
     }
 }

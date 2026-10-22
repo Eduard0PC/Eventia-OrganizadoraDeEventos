@@ -101,6 +101,16 @@ export class Cotizaciones implements OnInit {
 
   abrirDetalle(cotizacion: Cotizacion): void {
     this.cotizacionSeleccionada = cotizacion;
+    if ((!cotizacion.serviciosPorDefecto || cotizacion.serviciosPorDefecto.length === 0) && cotizacion.categoriaEvento) {
+      this.cotizacionesService.getServiciosPorDefecto(cotizacion.categoriaEvento).subscribe({
+        next: (defs) => {
+          if (defs && defs.length > 0) {
+            cotizacion.serviciosPorDefecto = defs;
+            this.cdr.detectChanges();
+          }
+        }
+      });
+    }
   }
 
   cerrarDetalle(): void {
@@ -108,8 +118,8 @@ export class Cotizaciones implements OnInit {
   }
 
   abrirEditarBorrador(cotizacion: Cotizacion): void {
-    if (cotizacion.estatus !== 'borrador') {
-      this.toastService.showError('Las cotizaciones enviadas solo pueden ser consultadas.');
+    if (cotizacion.estatus !== 'borrador' && cotizacion.estatus !== 'modificada') {
+      this.toastService.showError('Las cotizaciones enviadas solo pueden ser consultadas o ajustadas por el coordinador.');
       return;
     }
     this.cotizacionEditando = cotizacion;
@@ -276,6 +286,7 @@ export class Cotizaciones implements OnInit {
     const labels: Record<EstatusCotizacion, string> = {
       borrador: 'Borrador',
       enviada: 'Enviada',
+      modificada: 'Propuesta Ajustada',
       aceptada: 'Aceptada',
       rechazada: 'Rechazada',
       vencida: 'Vencida'
@@ -287,6 +298,7 @@ export class Cotizaciones implements OnInit {
     const classes: Record<EstatusCotizacion, string> = {
       borrador: 'bg-gray-100 text-gray-700 border border-gray-300',
       enviada: 'bg-blue-100 text-blue-800 border border-blue-200 font-bold',
+      modificada: 'bg-purple-100 text-purple-800 border border-purple-200 font-bold',
       aceptada: 'bg-green-100 text-green-700 border border-green-200',
       rechazada: 'bg-red-100 text-red-700 border border-red-200',
       vencida: 'bg-orange-100 text-orange-700 border border-orange-200'

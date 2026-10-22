@@ -4,7 +4,7 @@
   (click)="closeModal()"
 >
   <div
-    class="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl border border-gray-100"
+    class="bg-white rounded-3xl max-w-3xl w-full max-h-[92vh] overflow-hidden flex flex-col shadow-2xl border border-gray-100"
     (click)="$event.stopPropagation()"
   >
     <!-- Header Modal -->
@@ -61,7 +61,7 @@
     </div>
 
     <!-- Body Content -->
-    <div class="p-6 overflow-y-auto flex-1 space-y-5 max-h-[480px]">
+    <div class="p-6 overflow-y-auto flex-1 space-y-5 max-h-[500px]">
       <!-- Loading State -->
       <div *ngIf="loading" class="py-12 flex flex-col items-center justify-center space-y-3">
         <div class="w-8 h-8 border-4 border-red-600 border-t-transparent rounded-full animate-spin"></div>
@@ -81,68 +81,155 @@
       </div>
 
       <!-- Content when activeCotizacion loaded -->
-      <div *ngIf="!loading && !errorMessage && activeCotizacion">
-        <div class="flex items-center justify-between mb-3">
-          <h4 class="text-xs font-extrabold text-gray-500 uppercase tracking-wider">Desglose de Ítems / Conceptos</h4>
-          <span class="text-xs font-bold text-gray-400">Total ítems: {{ activeCotizacion.items.length || 0 }}</span>
+      <div *ngIf="!loading && !errorMessage && activeCotizacion" class="space-y-5">
+
+        <!-- Operational Viability Banner for Employee -->
+        <div
+          *ngIf="canManage && totalServiciosSinProveedor > 0"
+          class="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-3"
+        >
+          <div class="w-5 h-5 rounded-full bg-amber-500 text-white flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">!</div>
+          <div class="flex-1">
+            <h5 class="font-bold text-amber-950">Atención Operativa de Proveedores</h5>
+            <p class="mt-0.5 text-amber-800">
+              Se detectaron <strong>{{ totalServiciosSinProveedor }}</strong> servicio(s) que requieren proveedores no registrados o inactivos en el sistema. Puedes ajustar la propuesta para retirar el servicio, actualizar el costo o registrar al proveedor antes de formalizar el contrato.
+            </p>
+          </div>
         </div>
 
-        <div class="overflow-x-auto border border-gray-200 rounded-2xl shadow-2xs">
-          <table class="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr class="bg-gray-50 text-gray-600 font-bold border-b border-gray-200 uppercase tracking-wider text-[11px]">
-                <th class="py-3 px-4">Concepto / Descripción</th>
-                <th class="py-3 px-4">Tipo</th>
-                <th class="py-3 px-4">Precio U.</th>
-                <th class="py-3 px-4">Cant.</th>
-                <th class="py-3 px-4 text-right">Subtotal</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100">
-              <tr *ngFor="let item of activeCotizacion.items" class="hover:bg-gray-50/80 transition-colors">
-                <td class="py-3 px-4 font-bold text-gray-900">
-                  <p>{{ item.descripcion }}</p>
-                  <p *ngIf="item.notas" class="text-[11px] text-gray-400 font-normal mt-0.5">{{ item.notas }}</p>
-                </td>
-                <td class="py-3 px-4">
-                  <div class="flex flex-col gap-1 items-start">
-                    <span
-                      *ngIf="item.esServicioExtra"
-                      class="bg-purple-100 text-purple-700 border border-purple-200 px-2 py-0.5 rounded-full text-[10px] uppercase font-bold"
-                    >
-                      Servicio Extra
-                    </span>
-                    <span
-                      *ngIf="!item.esServicioExtra"
-                      class="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full text-[10px] uppercase font-semibold"
-                    >
-                      {{ item.tipo || 'concepto' }}
-                    </span>
-                    <span
-                      *ngIf="item.categoriaProveedor"
-                      class="bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded text-[10px] font-medium"
-                    >
-                      Proveedor: {{ item.categoriaProveedor }}
-                    </span>
-                  </div>
-                </td>
-                <td class="py-3 px-4 text-gray-600 font-medium">
-                  ${{ (item.precioUnitario || item.monto) | number:'1.2-2' }}
-                </td>
-                <td class="py-3 px-4 text-gray-800 font-bold">
-                  {{ item.cantidad || 1 }}
-                </td>
-                <td class="py-3 px-4 text-right font-extrabold text-red-600">
-                  ${{ item.monto | number:'1.2-2' }} MXN
-                </td>
-              </tr>
-              <tr *ngIf="!activeCotizacion.items || activeCotizacion.items.length === 0">
-                <td colspan="5" class="py-6 text-center text-gray-400 text-xs">
-                  No hay ítems registrados en esta cotización.
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <div
+          *ngIf="canManage && totalServiciosSinProveedor === 0 && (serviciosDefecto.length > 0 || serviciosExtra.length > 0)"
+          class="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs flex items-center gap-3"
+        >
+          <div class="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-xs shrink-0">✓</div>
+          <div>
+            <span class="font-bold">Viabilidad Completa:</span>
+            <span class="ml-1 text-emerald-800">Existen proveedores registrados y activos en todas las categorías requeridas para este evento.</span>
+          </div>
+        </div>
+
+        <!-- Table of Concepts -->
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <h4 class="text-xs font-extrabold text-gray-500 uppercase tracking-wider">Desglose de Ítems / Conceptos</h4>
+            <span class="text-xs font-bold text-gray-400">Total ítems: {{ activeCotizacion.items.length || 0 }}</span>
+          </div>
+
+          <div class="overflow-x-auto border border-gray-200 rounded-2xl shadow-2xs">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr class="bg-gray-50 text-gray-600 font-bold border-b border-gray-200 uppercase tracking-wider text-[11px]">
+                  <th class="py-3 px-4">Concepto / Descripción</th>
+                  <th class="py-3 px-4">Tipo</th>
+                  <th class="py-3 px-4">Precio U.</th>
+                  <th class="py-3 px-4">Cant.</th>
+                  <th class="py-3 px-4 text-right">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100">
+                <tr *ngFor="let item of activeCotizacion.items" class="hover:bg-gray-50/80 transition-colors">
+                  <td class="py-3 px-4 font-bold text-gray-900">
+                    <p>{{ item.descripcion }}</p>
+                    <p *ngIf="item.notas" class="text-[11px] text-gray-400 font-normal mt-0.5">{{ item.notas }}</p>
+                  </td>
+                  <td class="py-3 px-4">
+                    <div class="flex flex-col gap-1 items-start">
+                      <span
+                        *ngIf="item.esServicioExtra"
+                        class="bg-purple-100 text-purple-700 border border-purple-200 px-2 py-0.5 rounded-full text-[10px] uppercase font-bold"
+                      >
+                        Servicio Extra
+                      </span>
+                      <span
+                        *ngIf="!item.esServicioExtra"
+                        class="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full text-[10px] uppercase font-semibold"
+                      >
+                        {{ item.tipo || 'concepto' }}
+                      </span>
+                      <span
+                        *ngIf="item.categoriaProveedor"
+                        class="bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded text-[10px] font-medium"
+                      >
+                        Proveedor: {{ item.categoriaProveedor }}
+                      </span>
+                    </div>
+                  </td>
+                  <td class="py-3 px-4 text-gray-600 font-medium">
+                    ${{ (item.precioUnitario || item.monto) | number:'1.2-2' }}
+                  </td>
+                  <td class="py-3 px-4 text-gray-800 font-bold">
+                    {{ item.cantidad || 1 }}
+                  </td>
+                  <td class="py-3 px-4 text-right font-extrabold text-red-600">
+                    ${{ item.monto | number:'1.2-2' }} MXN
+                  </td>
+                </tr>
+                <tr *ngIf="!activeCotizacion.items || activeCotizacion.items.length === 0">
+                  <td colspan="5" class="py-6 text-center text-gray-400 text-xs">
+                    No hay ítems registrados en esta cotización.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Default Services Included in Base Event -->
+        <div *ngIf="serviciosDefecto.length > 0" class="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
+              <h5 class="text-xs font-bold text-emerald-900 uppercase tracking-wider">
+                Servicios Base Incluidos por Defecto ({{ serviciosDefecto.length }})
+              </h5>
+            </div>
+            <span class="text-[10px] font-extrabold text-emerald-700 bg-white border border-emerald-200 px-2.5 py-0.5 rounded-md uppercase">
+              {{ activeCotizacion.categoriaEvento || 'Base' }}
+            </span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+            <div
+              *ngFor="let def of serviciosDefecto"
+              class="bg-white p-3 rounded-xl border border-emerald-100 shadow-2xs flex flex-col justify-between"
+            >
+              <div>
+                <div class="flex items-start justify-between gap-2">
+                  <span class="font-bold text-gray-900 text-xs">{{ def.nombre }}</span>
+                  <span class="text-[10px] text-emerald-600 font-extrabold uppercase shrink-0">Incluido</span>
+                </div>
+                <p *ngIf="def.descripcion" class="text-[11px] text-gray-500 mt-0.5">{{ def.descripcion }}</p>
+                <p *ngIf="def.notas" class="text-[10px] text-gray-400 mt-0.5 italic">Nota: {{ def.notas }}</p>
+              </div>
+
+              <!-- Provider Viability Pill -->
+              <div class="mt-2.5 pt-2 border-t border-gray-100 text-[10px] flex flex-col gap-1">
+                <div class="flex items-center justify-between">
+                  <span class="text-gray-400 font-medium">Categoría Requerida:</span>
+                  <span class="bg-gray-100 text-gray-700 font-semibold px-2 py-0.5 rounded">
+                    {{ def.categoriaProveedor || 'General' }}
+                  </span>
+                </div>
+
+                <div *ngIf="canManage && def.categoriaProveedor" class="flex items-center justify-between mt-1">
+                  <span class="text-gray-400">Estado Proveedor:</span>
+                  <span
+                    *ngIf="getViabilidad(def.categoriaProveedor).disponible"
+                    class="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded text-[10px]"
+                    [title]="getViabilidad(def.categoriaProveedor).nombres"
+                  >
+                    Disponible ({{ getViabilidad(def.categoriaProveedor).cantidad }})
+                  </span>
+                  <span
+                    *ngIf="!getViabilidad(def.categoriaProveedor).disponible"
+                    class="bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded text-[10px]"
+                  >
+                    Sin proveedor registrado
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Extra Services Summary Card for Employee / Planner -->
@@ -151,7 +238,7 @@
             <div class="flex items-center gap-2">
               <span class="w-2.5 h-2.5 rounded-full bg-purple-600"></span>
               <h5 class="text-xs font-bold text-purple-900 uppercase tracking-wider">
-                Servicios Extra Seleccionados por el Cliente ({{ serviciosExtra.length }})
+                Servicios Extra Seleccionados ({{ serviciosExtra.length }})
               </h5>
             </div>
             <span class="text-xs font-extrabold text-purple-700">
@@ -171,11 +258,32 @@
                 </div>
                 <p *ngIf="s.notas && s.notas !== s.descripcion" class="text-[11px] text-gray-500 mt-0.5">{{ s.notas }}</p>
               </div>
-              <div class="mt-2 flex items-center justify-between text-[10px]">
-                <span class="text-gray-400">Categoría Proveedor:</span>
-                <span class="bg-purple-100 text-purple-800 font-bold px-2 py-0.5 rounded-md">
-                  {{ s.categoriaProveedor || 'General' }}
-                </span>
+
+              <!-- Provider Viability Pill -->
+              <div class="mt-2.5 pt-2 border-t border-gray-100 text-[10px] flex flex-col gap-1">
+                <div class="flex items-center justify-between">
+                  <span class="text-gray-400 font-medium">Categoría Proveedor:</span>
+                  <span class="bg-purple-100 text-purple-800 font-semibold px-2 py-0.5 rounded">
+                    {{ s.categoriaProveedor || 'General' }}
+                  </span>
+                </div>
+
+                <div *ngIf="canManage && s.categoriaProveedor" class="flex items-center justify-between mt-1">
+                  <span class="text-gray-400">Estado Proveedor:</span>
+                  <span
+                    *ngIf="getViabilidad(s.categoriaProveedor).disponible"
+                    class="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded text-[10px]"
+                    [title]="getViabilidad(s.categoriaProveedor).nombres"
+                  >
+                    Disponible ({{ getViabilidad(s.categoriaProveedor).cantidad }})
+                  </span>
+                  <span
+                    *ngIf="!getViabilidad(s.categoriaProveedor).disponible"
+                    class="bg-red-100 text-red-800 font-bold px-2 py-0.5 rounded text-[10px]"
+                  >
+                    Sin proveedor registrado
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -184,20 +292,82 @@
         <!-- Notes Section -->
         <div *ngIf="activeCotizacion.notas" class="mt-4 text-xs text-gray-700 bg-amber-50/80 border border-amber-200 p-4 rounded-2xl">
           <span class="font-bold text-amber-900 block mb-1">Notas Adicionales:</span>
-          <p>{{ activeCotizacion.notas }}</p>
+          <p class="whitespace-pre-line">{{ activeCotizacion.notas }}</p>
         </div>
+
+        <!-- Rejection Box when activated -->
+        <div *ngIf="mostrandoFormularioRechazo" class="p-4 rounded-2xl bg-red-50 border border-red-200 space-y-3 animate-fade-in">
+          <h5 class="text-xs font-bold text-red-900 uppercase tracking-wider">Indicar Motivo de Rechazo</h5>
+          <p class="text-xs text-red-700">Explica al cliente la razón por la cual no es posible cubrir esta cotización en los términos actuales:</p>
+          <textarea
+            [(ngModel)]="motivoRechazo"
+            rows="3"
+            placeholder="Ejemplo: Fecha no disponible en agenda. Salón con cupo completo para la fecha solicitada."
+            class="w-full text-xs p-3 rounded-xl border border-red-300 focus:outline-none focus:ring-2 focus:ring-red-500 bg-white"
+          ></textarea>
+          <div class="flex justify-end gap-2 pt-1">
+            <button
+              type="button"
+              (click)="cancelarRechazo()"
+              class="px-4 py-2 rounded-xl text-xs font-semibold text-gray-700 hover:bg-gray-200 transition"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              (click)="confirmarRechazo()"
+              [disabled]="!motivoRechazo.trim()"
+              class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-red-600 hover:bg-red-700 transition disabled:opacity-50 cursor-pointer shadow-xs"
+            >
+              Confirmar Rechazo
+            </button>
+          </div>
+        </div>
+
       </div>
     </div>
 
     <!-- Footer Modal -->
-    <div class="p-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
-      <button
-        type="button"
-        (click)="closeModal()"
-        class="px-6 py-2.5 rounded-xl bg-gray-900 hover:bg-black text-white font-bold text-xs shadow-md transition cursor-pointer"
-      >
-        Cerrar Desglose
-      </button>
+    <div class="p-4 bg-gray-50 border-t border-gray-100 flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <button
+          type="button"
+          (click)="closeModal()"
+          class="px-4 py-2 rounded-xl text-xs font-bold text-gray-600 hover:bg-gray-200 transition cursor-pointer"
+        >
+          Cerrar
+        </button>
+      </div>
+
+      <!-- Actions for Coordinator / Employee -->
+      <div *ngIf="canManage && activeCotizacion && (activeCotizacion.estatus === 'enviada' || activeCotizacion.estatus === 'modificada')" class="flex flex-wrap items-center gap-2">
+        <button
+          *ngIf="!mostrandoFormularioRechazo"
+          type="button"
+          (click)="iniciarRechazo()"
+          class="px-3.5 py-2 rounded-xl text-xs font-bold text-red-700 bg-red-100 hover:bg-red-200 border border-red-200 transition cursor-pointer"
+        >
+          Rechazar Cotización
+        </button>
+
+        <button
+          type="button"
+          (click)="solicitarAjuste()"
+          class="px-3.5 py-2 rounded-xl text-xs font-bold text-purple-700 bg-purple-100 hover:bg-purple-200 border border-purple-200 transition cursor-pointer"
+        >
+          Ajustar Propuesta
+        </button>
+
+        <button
+          type="button"
+          (click)="solicitarAprobacion()"
+          [disabled]="totalServiciosSinProveedor > 0"
+          [class]="totalServiciosSinProveedor > 0 ? 'bg-gray-200 text-gray-400 border border-gray-300 cursor-not-allowed shadow-none' : 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-xs'"
+          class="px-5 py-2 rounded-xl text-xs font-bold transition"
+        >
+          {{ totalServiciosSinProveedor > 0 ? 'Faltan proveedores' : 'Aprobar y Formalizar Contrato' }}
+        </button>
+      </div>
     </div>
   </div>
 </div>

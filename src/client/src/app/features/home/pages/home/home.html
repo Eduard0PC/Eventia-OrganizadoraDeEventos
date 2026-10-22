@@ -178,6 +178,51 @@
           </p>
         </div>
 
+        <!-- SERVICIOS INCLUIDOS POR DEFECTO -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <h4 class="text-sm font-extrabold text-gray-900 uppercase tracking-wider flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+              Servicios Incluidos en el Paquete
+            </h4>
+            <span class="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+              Base Garantizada
+            </span>
+          </div>
+
+          <div *ngIf="cargandoServiciosDefecto" class="py-4 flex items-center justify-center space-x-2 text-xs text-gray-400">
+            <div class="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+            <span>Cargando servicios base...</span>
+          </div>
+
+          <div *ngIf="!cargandoServiciosDefecto && serviciosDefecto.length === 0" class="text-xs text-gray-400 bg-gray-50 p-3 rounded-xl border border-gray-100 text-center">
+            No hay servicios fijos registrados para esta categoría.
+          </div>
+
+          <div *ngIf="!cargandoServiciosDefecto && serviciosDefecto.length > 0" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div
+              *ngFor="let s of serviciosDefecto"
+              class="bg-emerald-50/50 border border-emerald-200/70 rounded-2xl p-3 flex items-start space-x-2.5"
+            >
+              <div class="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                </svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-xs font-bold text-gray-900 leading-snug">{{ s.nombre }}</p>
+                <p *ngIf="s.descripcion" class="text-[11px] text-gray-500 line-clamp-2 mt-0.5">{{ s.descripcion }}</p>
+                <div class="mt-1 flex items-center gap-1.5" *ngIf="s.categoriaProveedor">
+                  <span class="text-[10px] bg-white border border-emerald-200 text-emerald-800 font-semibold px-2 py-0.5 rounded-md">
+                    {{ s.categoriaProveedor }}
+                  </span>
+                  <span class="text-[10px] text-emerald-600 font-medium">Incluido</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="bg-red-50/50 border border-red-100 rounded-2xl p-4 flex items-start space-x-3">
           <svg class="w-6 h-6 text-red-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -303,6 +348,50 @@
                 </button>
               </div>
               <p class="text-xs text-gray-500">$1,000 MXN por cada hora adicional.</p>
+            </div>
+          </div>
+
+          <!-- SERVICIOS BASE INCLUIDOS POR DEFECTO -->
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <label class="block text-sm font-semibold text-gray-900 flex items-center gap-1.5">
+                <span>✓ Servicios Incluidos en el Paquete</span>
+                <span class="text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                  Sin costo extra
+                </span>
+              </label>
+              <span *ngIf="serviciosDefecto.length > 0" class="text-xs text-gray-400 font-medium">
+                {{ serviciosDefecto.length }} servicio(s)
+              </span>
+            </div>
+
+            <div *ngIf="cargandoServiciosDefecto" class="py-3 flex items-center justify-center space-x-2 text-xs text-gray-400">
+              <div class="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+              <span>Cargando servicios base...</span>
+            </div>
+
+            <div *ngIf="!cargandoServiciosDefecto && serviciosDefecto.length > 0" class="space-y-2 max-h-48 overflow-y-auto pr-1">
+              <div
+                *ngFor="let def of serviciosDefecto"
+                class="border border-emerald-200 bg-emerald-50/40 rounded-2xl p-3 flex items-start space-x-3 shadow-2xs"
+              >
+                <div class="w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-black">
+                  ✓
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center justify-between gap-2">
+                    <p class="text-xs font-bold text-gray-900">{{ def.nombre }}</p>
+                    <span class="text-[10px] font-extrabold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-md uppercase tracking-wider shrink-0">Incluido</span>
+                  </div>
+                  <p *ngIf="def.descripcion" class="text-[11px] text-gray-500 line-clamp-2 mt-0.5">{{ def.descripcion }}</p>
+                  <div class="mt-1 flex items-center gap-1.5" *ngIf="def.categoriaProveedor">
+                    <span class="text-[10px] bg-white border border-emerald-200 text-emerald-800 font-semibold px-2 py-0.5 rounded-md">
+                      {{ def.categoriaProveedor }}
+                    </span>
+                    <span *ngIf="def.notas" class="text-[10px] text-gray-400 italic">({{ def.notas }})</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 

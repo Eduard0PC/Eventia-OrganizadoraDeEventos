@@ -67,6 +67,20 @@ public static class ServiceCollectionExtensions
                     IF NOT EXISTS (SELECT 1 FROM pg_cast JOIN pg_type s ON pg_cast.castsource = s.oid JOIN pg_type t ON pg_cast.casttarget = t.oid WHERE s.typname = 'varchar' AND t.typname = 'tipo_item_cotizacion') THEN
                         CREATE CAST (varchar AS tipo_item_cotizacion) WITH INOUT AS IMPLICIT;
                     END IF;
+
+                    IF NOT EXISTS (SELECT 1 FROM pg_cast JOIN pg_type s ON pg_cast.castsource = s.oid JOIN pg_type t ON pg_cast.casttarget = t.oid WHERE s.typname = 'text' AND t.typname = 'estatus_contrato') THEN
+                        CREATE CAST (text AS estatus_contrato) WITH INOUT AS IMPLICIT;
+                    END IF;
+                    IF NOT EXISTS (SELECT 1 FROM pg_cast JOIN pg_type s ON pg_cast.castsource = s.oid JOIN pg_type t ON pg_cast.casttarget = t.oid WHERE s.typname = 'varchar' AND t.typname = 'estatus_contrato') THEN
+                        CREATE CAST (varchar AS estatus_contrato) WITH INOUT AS IMPLICIT;
+                    END IF;
+
+                    IF NOT EXISTS (SELECT 1 FROM pg_cast JOIN pg_type s ON pg_cast.castsource = s.oid JOIN pg_type t ON pg_cast.casttarget = t.oid WHERE s.typname = 'text' AND t.typname = 'estatus_evento') THEN
+                        CREATE CAST (text AS estatus_evento) WITH INOUT AS IMPLICIT;
+                    END IF;
+                    IF NOT EXISTS (SELECT 1 FROM pg_cast JOIN pg_type s ON pg_cast.castsource = s.oid JOIN pg_type t ON pg_cast.casttarget = t.oid WHERE s.typname = 'varchar' AND t.typname = 'estatus_evento') THEN
+                        CREATE CAST (varchar AS estatus_evento) WITH INOUT AS IMPLICIT;
+                    END IF;
                 END $$;
             ");
         }
@@ -84,6 +98,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICotizacionService, CotizacionService>();
         services.AddScoped<IClienteService, ClienteService>();
         services.AddScoped<IProveedorService, ProveedorService>();
+        services.AddScoped<IEventoService, EventoService>();
 
         return services;
     }

@@ -12,4 +12,6 @@ public interface ICotizacionService
     Task<(CotizacionResponse? Result, string? Error)> CrearCotizacionAsync(CrearCotizacionRequest request, CancellationToken cancellationToken = default);
     Task<(CotizacionResponse? Result, string? Error)> ActualizarCotizacionAsync(int id, CrearCotizacionRequest request, CancellationToken cancellationToken = default);
     Task<bool> DeleteCotizacionAsync(int id, CancellationToken cancellationToken = default);
+    Task<(AprobarCotizacionResponse? Result, string? Error)> AprobarCotizacionAsync(int id, CancellationToken cancellationToken = default);
+    Task<(CotizacionResponse? Result, string? Error)> RechazarCotizacionAsync(int id, string? motivo, CancellationToken cancellationToken = default);
 }

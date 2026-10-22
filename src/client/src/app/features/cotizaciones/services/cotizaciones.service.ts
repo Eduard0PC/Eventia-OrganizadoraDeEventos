@@ -36,6 +36,14 @@ export class CotizacionesService {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 
+  aprobarCotizacion(id: number): Observable<import('@core/models/cotizacion.models').AprobarCotizacionResponse> {
+    return this.http.post<import('@core/models/cotizacion.models').AprobarCotizacionResponse>(`${this.apiUrl}/${id}/aprobar`, {});
+  }
+
+  rechazarCotizacion(id: number, motivo?: string): Observable<Cotizacion> {
+    return this.http.post<Cotizacion>(`${this.apiUrl}/${id}/rechazar`, { motivo });
+  }
+
   getServiciosExtra(categoria?: string): Observable<import('@core/models/cotizacion.models').ServicioExtraItem[]> {
     const url = categoria
       ? `${environment.apiUrl}/api/catalogo-servicios/extras?categoria=${encodeURIComponent(categoria)}`
@@ -43,6 +51,18 @@ export class CotizacionesService {
     return this.http.get<import('@core/models/cotizacion.models').ServicioExtraItem[]>(url).pipe(
       catchError((err) => {
         console.error('Error fetching servicios extra:', err);
+        return of([]);
+      })
+    );
+  }
+
+  getServiciosPorDefecto(categoria?: string): Observable<import('@core/models/cotizacion.models').ServicioDefectoItem[]> {
+    const url = categoria
+      ? `${environment.apiUrl}/api/catalogo-servicios/por-defecto?categoria=${encodeURIComponent(categoria)}`
+      : `${environment.apiUrl}/api/catalogo-servicios/por-defecto`;
+    return this.http.get<import('@core/models/cotizacion.models').ServicioDefectoItem[]>(url).pipe(
+      catchError((err) => {
+        console.error('Error fetching servicios por defecto:', err);
         return of([]);
       })
     );

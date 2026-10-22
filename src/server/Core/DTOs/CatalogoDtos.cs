@@ -47,3 +47,18 @@ public record ServicioExtraDto(
     string? Categoria,
     string? CategoriaProveedor
 );
+
+/// <summary>Servicio por defecto incluido en el evento según su categoría.</summary>
+public record ServicioDefectoDto(
+    int Id,
+    int CatalogoServicioId,
+    string Nombre,
+    string? Descripcion,
+    string Categoria,
+    string? CategoriaProveedor,
+    bool EsObligatorio,
+    bool IncluidoEnPrecio,
+    short OrdenPrioridad,
+    string? Notas
+);
+

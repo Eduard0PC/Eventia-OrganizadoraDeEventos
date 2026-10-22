@@ -20,6 +20,7 @@ public class AppDbContext : DbContext
     public DbSet<CategoriaProveedor> CategoriasProveedores => Set<CategoriaProveedor>();
     public DbSet<Proveedor> Proveedores => Set<Proveedor>();
     public DbSet<ProveedorServicio> ProveedorServicios => Set<ProveedorServicio>();
+    public DbSet<CatalogoEventoServicio> CatalogoEventoServicios => Set<CatalogoEventoServicio>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -107,6 +108,26 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.SetNull);
         });
 
+        modelBuilder.Entity<CatalogoEventoServicio>(e =>
+        {
+            e.ToTable("catalogo_evento_servicios");
+            e.HasKey(ces => ces.Id);
+            e.Property(ces => ces.Id).HasColumnName("id");
+            e.Property(ces => ces.Categoria).HasColumnName("categoria");
+            e.Property(ces => ces.CatalogoServicioId).HasColumnName("catalogo_servicio_id");
+            e.Property(ces => ces.EsObligatorio).HasColumnName("es_obligatorio");
+            e.Property(ces => ces.IncluidoEnPrecio).HasColumnName("incluido_en_precio");
+            e.Property(ces => ces.OrdenPrioridad).HasColumnName("orden_prioridad");
+            e.Property(ces => ces.Notas).HasColumnName("notas");
+            e.Property(ces => ces.CreatedAt).HasColumnName("created_at");
+            e.Property(ces => ces.UpdatedAt).HasColumnName("updated_at");
+
+            e.HasOne(ces => ces.CatalogoServicio)
+                .WithMany()
+                .HasForeignKey(ces => ces.CatalogoServicioId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
         modelBuilder.Entity<Cotizacion>(e =>
         {
             e.ToTable("cotizaciones");
@@ -118,8 +139,8 @@ public class AppDbContext : DbContext
             e.Property(c => c.Total).HasColumnName("total");
             e.Property(c => c.Descuento).HasColumnName("descuento");
             e.Property(c => c.Estatus).HasColumnName("estatus");
-            e.Property(c => c.FechaVigencia).HasColumnName("fecha_vigencia");
-            e.Property(c => c.FechaEvento).HasColumnName("fecha_evento");
+            e.Property(c => c.FechaVigencia).HasColumnName("fecha_vigencia").HasColumnType("date");
+            e.Property(c => c.FechaEvento).HasColumnName("fecha_evento").HasColumnType("date");
             e.Property(c => c.Invitados).HasColumnName("invitados");
             e.Property(c => c.Notas).HasColumnName("notas");
             e.Property(c => c.CreatedAt).HasColumnName("created_at");
@@ -169,9 +190,9 @@ public class AppDbContext : DbContext
             e.Property(c => c.ClienteId).HasColumnName("cliente_id");
             e.Property(c => c.CotizacionId).HasColumnName("cotizacion_id");
             e.Property(c => c.Folio).HasColumnName("folio");
-            e.Property(c => c.FechaFirma).HasColumnName("fecha_firma");
-            e.Property(c => c.FechaInicio).HasColumnName("fecha_inicio");
-            e.Property(c => c.FechaFin).HasColumnName("fecha_fin");
+            e.Property(c => c.FechaFirma).HasColumnName("fecha_firma").HasColumnType("date");
+            e.Property(c => c.FechaInicio).HasColumnName("fecha_inicio").HasColumnType("date");
+            e.Property(c => c.FechaFin).HasColumnName("fecha_fin").HasColumnType("date");
             e.Property(c => c.TotalContrato).HasColumnName("total_contrato");
             e.Property(c => c.Estatus).HasColumnName("estatus");
             e.Property(c => c.Condiciones).HasColumnName("condiciones");
@@ -195,7 +216,7 @@ public class AppDbContext : DbContext
             e.Property(ev => ev.Id).HasColumnName("id");
             e.Property(ev => ev.ContratoId).HasColumnName("contrato_id");
             e.Property(ev => ev.CatalogoEventoId).HasColumnName("catalogo_evento_id");
-            e.Property(ev => ev.FechaEvento).HasColumnName("fecha_evento");
+            e.Property(ev => ev.FechaEvento).HasColumnName("fecha_evento").HasColumnType("date");
             e.Property(ev => ev.HoraInicio).HasColumnName("hora_inicio");
             e.Property(ev => ev.HoraFin).HasColumnName("hora_fin");
             e.Property(ev => ev.Lugar).HasColumnName("lugar");
@@ -225,7 +246,7 @@ public class AppDbContext : DbContext
             e.Property(p => p.MetodoPago).HasColumnName("metodo_pago");
             e.Property(p => p.TipoTransaccion).HasColumnName("tipo_transaccion");
             e.Property(p => p.Referencia).HasColumnName("referencia");
-            e.Property(p => p.FechaPago).HasColumnName("fecha_pago");
+            e.Property(p => p.FechaPago).HasColumnName("fecha_pago").HasColumnType("date");
             e.Property(p => p.Estatus).HasColumnName("estatus");
             e.Property(p => p.Notas).HasColumnName("notas");
             e.Property(p => p.CreatedAt).HasColumnName("created_at");

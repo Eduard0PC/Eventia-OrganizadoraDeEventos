@@ -23,6 +23,7 @@ import { ProveedorCardComponent } from '@features/proveedores/components/proveed
 import { ProveedorServiciosModalComponent } from '@features/proveedores/components/proveedor-servicios-modal/proveedor-servicios-modal';
 import { ProveedorFormModalComponent } from '@features/proveedores/components/proveedor-form-modal/proveedor-form-modal';
 import { LoadingSpinnerComponent } from '@shared/components/loading-spinner/loading-spinner.component';
+import { EventosService } from '@features/eventos/services/eventos.service';
 
 export type EmployeeTab =
   | 'inicio'
@@ -120,6 +121,7 @@ export class Empleado implements OnInit {
   private readonly clientesService = inject(ClientesService);
   private readonly catalogoService = inject(CatalogoService);
   private readonly proveedorService = inject(ProveedorService);
+  private readonly eventosService = inject(EventosService);
   private readonly toastService = inject(ToastService);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly router = inject(Router);
@@ -127,6 +129,17 @@ export class Empleado implements OnInit {
   // Tab State
   activeTab: EmployeeTab = 'inicio';
   sidebarOpen = false;
+
+  // Modal Ajuste de Cotización por Empleado
+  showAjusteModal = false;
+  cotizacionAjustando: Cotizacion | null = null;
+  ajusteFechaEvento = '';
+  ajusteInvitados = 50;
+  ajusteHorasAdicionales = 0;
+  ajusteNotas = '';
+  guardandoAjuste = false;
+  serviciosExtraAjuste: import('@core/models/cotizacion.models').ServicioExtraItem[] = [];
+  cargandoServiciosAjuste = false;
 
   // User Info
   empleadoNombre = 'Carlos Ruiz';
@@ -243,6 +256,7 @@ export class Empleado implements OnInit {
     this.loadProveedores();
     this.loadCategoriasProveedores();
     this.initMockData();
+    this.loadPlanificador();
   }
 
   loadProveedores(): void {
@@ -962,12 +976,189 @@ export class Empleado implements OnInit {
     plan.progreso = Math.round((doneCount / plan.checklist.length) * 100);
   }
 
-  approveCotizacion(cot: Cotizacion): void {
-    cot.estatus = 'aceptada';
+  loadPlanificador(): void {
+    this.eventosService.getEventos().subscribe({
+      next: (data) => {
+        if (data && data.length > 0) {
+          this.planificador = data.map((ev) => {
+            const st = (ev.estatus || '').toLowerCase();
+            let progreso = 30;
+            let estatusEtiqueta: 'En preparación' | 'Confirmado' | 'En ejecución' | 'Finalizado' = 'En preparación';
+
+            if (st === 'programado') {
+              progreso = 35;
+              estatusEtiqueta = 'En preparación';
+            } else if (st === 'en_curso') {
+              progreso = 75;
+              estatusEtiqueta = 'En ejecución';
+            } else if (st === 'completado') {
+              progreso = 100;
+              estatusEtiqueta = 'Finalizado';
+            } else if (st === 'reprogramado') {
+              progreso = 20;
+              estatusEtiqueta = 'Confirmado';
+            }
+
+            return {
+              id: ev.id,
+              nombreEvento: ev.nombreEvento || 'Evento Contratado',
+              clienteNombre: ev.nombreCliente || 'Cliente',
+              fecha: ev.fechaEvento || '',
+              lugar: ev.lugar || 'Salón por confirmar',
+              invitados: ev.aforo || 50,
+              progreso: progreso,
+              estatus: estatusEtiqueta,
+              encargado: this.empleadoNombre,
+              checklist: [
+                { tarea: 'Confirmación de Menú y Servicios', completado: true },
+                { tarea: 'Asignación de Proveedores', completado: true },
+                { tarea: 'Coordinación Logística y Montaje', completado: progreso >= 50 },
+                { tarea: 'Supervisión en Fecha de Evento', completado: progreso >= 75 },
+                { tarea: 'Cierre y Liquidación', completado: progreso === 100 }
+              ]
+            };
+          });
+          this.cdr.detectChanges();
+        }
+      },
+      error: (err) => console.error('Error al cargar eventos en el planificador:', err)
+    });
   }
 
-  rejectCotizacion(cot: Cotizacion): void {
-    cot.estatus = 'rechazada';
+  approveCotizacion(cot: Cotizacion): void {
+    if (!confirm(`¿Confirmas la aprobación de la cotización ${cot.folio} para formalizar el contrato legal y programar el evento?`)) {
+      return;
+    }
+
+    this.cotizacionesService.aprobarCotizacion(cot.id).subscribe({
+      next: (res) => {
+        this.toastService.showSuccess(`Cotización aprobada con éxito. Contrato formalizado con folio: ${res.folioContrato}`);
+        this.loadCotizaciones();
+        this.loadPlanificador();
+        this.cerrarDesgloseCotizacion();
+      },
+      error: (err) => {
+        console.error('Error al aprobar cotización:', err);
+        this.toastService.showError(err?.error?.error || 'No se pudo aprobar la cotización.');
+      }
+    });
+  }
+
+  rejectCotizacion(cot: Cotizacion, motivo?: string): void {
+    this.cotizacionesService.rechazarCotizacion(cot.id, motivo).subscribe({
+      next: () => {
+        this.toastService.showInfo('La cotización ha sido rechazada formalmente.');
+        this.loadCotizaciones();
+        this.cerrarDesgloseCotizacion();
+      },
+      error: (err) => {
+        console.error('Error al rechazar cotización:', err);
+        this.toastService.showError(err?.error?.error || 'No se pudo rechazar la cotización.');
+      }
+    });
+  }
+
+  aprobarCotizacionDesdeModal(cot: Cotizacion): void {
+    this.approveCotizacion(cot);
+  }
+
+  rechazarCotizacionDesdeModal(event: { cotizacion: Cotizacion; motivo: string }): void {
+    this.rejectCotizacion(event.cotizacion, event.motivo);
+  }
+
+  ajustarCotizacionDesdeModal(cot: Cotizacion): void {
+    this.cerrarDesgloseCotizacion();
+    this.abrirAjusteCotizacion(cot);
+  }
+
+  abrirAjusteCotizacion(cot: Cotizacion): void {
+    this.cotizacionAjustando = cot;
+    this.ajusteFechaEvento = cot.fechaEvento || '';
+    this.ajusteInvitados = cot.invitados || 50;
+
+    const itemHoras = cot.items.find(i => i.descripcion.toLowerCase().includes('horas adicionales'));
+    this.ajusteHorasAdicionales = itemHoras ? (itemHoras.cantidad || 0) : 0;
+    this.ajusteNotas = cot.notas || '';
+
+    this.serviciosExtraAjuste = [];
+    this.showAjusteModal = true;
+    this.cargarServiciosExtraAjuste(cot);
+  }
+
+  cerrarAjusteCotizacion(): void {
+    this.showAjusteModal = false;
+    this.cotizacionAjustando = null;
+    this.serviciosExtraAjuste = [];
+  }
+
+  cargarServiciosExtraAjuste(cot: Cotizacion): void {
+    this.cargandoServiciosAjuste = true;
+    this.cdr.detectChanges();
+
+    this.cotizacionesService.getServiciosExtra(cot.categoriaEvento).subscribe({
+      next: (servicios) => {
+        const itemsCot = cot.items || [];
+        this.serviciosExtraAjuste = (servicios || []).map(s => {
+          const yaSeleccionado = itemsCot.some(i =>
+            (i.esServicioExtra && i.catalogoServicioId === s.id) ||
+            i.catalogoServicioId === s.id ||
+            (i.tipo === 'servicio' && i.descripcion?.toLowerCase() === s.nombre.toLowerCase())
+          );
+          return {
+            ...s,
+            seleccionado: yaSeleccionado
+          };
+        });
+        this.cargandoServiciosAjuste = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error al cargar servicios extra para ajuste:', err);
+        this.serviciosExtraAjuste = [];
+        this.cargandoServiciosAjuste = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  toggleServicioExtraAjuste(servicio: import('@core/models/cotizacion.models').ServicioExtraItem): void {
+    servicio.seleccionado = !servicio.seleccionado;
+  }
+
+  guardarAjusteCotizacion(): void {
+    if (!this.cotizacionAjustando || !this.ajusteFechaEvento || !this.ajusteInvitados || this.guardandoAjuste) {
+      return;
+    }
+
+    const catalogoId = this.cotizacionAjustando.catalogoEventoId || 1;
+    const serviciosExtraIds = this.serviciosExtraAjuste
+      .filter(s => s.seleccionado)
+      .map(s => s.id);
+
+    this.guardandoAjuste = true;
+
+    this.cotizacionesService.actualizarCotizacion(this.cotizacionAjustando.id, {
+      clienteId: undefined,
+      catalogoEventoId: catalogoId,
+      fechaEvento: this.ajusteFechaEvento,
+      invitados: this.ajusteInvitados,
+      horasAdicionales: this.ajusteHorasAdicionales,
+      notas: this.ajusteNotas,
+      estatus: 'modificada',
+      serviciosExtraIds: serviciosExtraIds
+    }).subscribe({
+      next: () => {
+        this.guardandoAjuste = false;
+        this.cerrarAjusteCotizacion();
+        this.loadCotizaciones();
+        this.toastService.showSuccess('Propuesta de cotización actualizada exitosamente en la base de datos.');
+      },
+      error: (err) => {
+        this.guardandoAjuste = false;
+        console.error('Error al ajustar cotización:', err);
+        this.toastService.showError(err?.error?.error || 'No se pudo actualizar la propuesta.');
+      }
+    });
   }
 
   saveNewClient(): void {

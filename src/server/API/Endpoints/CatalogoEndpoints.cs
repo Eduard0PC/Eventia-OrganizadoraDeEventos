@@ -138,6 +138,13 @@ public static class CatalogoEndpoints
         })
         .WithName("GetServiciosExtra");
 
+        endpoints.MapGet("/api/catalogo-servicios/por-defecto", async (string? categoria, ICatalogoService catalogoService, CancellationToken cancellationToken) =>
+        {
+            var servicios = await catalogoService.GetServiciosDefectoPorCategoriaAsync(categoria, cancellationToken);
+            return Results.Ok(servicios);
+        })
+        .WithName("GetServiciosDefectoPorCategoria");
+
         endpoints.MapGet("/api/catalogo-servicios/{id:int}", async (int id, ICatalogoService catalogoService, CancellationToken cancellationToken) =>
         {
             var servicio = await catalogoService.GetCatalogoServicioByIdAsync(id, cancellationToken);

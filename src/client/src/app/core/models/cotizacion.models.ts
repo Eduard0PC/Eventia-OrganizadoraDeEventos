@@ -1,4 +1,4 @@
-export type EstatusCotizacion = 'borrador' | 'enviada' | 'aceptada' | 'rechazada' | 'vencida';
+export type EstatusCotizacion = 'borrador' | 'enviada' | 'modificada' | 'aceptada' | 'rechazada' | 'vencida';
 
 export interface CotizacionItem {
   id?: number;
@@ -30,6 +30,7 @@ export interface Cotizacion {
   fechaCreacion: string;
   notas: string;
   items: CotizacionItem[];
+  serviciosPorDefecto?: ServicioDefectoItem[];
 }
 
 export interface CrearCotizacionRequest {
@@ -53,3 +54,31 @@ export interface ServicioExtraItem {
   categoriaProveedor?: string;
   seleccionado?: boolean;
 }
+
+export interface ServicioDefectoItem {
+  id: number;
+  catalogoServicioId: number;
+  nombre: string;
+  descripcion?: string;
+  categoria: string;
+  categoriaProveedor?: string;
+  esObligatorio: boolean;
+  incluidoEnPrecio: boolean;
+  ordenPrioridad: number;
+  notas?: string;
+}
+
+export interface AprobarCotizacionResponse {
+  cotizacionId: number;
+  folioCotizacion: string;
+  estatusCotizacion: string;
+  contratoId: number;
+  folioContrato: string;
+  eventoContratadoId: number;
+  mensaje: string;
+}
+
+export interface RechazarCotizacionRequest {
+  motivo?: string;
+}
+
