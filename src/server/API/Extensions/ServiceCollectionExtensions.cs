@@ -81,6 +81,34 @@ public static class ServiceCollectionExtensions
                     IF NOT EXISTS (SELECT 1 FROM pg_cast JOIN pg_type s ON pg_cast.castsource = s.oid JOIN pg_type t ON pg_cast.casttarget = t.oid WHERE s.typname = 'varchar' AND t.typname = 'estatus_evento') THEN
                         CREATE CAST (varchar AS estatus_evento) WITH INOUT AS IMPLICIT;
                     END IF;
+
+                    IF NOT EXISTS (SELECT 1 FROM pg_cast JOIN pg_type s ON pg_cast.castsource = s.oid JOIN pg_type t ON pg_cast.casttarget = t.oid WHERE s.typname = 'text' AND t.typname = 'estatus_plan_pago') THEN
+                        CREATE CAST (text AS estatus_plan_pago) WITH INOUT AS IMPLICIT;
+                    END IF;
+                    IF NOT EXISTS (SELECT 1 FROM pg_cast JOIN pg_type s ON pg_cast.castsource = s.oid JOIN pg_type t ON pg_cast.casttarget = t.oid WHERE s.typname = 'varchar' AND t.typname = 'estatus_plan_pago') THEN
+                        CREATE CAST (varchar AS estatus_plan_pago) WITH INOUT AS IMPLICIT;
+                    END IF;
+
+                    IF NOT EXISTS (SELECT 1 FROM pg_cast JOIN pg_type s ON pg_cast.castsource = s.oid JOIN pg_type t ON pg_cast.casttarget = t.oid WHERE s.typname = 'text' AND t.typname = 'estatus_pago') THEN
+                        CREATE CAST (text AS estatus_pago) WITH INOUT AS IMPLICIT;
+                    END IF;
+                    IF NOT EXISTS (SELECT 1 FROM pg_cast JOIN pg_type s ON pg_cast.castsource = s.oid JOIN pg_type t ON pg_cast.casttarget = t.oid WHERE s.typname = 'varchar' AND t.typname = 'estatus_pago') THEN
+                        CREATE CAST (varchar AS estatus_pago) WITH INOUT AS IMPLICIT;
+                    END IF;
+
+                    IF NOT EXISTS (SELECT 1 FROM pg_cast JOIN pg_type s ON pg_cast.castsource = s.oid JOIN pg_type t ON pg_cast.casttarget = t.oid WHERE s.typname = 'text' AND t.typname = 'metodo_pago_tipo') THEN
+                        CREATE CAST (text AS metodo_pago_tipo) WITH INOUT AS IMPLICIT;
+                    END IF;
+                    IF NOT EXISTS (SELECT 1 FROM pg_cast JOIN pg_type s ON pg_cast.castsource = s.oid JOIN pg_type t ON pg_cast.casttarget = t.oid WHERE s.typname = 'varchar' AND t.typname = 'metodo_pago_tipo') THEN
+                        CREATE CAST (varchar AS metodo_pago_tipo) WITH INOUT AS IMPLICIT;
+                    END IF;
+
+                    IF NOT EXISTS (SELECT 1 FROM pg_cast JOIN pg_type s ON pg_cast.castsource = s.oid JOIN pg_type t ON pg_cast.casttarget = t.oid WHERE s.typname = 'text' AND t.typname = 'tipo_transaccion_tipo') THEN
+                        CREATE CAST (text AS tipo_transaccion_tipo) WITH INOUT AS IMPLICIT;
+                    END IF;
+                    IF NOT EXISTS (SELECT 1 FROM pg_cast JOIN pg_type s ON pg_cast.castsource = s.oid JOIN pg_type t ON pg_cast.casttarget = t.oid WHERE s.typname = 'varchar' AND t.typname = 'tipo_transaccion_tipo') THEN
+                        CREATE CAST (varchar AS tipo_transaccion_tipo) WITH INOUT AS IMPLICIT;
+                    END IF;
                 END $$;
             ");
         }
@@ -99,6 +127,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IClienteService, ClienteService>();
         services.AddScoped<IProveedorService, ProveedorService>();
         services.AddScoped<IEventoService, EventoService>();
+        services.AddScoped<IPagoService, PagoService>();
 
         return services;
     }

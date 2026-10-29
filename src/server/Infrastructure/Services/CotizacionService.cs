@@ -290,6 +290,40 @@ public class CotizacionService : ICotizacionService
             _db.Contratos.Add(contrato);
             await _db.SaveChangesAsync(cancellationToken);
 
+            decimal totalContrato = contrato.TotalContrato;
+            decimal cuota1Monto = Math.Round(totalContrato / 2m, 2);
+            decimal cuota2Monto = totalContrato - cuota1Monto;
+
+            DateTime fechaAnticipo = DateTime.SpecifyKind(DateTime.UtcNow.AddDays(5).Date, DateTimeKind.Utc);
+            DateTime fechaLiquidacion = fechaEv.AddDays(-7).Date;
+            if (fechaLiquidacion <= DateTime.UtcNow.Date)
+            {
+                fechaLiquidacion = fechaEv.Date;
+            }
+            fechaLiquidacion = DateTime.SpecifyKind(fechaLiquidacion, DateTimeKind.Utc);
+
+            _db.PlanPagos.Add(new PlanPago
+            {
+                ContratoId = contrato.Id,
+                NumeroPago = 1,
+                Monto = cuota1Monto,
+                FechaVencimiento = fechaAnticipo,
+                Estatus = "pendiente",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            });
+
+            _db.PlanPagos.Add(new PlanPago
+            {
+                ContratoId = contrato.Id,
+                NumeroPago = 2,
+                Monto = cuota2Monto,
+                FechaVencimiento = fechaLiquidacion,
+                Estatus = "pendiente",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            });
+
             int catalogoEventoId = cotizacion.Items.FirstOrDefault(i => i.CatalogoEventoId.HasValue)?.CatalogoEventoId
                 ?? await _db.CatalogoEventos.Where(e => e.Activo).Select(e => e.Id).FirstOrDefaultAsync(cancellationToken);
 

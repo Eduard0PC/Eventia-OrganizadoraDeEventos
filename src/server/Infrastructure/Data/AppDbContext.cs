@@ -17,6 +17,8 @@ public class AppDbContext : DbContext
     public DbSet<Contrato> Contratos => Set<Contrato>();
     public DbSet<EventoContratado> EventosContratados => Set<EventoContratado>();
     public DbSet<Pago> Pagos => Set<Pago>();
+    public DbSet<PlanPago> PlanPagos => Set<PlanPago>();
+    public DbSet<Ticket> Tickets => Set<Ticket>();
     public DbSet<CategoriaProveedor> CategoriasProveedores => Set<CategoriaProveedor>();
     public DbSet<Proveedor> Proveedores => Set<Proveedor>();
     public DbSet<ProveedorServicio> ProveedorServicios => Set<ProveedorServicio>();
@@ -235,6 +237,24 @@ public class AppDbContext : DbContext
                 .HasForeignKey(ev => ev.CatalogoEventoId);
         });
 
+        modelBuilder.Entity<PlanPago>(e =>
+        {
+            e.ToTable("plan_pagos");
+            e.HasKey(pp => pp.Id);
+            e.Property(pp => pp.Id).HasColumnName("id");
+            e.Property(pp => pp.ContratoId).HasColumnName("contrato_id");
+            e.Property(pp => pp.NumeroPago).HasColumnName("numero_pago");
+            e.Property(pp => pp.Monto).HasColumnName("monto");
+            e.Property(pp => pp.FechaVencimiento).HasColumnName("fecha_vencimiento").HasColumnType("date");
+            e.Property(pp => pp.Estatus).HasColumnName("estatus");
+            e.Property(pp => pp.CreatedAt).HasColumnName("created_at");
+            e.Property(pp => pp.UpdatedAt).HasColumnName("updated_at");
+
+            e.HasOne(pp => pp.Contrato)
+                .WithMany(c => c.PlanPagos)
+                .HasForeignKey(pp => pp.ContratoId);
+        });
+
         modelBuilder.Entity<Pago>(e =>
         {
             e.ToTable("pagos");
@@ -250,10 +270,34 @@ public class AppDbContext : DbContext
             e.Property(p => p.Estatus).HasColumnName("estatus");
             e.Property(p => p.Notas).HasColumnName("notas");
             e.Property(p => p.CreatedAt).HasColumnName("created_at");
+            e.Property(p => p.UpdatedAt).HasColumnName("updated_at");
 
             e.HasOne(p => p.Contrato)
                 .WithMany(c => c.Pagos)
                 .HasForeignKey(p => p.ContratoId);
+
+            e.HasOne(p => p.PlanPago)
+                .WithMany(pp => pp.Pagos)
+                .HasForeignKey(p => p.PlanPagoId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            e.HasOne(p => p.Ticket)
+                .WithOne(t => t.Pago)
+                .HasForeignKey<Ticket>(t => t.PagoId);
+        });
+
+        modelBuilder.Entity<Ticket>(e =>
+        {
+            e.ToTable("tickets");
+            e.HasKey(t => t.Id);
+            e.Property(t => t.Id).HasColumnName("id");
+            e.Property(t => t.PagoId).HasColumnName("pago_id");
+            e.Property(t => t.Folio).HasColumnName("folio");
+            e.Property(t => t.EmitidoAt).HasColumnName("emitido_at");
+            e.Property(t => t.Impreso).HasColumnName("impreso");
+            e.Property(t => t.UrlPdf).HasColumnName("url_pdf");
+            e.Property(t => t.CreatedAt).HasColumnName("created_at");
+            e.Property(t => t.UpdatedAt).HasColumnName("updated_at");
         });
 
         modelBuilder.Entity<CategoriaProveedor>(e =>

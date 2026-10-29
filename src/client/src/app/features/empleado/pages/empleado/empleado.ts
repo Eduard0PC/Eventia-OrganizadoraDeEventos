@@ -24,6 +24,8 @@ import { ProveedorServiciosModalComponent } from '@features/proveedores/componen
 import { ProveedorFormModalComponent } from '@features/proveedores/components/proveedor-form-modal/proveedor-form-modal';
 import { LoadingSpinnerComponent } from '@shared/components/loading-spinner/loading-spinner.component';
 import { EventosService } from '@features/eventos/services/eventos.service';
+import { PagosService } from '@features/pagos/services/pagos.service';
+import { EstadoCuentaEvento, PagoItem as BackendPagoItem } from '@core/models/pago.models';
 
 export type EmployeeTab =
   | 'inicio'
@@ -61,6 +63,8 @@ export interface ClienteItem {
 
 export interface PlanificadorEvento {
   id: number;
+  contratoId?: number;
+  folioContrato?: string;
   nombreEvento: string;
   clienteNombre: string;
   fecha: string;
@@ -122,6 +126,7 @@ export class Empleado implements OnInit {
   private readonly catalogoService = inject(CatalogoService);
   private readonly proveedorService = inject(ProveedorService);
   private readonly eventosService = inject(EventosService);
+  private readonly pagosService = inject(PagosService);
   private readonly toastService = inject(ToastService);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly router = inject(Router);
@@ -160,6 +165,13 @@ export class Empleado implements OnInit {
   clientes: ClienteSummary[] = [];
   planificador: PlanificadorEvento[] = [];
   pagos: PagoItem[] = [];
+  estadosCuenta: EstadoCuentaEvento[] = [];
+  pagosFilterStatus: 'todos' | 'pendientes' | 'liquidados' = 'todos';
+  pagosSearchQuery = '';
+  selectedEventoPago: EstadoCuentaEvento | null = null;
+  empleadoModoMonto: 'anticipo' | 'total' | 'personalizado' = 'anticipo';
+  showReciboModal = false;
+  selectedPagoRecibo: BackendPagoItem | null = null;
   proveedores: Proveedor[] = [];
   categoriasProveedores: CategoriaProveedor[] = [];
 
@@ -225,10 +237,13 @@ export class Empleado implements OnInit {
 
   showNewPaymentModal = false;
   newPaymentData = {
+    contratoId: 0,
     folioCotizacion: '',
     clienteNombre: '',
     monto: 0,
-    metodo: 'Transferencia' as const,
+    metodo: 'Efectivo',
+    referencia: '',
+    notas: '',
     estatus: 'Completado' as const,
   };
 
@@ -257,6 +272,7 @@ export class Empleado implements OnInit {
     this.loadCategoriasProveedores();
     this.initMockData();
     this.loadPlanificador();
+    this.loadPagos();
   }
 
   loadProveedores(): void {
@@ -788,48 +804,45 @@ export class Empleado implements OnInit {
       },
     ];
 
-    // Pagos
-    this.pagos = [
-      {
-        id: 'PAG-2026-0091',
-        folioCotizacion: 'COT-2026-4821',
-        clienteNombre: 'Mariana González',
-        monto: 23000,
-        metodo: 'Transferencia',
-        fecha: '2026-08-21',
-        estatus: 'Completado',
-      },
-      {
-        id: 'PAG-2026-0088',
-        folioCotizacion: 'COT-2026-3912',
-        clienteNombre: 'Roberto Mendoza',
-        monto: 19000,
-        metodo: 'Tarjeta',
-        fecha: '2026-08-16',
-        estatus: 'Completado',
-      },
-      {
-        id: 'PAG-2026-0075',
-        folioCotizacion: 'COT-2026-1093',
-        clienteNombre: 'Alejandro Vargas',
-        monto: 16500,
-        metodo: 'Efectivo',
-        fecha: '2026-08-05',
-        estatus: 'Completado',
-      },
-      {
-        id: 'PAG-2026-0095',
-        folioCotizacion: 'COT-2026-4821',
-        clienteNombre: 'Mariana González',
-        monto: 23000,
-        metodo: 'Transferencia',
-        fecha: '2026-09-30',
-        estatus: 'Pendiente',
-      },
-    ];
+    // Pagos cargados dinámicamente desde base de datos
+    this.pagos = [];
   }
 
-  // Calculated Metrics for Dashboard (Inicio)
+  loadPagos(): void {
+    this.pagosService.getEstadoCuenta().subscribe({
+      next: (lista) => {
+        this.estadosCuenta = lista || [];
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error al cargar estado de cuenta en empleado:', err);
+        this.estadosCuenta = [];
+        this.cdr.detectChanges();
+      }
+    });
+
+    this.pagosService.getPagos().subscribe({
+      next: (lista) => {
+        this.pagos = (lista || []).map((p) => ({
+          id: p.ticketFolio || `PAG-${p.id}`,
+          folioCotizacion: p.folioContrato,
+          clienteNombre: p.clienteNombre,
+          monto: p.monto,
+          metodo: (p.metodoPago === 'transferencia' ? 'Transferencia' : p.metodoPago === 'efectivo' ? 'Efectivo' : 'Tarjeta') as any,
+          fecha: p.fechaPago,
+          estatus: (p.estatus === 'procesado' ? 'Completado' : 'Pendiente') as any,
+        }));
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error al cargar pagos en empleado:', err);
+        this.pagos = [];
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  // Calculated Metrics for Dashboard & Pagos
   get totalEventosActivos(): number {
     return this.planificador.filter((e) => e.estatus !== 'Finalizado').length;
   }
@@ -839,9 +852,35 @@ export class Empleado implements OnInit {
   }
 
   get ingresosTotalesMes(): number {
-    return this.pagos
-      .filter((p) => p.estatus === 'Completado')
-      .reduce((acc, curr) => acc + curr.monto, 0);
+    return this.estadosCuenta.reduce((acc, curr) => acc + curr.totalPagado, 0);
+  }
+
+  get saldoPendienteCobrarTotal(): number {
+    return this.estadosCuenta.reduce((acc, curr) => acc + curr.saldoPendiente, 0);
+  }
+
+  get conteoEventosConSaldoPendiente(): number {
+    return this.estadosCuenta.filter((ev) => ev.saldoPendiente > 0.009).length;
+  }
+
+  get filteredEstadosCuenta(): EstadoCuentaEvento[] {
+    const q = this.pagosSearchQuery.trim().toLowerCase();
+    return this.estadosCuenta.filter((item) => {
+      const matchSearch =
+        !q ||
+        item.folioContrato.toLowerCase().includes(q) ||
+        item.evento.toLowerCase().includes(q) ||
+        item.clienteNombre.toLowerCase().includes(q) ||
+        item.pagos.some(p => (p.ticketFolio && p.ticketFolio.toLowerCase().includes(q)) ||
+                             (p.referencia && p.referencia.toLowerCase().includes(q)));
+
+      const matchStatus =
+        this.pagosFilterStatus === 'todos' ||
+        (this.pagosFilterStatus === 'pendientes' && item.saldoPendiente > 0.009) ||
+        (this.pagosFilterStatus === 'liquidados' && item.saldoPendiente <= 0.009);
+
+      return matchSearch && matchStatus;
+    });
   }
 
   get totalClientes(): number {
@@ -1001,6 +1040,8 @@ export class Empleado implements OnInit {
 
             return {
               id: ev.id,
+              contratoId: ev.contratoId,
+              folioContrato: ev.folioContrato,
               nombreEvento: ev.nombreEvento || 'Evento Contratado',
               clienteNombre: ev.nombreCliente || 'Cliente',
               fecha: ev.fechaEvento || '',
@@ -1298,20 +1339,179 @@ export class Empleado implements OnInit {
     });
   }
 
+  abrirRegistrarPagoParaEvento(ev: EstadoCuentaEvento): void {
+    this.selectedEventoPago = ev;
+    this.newPaymentData.contratoId = ev.contratoId;
+    this.newPaymentData.folioCotizacion = ev.folioContrato;
+    this.newPaymentData.clienteNombre = ev.clienteNombre;
+    this.newPaymentData.metodo = 'Efectivo';
+    this.newPaymentData.referencia = '';
+    this.newPaymentData.notas = '';
+
+    if (ev.anticipoRestante > 0.009) {
+      this.empleadoModoMonto = 'anticipo';
+      this.newPaymentData.monto = ev.anticipoRestante;
+    } else {
+      this.empleadoModoMonto = 'total';
+      this.newPaymentData.monto = ev.saldoPendiente;
+    }
+
+    this.showNewPaymentModal = true;
+    this.cdr.detectChanges();
+  }
+
+  abrirRegistrarNuevoPagoGeneral(): void {
+    if (this.estadosCuenta.length > 0) {
+      const primerPendiente = this.estadosCuenta.find(e => e.saldoPendiente > 0.009) || this.estadosCuenta[0];
+      this.abrirRegistrarPagoParaEvento(primerPendiente);
+    } else {
+      this.selectedEventoPago = null;
+      this.newPaymentData = {
+        contratoId: 0,
+        folioCotizacion: '',
+        clienteNombre: '',
+        monto: 0,
+        metodo: 'Efectivo',
+        referencia: '',
+        notas: '',
+        estatus: 'Completado'
+      };
+      this.showNewPaymentModal = true;
+    }
+  }
+
+  onSeleccionarEventoEnModal(contratoIdStr: string): void {
+    const cid = Number(contratoIdStr);
+    const ev = this.estadosCuenta.find(e => e.contratoId === cid);
+    if (ev) {
+      this.abrirRegistrarPagoParaEvento(ev);
+    }
+  }
+
+  seleccionarModoMontoEmpleado(modo: 'anticipo' | 'total' | 'personalizado'): void {
+    if (!this.selectedEventoPago) return;
+    this.empleadoModoMonto = modo;
+    if (modo === 'anticipo') {
+      this.newPaymentData.monto = this.selectedEventoPago.anticipoRestante;
+    } else if (modo === 'total') {
+      this.newPaymentData.monto = this.selectedEventoPago.saldoPendiente;
+    }
+    this.cdr.detectChanges();
+  }
+
+  ajustarMontoEmpleadoAlMaximo(): void {
+    if (this.selectedEventoPago) {
+      this.newPaymentData.monto = this.selectedEventoPago.saldoPendiente;
+      this.cdr.detectChanges();
+    }
+  }
+
+  get esMontoEmpleadoExcedido(): boolean {
+    return !!this.selectedEventoPago && Number(this.newPaymentData.monto) > this.selectedEventoPago.saldoPendiente + 0.009;
+  }
+
+  get esMontoEmpleadoMenorAnticipo(): boolean {
+    return !!this.selectedEventoPago &&
+      this.selectedEventoPago.anticipoRestante > 0.009 &&
+      Number(this.newPaymentData.monto) + 0.009 < this.selectedEventoPago.anticipoRestante;
+  }
+
+  verReciboEmpleado(pago: BackendPagoItem): void {
+    this.selectedPagoRecibo = pago;
+    this.showReciboModal = true;
+    this.cdr.detectChanges();
+  }
+
+  cerrarReciboEmpleado(): void {
+    this.showReciboModal = false;
+    this.selectedPagoRecibo = null;
+    this.cdr.detectChanges();
+  }
+
+  imprimirReciboEmpleado(): void {
+    window.print();
+  }
+
+  getEstatusCuentaLabel(estatus: string, vencido: boolean): string {
+    if (vencido) return 'Pago Vencido';
+    switch (estatus) {
+      case 'liquidado': return 'Liquidado (100%)';
+      case 'anticipo_pagado': return 'Anticipo Cubierto (50%)';
+      case 'pendiente_anticipo': return 'Pendiente Anticipo (50% mín.)';
+      case 'cancelado': return 'Cancelado';
+      default: return estatus;
+    }
+  }
+
+  getEstatusCuentaClasses(estatus: string, vencido: boolean): string {
+    if (vencido) return 'bg-rose-100 text-rose-800 border-rose-300';
+    switch (estatus) {
+      case 'liquidado': return 'bg-emerald-100 text-emerald-800 border-emerald-300';
+      case 'anticipo_pagado': return 'bg-blue-100 text-blue-800 border-blue-300';
+      case 'pendiente_anticipo': return 'bg-amber-100 text-amber-800 border-amber-300';
+      case 'cancelado': return 'bg-gray-100 text-gray-800 border-gray-300';
+      default: return 'bg-gray-100 text-gray-800 border-gray-300';
+    }
+  }
+
+  formatearFechaPago(fecha?: string | null): string {
+    if (!fecha) return 'Por definir';
+    return new Date(fecha + 'T12:00:00').toLocaleDateString('es-MX', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  }
+
   saveNewPayment(): void {
-    if (!this.newPaymentData.folioCotizacion || !this.newPaymentData.monto) return;
-    const newPayment: PagoItem = {
-      id: `PAG-2026-0${100 + this.pagos.length}`,
-      folioCotizacion: this.newPaymentData.folioCotizacion || '',
-      clienteNombre: this.newPaymentData.clienteNombre || 'Cliente Registrado',
-      monto: Number(this.newPaymentData.monto),
-      metodo: (this.newPaymentData.metodo as any) || 'Transferencia',
-      fecha: new Date().toISOString().split('T')[0],
-      estatus: (this.newPaymentData.estatus as any) || 'Completado',
+    const monto = Number(this.newPaymentData.monto);
+    if (!monto || monto <= 0) {
+      this.toastService.showError('Ingresa un monto válido para el pago.');
+      return;
+    }
+
+    const contratoId = this.selectedEventoPago?.contratoId || this.newPaymentData.contratoId;
+    if (!contratoId) {
+      this.toastService.showError('Selecciona un evento / contrato válido.');
+      return;
+    }
+
+    const evento = this.selectedEventoPago || this.estadosCuenta.find(e => e.contratoId === contratoId);
+    if (evento) {
+      if (evento.saldoPendiente <= 0.009) {
+        this.toastService.showError('Este evento ya se encuentra liquidado al 100%. No admite pagos adicionales.');
+        return;
+      }
+      if (monto > evento.saldoPendiente + 0.009) {
+        this.toastService.showError(`No es posible pagar más del 100% del evento. El saldo pendiente máximo a cobrar es de $${evento.saldoPendiente.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN.`);
+        return;
+      }
+      if (evento.anticipoRestante > 0.009 && monto + 0.009 < evento.anticipoRestante) {
+        this.toastService.showError(`El primer pago debe cubrir al menos el 50% de anticipo ($${evento.anticipoRestante.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN).`);
+        return;
+      }
+    }
+
+    const payload: import('@core/models/pago.models').RegistrarPagoRequest = {
+      contratoId: contratoId,
+      monto: monto,
+      metodoPago: this.newPaymentData.metodo ? this.newPaymentData.metodo.toLowerCase() : 'efectivo',
+      referencia: undefined, // Generado automáticamente por el backend
+      notas: this.newPaymentData.notas?.trim() || `Registrado por personal de oficina para ${this.newPaymentData.clienteNombre || 'cliente'}`
     };
-    this.pagos.unshift(newPayment);
-    this.showNewPaymentModal = false;
-    this.newPaymentData = { folioCotizacion: '', clienteNombre: '', monto: 0, metodo: 'Transferencia', estatus: 'Completado' };
+
+    this.pagosService.registrarPago(payload).subscribe({
+      next: (res) => {
+        this.toastService.showSuccess(`Pago registrado correctamente. Folio Recibo: ${res.ticketFolio || res.pagoId}`);
+        this.loadPagos();
+        this.showNewPaymentModal = false;
+        this.selectedEventoPago = null;
+      },
+      error: (err) => {
+        console.error('Error al registrar pago en empleado:', err);
+        this.toastService.showError(err?.error?.error || 'No se pudo registrar el pago.');
+      }
+    });
   }
 
   verDesgloseCotizacion(cotizacionId: number): void {

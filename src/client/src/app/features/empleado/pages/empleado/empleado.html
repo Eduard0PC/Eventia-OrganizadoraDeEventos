@@ -635,60 +635,306 @@
       <div *ngIf="activeTab === 'pagos'" class="space-y-6 animate-fade-in">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h3 class="text-xl font-bold text-gray-900">Control Financiero de Pagos</h3>
-            <p class="text-xs text-gray-500">Historial de abonos, liquidaciones y recibos de cotizaciones</p>
+            <h3 class="text-xl font-bold text-gray-900">Control Financiero de Eventos y Pagos</h3>
+            <p class="text-xs text-gray-500">Gestión de abonos, anticipos del 50%, liquidaciones y emisión de recibos</p>
           </div>
-          <button (click)="showNewPaymentModal = true" class="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition flex items-center gap-2 shadow-md shadow-red-600/20">
+          <button (click)="abrirRegistrarNuevoPagoGeneral()" class="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition flex items-center gap-2 shadow-md shadow-red-600/20 cursor-pointer">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+            </svg>
             <span>+ Registrar Nuevo Pago</span>
           </button>
         </div>
 
+        <!-- KPIs Financieros Dinámicos -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-md">
             <p class="text-xs font-semibold text-gray-400 uppercase">Recaudación Total</p>
-            <h4 class="text-3xl font-black text-gray-900 mt-2">${{ ingresosTotalesMes | number:'1.0-0' }} MXN</h4>
-            <p class="text-xs text-emerald-600 mt-1 font-semibold">Fondos disponibles</p>
+            <h4 class="text-3xl font-black text-gray-900 mt-2">${{ ingresosTotalesMes | number:'1.2-2' }} MXN</h4>
+            <p class="text-xs text-emerald-600 mt-1 font-semibold">Abonos conciliados y cobrados</p>
           </div>
           <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-md">
             <p class="text-xs font-semibold text-gray-400 uppercase">Pagos Pendientes por Cobrar</p>
-            <h4 class="text-3xl font-black text-gray-900 mt-2">$23,000 MXN</h4>
-            <p class="text-xs text-amber-600 mt-1 font-semibold">1 pago programado</p>
+            <h4 class="text-3xl font-black text-red-600 mt-2">${{ saldoPendienteCobrarTotal | number:'1.2-2' }} MXN</h4>
+            <p class="text-xs text-amber-600 mt-1 font-semibold">{{ conteoEventosConSaldoPendiente }} evento(s) con saldo por liquidar</p>
           </div>
           <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-md">
-            <p class="text-xs font-semibold text-gray-400 uppercase">Método Preferido</p>
-            <h4 class="text-3xl font-black text-gray-900 mt-2">Transferencia (75%)</h4>
-            <p class="text-xs text-blue-600 mt-1 font-semibold">SPEI / Banamex</p>
+            <p class="text-xs font-semibold text-gray-400 uppercase">Eventos Contratados</p>
+            <h4 class="text-3xl font-black text-gray-900 mt-2">{{ estadosCuenta.length }}</h4>
+            <p class="text-xs text-blue-600 mt-1 font-semibold">Monitoreo financiero unificado</p>
           </div>
         </div>
 
-        <div class="bg-white rounded-3xl shadow-md border border-gray-100 overflow-hidden">
-          <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
-              <thead>
-                <tr class="bg-gray-50/80 text-gray-500 text-xs uppercase font-bold border-b border-gray-100">
-                  <th class="py-4 px-6">ID Pago</th>
-                  <th class="py-4 px-6">Folio Cotización</th>
-                  <th class="py-4 px-6">Cliente</th>
-                  <th class="py-4 px-6">Método</th>
-                  <th class="py-4 px-6">Monto</th>
-                  <th class="py-4 px-6">Estado</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-gray-100 text-sm">
-                <tr *ngFor="let p of pagos" class="hover:bg-gray-50/80 transition">
-                  <td class="py-4 px-6 font-bold text-gray-900">{{ p.id }}</td>
-                  <td class="py-4 px-6 font-semibold text-red-600">{{ p.folioCotizacion }}</td>
-                  <td class="py-4 px-6 text-gray-800 font-medium">{{ p.clienteNombre }}</td>
-                  <td class="py-4 px-6 text-xs text-gray-600 font-semibold">{{ p.metodo }}</td>
-                  <td class="py-4 px-6 font-extrabold text-gray-900">${{ p.monto | number:'1.0-0' }} MXN</td>
-                  <td class="py-4 px-6">
-                    <span [class]="getStatusBadgeClass(p.estatus)" class="px-2.5 py-0.5 rounded-full text-xs font-bold border">
-                      {{ p.estatus }}
+        <!-- Filtros y Búsqueda -->
+        <div class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+          <div class="flex flex-wrap gap-2">
+            <button
+              type="button"
+              (click)="pagosFilterStatus = 'todos'"
+              class="px-4 py-2 rounded-xl font-semibold transition cursor-pointer text-xs"
+              [ngClass]="pagosFilterStatus === 'todos' ? 'bg-red-600 text-white shadow-xs' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'"
+            >
+              Todos ({{ estadosCuenta.length }})
+            </button>
+            <button
+              type="button"
+              (click)="pagosFilterStatus = 'pendientes'"
+              class="px-4 py-2 rounded-xl font-semibold transition cursor-pointer text-xs"
+              [ngClass]="pagosFilterStatus === 'pendientes' ? 'bg-red-600 text-white shadow-xs' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'"
+            >
+              Con Saldo Pendiente ({{ conteoEventosConSaldoPendiente }})
+            </button>
+            <button
+              type="button"
+              (click)="pagosFilterStatus = 'liquidados'"
+              class="px-4 py-2 rounded-xl font-semibold transition cursor-pointer text-xs"
+              [ngClass]="pagosFilterStatus === 'liquidados' ? 'bg-red-600 text-white shadow-xs' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'"
+            >
+              Liquidados al 100%
+            </button>
+          </div>
+
+          <div class="relative flex-1 max-w-sm">
+            <input
+              type="text"
+              placeholder="Buscar por cliente, folio, evento o recibo..."
+              [(ngModel)]="pagosSearchQuery"
+              class="w-full bg-white rounded-xl pl-9 pr-4 py-2 text-xs border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500"
+            />
+            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Mensaje si no hay eventos -->
+        <div *ngIf="filteredEstadosCuenta.length === 0" class="bg-white rounded-3xl p-12 text-center border border-gray-100 shadow-sm">
+          <p class="text-gray-500 text-sm">No se encontraron eventos contratados con los filtros seleccionados.</p>
+        </div>
+
+        <!-- Tarjetas Unificadas por Evento (Igual que en la vista del cliente) -->
+        <div class="space-y-6" *ngIf="filteredEstadosCuenta.length > 0">
+          <div
+            *ngFor="let ev of filteredEstadosCuenta"
+            class="bg-white rounded-3xl shadow-md hover:shadow-lg transition-all p-6 md:p-8 border border-gray-100"
+            [ngClass]="{
+              'border-l-6 border-l-emerald-500': ev.estatus === 'liquidado',
+              'border-l-6 border-l-rose-500': ev.vencido,
+              'border-l-6 border-l-blue-500': ev.estatus === 'anticipo_pagado' && !ev.vencido,
+              'border-l-6 border-l-amber-500': ev.estatus === 'pendiente_anticipo' && !ev.vencido
+            }"
+          >
+            <!-- Cabecera del Evento -->
+            <div class="flex flex-col lg:flex-row lg:items-start justify-between gap-6 pb-5 border-b border-gray-100">
+              <div class="flex-1">
+                <div class="flex flex-wrap items-center gap-2 mb-2">
+                  <span class="text-xs font-black uppercase text-gray-700 bg-gray-100 px-3 py-1 rounded-xl font-mono">
+                    {{ ev.folioContrato }}
+                  </span>
+                  <span class="text-xs font-bold bg-gray-100 text-gray-800 px-3 py-1 rounded-xl flex items-center gap-1">
+                    <svg class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                    </svg>
+                    {{ ev.clienteNombre }}
+                  </span>
+                  <span *ngIf="ev.categoria" class="text-xs font-bold bg-red-50 text-red-700 border border-red-100 px-3 py-1 rounded-xl">
+                    {{ ev.categoria }}
+                  </span>
+                  <span
+                    class="text-xs font-bold px-3 py-1 rounded-xl border flex items-center gap-1.5"
+                    [ngClass]="getEstatusCuentaClasses(ev.estatus, ev.vencido)"
+                  >
+                    <span class="w-2 h-2 rounded-full" [ngClass]="ev.estatus === 'liquidado' ? 'bg-emerald-500' : ev.vencido ? 'bg-rose-500' : 'bg-amber-500'"></span>
+                    {{ getEstatusCuentaLabel(ev.estatus, ev.vencido) }}
+                  </span>
+                </div>
+
+                <h3 class="text-2xl font-extrabold text-gray-900">{{ ev.evento }}</h3>
+                <p class="text-gray-500 text-xs mt-1">
+                  Fecha del evento: <strong class="text-gray-800">{{ formatearFechaPago(ev.fechaEvento) }}</strong>
+                </p>
+              </div>
+
+              <!-- Cifras Financieras y Botón de Acción -->
+              <div class="flex flex-wrap items-center gap-5 lg:justify-end">
+                <div class="text-left lg:text-right">
+                  <span class="text-[10px] font-bold text-gray-400 block uppercase">Total Evento</span>
+                  <span class="text-xl font-black text-gray-900">${{ ev.totalContrato | number:'1.2-2' }}</span>
+                </div>
+                <div class="text-left lg:text-right">
+                  <span class="text-[10px] font-bold text-gray-400 block uppercase">Cobrado</span>
+                  <span class="text-xl font-black text-emerald-600">${{ ev.totalPagado | number:'1.2-2' }}</span>
+                </div>
+                <div class="text-left lg:text-right">
+                  <span class="text-[10px] font-bold text-gray-400 block uppercase">Saldo Pendiente</span>
+                  <span class="text-xl font-black" [ngClass]="ev.saldoPendiente > 0.009 ? 'text-red-600' : 'text-gray-400'">
+                    ${{ ev.saldoPendiente | number:'1.2-2' }}
+                  </span>
+                </div>
+
+                <div>
+                  <button
+                    *ngIf="ev.saldoPendiente > 0.009"
+                    (click)="abrirRegistrarPagoParaEvento(ev)"
+                    class="bg-red-600 hover:bg-red-700 text-white px-5 py-3 rounded-2xl font-bold text-xs shadow-md shadow-red-600/20 transition cursor-pointer flex items-center gap-1.5"
+                  >
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    <span>Registrar Pago / Abono</span>
+                  </button>
+
+                  <div
+                    *ngIf="ev.saldoPendiente <= 0.009"
+                    class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold"
+                  >
+                    <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    <span>Liquidado al 100%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Barra de Progreso -->
+            <div class="py-4">
+              <div class="flex justify-between items-center text-xs font-bold mb-1.5">
+                <span class="text-gray-500">Avance de Pago del Contrato</span>
+                <span class="font-extrabold" [ngClass]="ev.porcentajePagado >= 100 ? 'text-emerald-600' : 'text-gray-800'">
+                  {{ ev.porcentajePagado | number:'1.0-1' }}% liquidado
+                </span>
+              </div>
+              <div class="w-full bg-gray-100 rounded-full h-3 overflow-hidden flex shadow-inner">
+                <div
+                  class="h-full transition-all duration-500 rounded-full"
+                  [ngClass]="ev.porcentajePagado >= 100 ? 'bg-emerald-500' : 'bg-red-600'"
+                  [style.width.%]="ev.porcentajePagado"
+                ></div>
+              </div>
+              <div class="flex justify-between items-center text-[10px] text-gray-400 mt-1 font-medium">
+                <span>0% Inicio</span>
+                <span>50% Anticipo Mínimo (${{ ev.anticipoMinimo | number:'1.2-2' }})</span>
+                <span>100% Liquidado (${{ ev.totalContrato | number:'1.2-2' }})</span>
+              </div>
+            </div>
+
+            <!-- Desglose: Abonos Cobrados y Saldo Pendiente del Evento -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 pt-3">
+
+              <!-- Abonos Realizados -->
+              <div class="bg-gray-50/80 rounded-2xl p-4 border border-gray-200/80">
+                <div class="flex items-center justify-between mb-3">
+                  <h4 class="text-xs font-black text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    Abonos Cobrados ({{ ev.pagos.length }})
+                  </h4>
+                  <span class="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-lg">
+                    ${{ ev.totalPagado | number:'1.2-2' }} MXN
+                  </span>
+                </div>
+
+                <div *ngIf="ev.pagos.length > 0" class="space-y-2.5">
+                  <div
+                    *ngFor="let p of ev.pagos"
+                    class="bg-white p-3 rounded-xl border border-gray-200 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+                  >
+                    <div class="text-xs space-y-0.5">
+                      <div class="flex items-center gap-2">
+                        <span class="font-bold text-gray-900 bg-gray-100 px-2 py-0.5 rounded-md">
+                          Pago {{ p.numeroPago }} · {{ p.tipoTransaccion | titlecase }}
+                        </span>
+                        <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
+                          Procesado
+                        </span>
+                        <span *ngIf="p.ticketFolio" class="text-[10px] font-mono font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-md">
+                          {{ p.ticketFolio }}
+                        </span>
+                      </div>
+                      <p class="text-gray-500">
+                        Fecha: <strong>{{ formatearFechaPago(p.fechaPago) }}</strong> · Método: <strong>{{ p.metodoPago }}</strong>
+                      </p>
+                      <p *ngIf="p.referencia" class="text-[10px] font-mono text-gray-400">
+                        Ref: {{ p.referencia }}
+                      </p>
+                    </div>
+
+                    <div class="flex items-center gap-2 sm:text-right">
+                      <div>
+                        <span class="text-sm font-black text-emerald-600 block">${{ p.monto | number:'1.2-2' }}</span>
+                      </div>
+                      <button
+                        type="button"
+                        (click)="verReciboEmpleado(p)"
+                        class="bg-gray-100 hover:bg-gray-200 text-gray-800 text-[11px] font-bold px-2.5 py-1.5 rounded-lg border border-gray-200 transition cursor-pointer"
+                      >
+                        Recibo
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div *ngIf="ev.pagos.length === 0" class="p-4 text-center text-gray-400 text-xs">
+                  Sin pagos registrados aún para este evento.
+                </div>
+              </div>
+
+              <!-- Saldo Pendiente de Cobro -->
+              <div class="bg-gray-50/80 rounded-2xl p-4 border border-gray-200/80 flex flex-col justify-between">
+                <div>
+                  <div class="flex items-center justify-between mb-3">
+                    <h4 class="text-xs font-black text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <span class="w-2 h-2 rounded-full" [ngClass]="ev.saldoPendiente > 0.009 ? 'bg-amber-500' : 'bg-emerald-500'"></span>
+                      Saldo Pendiente de Cobro
+                    </h4>
+                    <span
+                      class="text-xs font-bold px-2 py-0.5 rounded-lg border"
+                      [ngClass]="ev.saldoPendiente > 0.009 ? 'bg-amber-50 text-amber-800 border-amber-200' : 'bg-emerald-50 text-emerald-800 border-emerald-200'"
+                    >
+                      ${{ ev.saldoPendiente | number:'1.2-2' }} MXN restante
                     </span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+                  </div>
+
+                  <!-- Caso A: Anticipo pendiente -->
+                  <div *ngIf="ev.estatus === 'pendiente_anticipo'" class="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 space-y-1.5 text-xs mb-2">
+                    <div class="flex justify-between items-center">
+                      <span class="font-black uppercase text-amber-800 text-[11px]">Anticipo mínimo requerido (50%)</span>
+                      <span class="font-black text-sm text-amber-950">${{ ev.anticipoRestante | number:'1.2-2' }} MXN</span>
+                    </div>
+                    <p class="text-amber-800">
+                      El cliente debe abonar al menos ${{ ev.anticipoRestante | number:'1.2-2' }} MXN de anticipo para formalizar la reserva, o liquidar el 100% (${{ ev.totalContrato | number:'1.2-2' }} MXN).
+                    </p>
+                    <p *ngIf="ev.fechaLimiteAnticipo" class="text-amber-900 font-semibold">
+                      Límite anticipo: {{ formatearFechaPago(ev.fechaLimiteAnticipo) }}
+                    </p>
+                  </div>
+
+                  <!-- Caso B: Anticipo cubierto, pendiente finiquito -->
+                  <div *ngIf="ev.estatus === 'anticipo_pagado'" class="p-3.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 space-y-1.5 text-xs mb-2" [ngClass]="{'bg-rose-50 border-rose-200 text-rose-900': ev.vencido}">
+                    <div class="flex justify-between items-center">
+                      <span class="font-black uppercase text-[11px]" [ngClass]="ev.vencido ? 'text-rose-800' : 'text-blue-800'">
+                        {{ ev.vencido ? 'Liquidación Vencida' : 'Liquidación Final Pendiente' }}
+                      </span>
+                      <span class="font-black text-sm" [ngClass]="ev.vencido ? 'text-rose-950' : 'text-blue-950'">${{ ev.saldoPendiente | number:'1.2-2' }} MXN</span>
+                    </div>
+                    <p [ngClass]="ev.vencido ? 'text-rose-800' : 'text-blue-800'">
+                      El anticipo fue cubierto. Queda pendiente el cobro de finiquito antes de la fecha del evento.
+                    </p>
+                    <p *ngIf="ev.fechaLimiteLiquidacion" class="font-semibold" [ngClass]="ev.vencido ? 'text-rose-900 font-bold' : 'text-blue-900'">
+                      Límite liquidación: {{ formatearFechaPago(ev.fechaLimiteLiquidacion) }}
+                    </p>
+                  </div>
+
+                  <!-- Caso C: Liquidado al 100% -->
+                  <div *ngIf="ev.estatus === 'liquidado'" class="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs text-center space-y-1">
+                    <span class="font-black text-emerald-950 block">✓ Totalmente Liquidado</span>
+                    <p class="text-emerald-800">El contrato se encuentra cubierto al 100%. No existen saldos por cobrar.</p>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
           </div>
         </div>
       </div>
@@ -852,40 +1098,263 @@
     </div>
   </div>
 
-  <!-- MODAL: REGISTRAR NUEVO PAGO -->
-  <div *ngIf="showNewPaymentModal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs">
-    <div class="bg-white rounded-3xl max-w-lg w-full p-6 space-y-6 shadow-2xl animate-fade-in">
-      <div class="flex justify-between items-center border-b border-gray-100 pb-4">
-        <h3 class="text-xl font-bold text-gray-900">Registrar Nuevo Pago</h3>
-        <button (click)="showNewPaymentModal = false" class="text-gray-400 hover:text-gray-600">✕</button>
+  <!-- MODAL: REGISTRAR / COBRAR PAGO DE EVENTO (EMPLEADO) -->
+  <div *ngIf="showNewPaymentModal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs animate-fade-in">
+    <div class="bg-white rounded-3xl max-w-xl w-full p-6 md:p-8 space-y-5 shadow-2xl max-h-[92vh] overflow-y-auto border border-gray-100">
+      <div class="flex justify-between items-start border-b border-gray-100 pb-4">
+        <div>
+          <span class="text-xs font-black uppercase tracking-wider text-red-600">Recepción de Pago en Oficina</span>
+          <h3 class="text-xl font-bold text-gray-900 mt-1">Registrar Pago de Evento</h3>
+          <p class="text-xs text-gray-500">Abona al contrato seleccionado con cálculo de anticipo (50% mín.) o finiquito</p>
+        </div>
+        <button (click)="showNewPaymentModal = false" class="text-gray-400 hover:text-gray-600 text-xl font-bold cursor-pointer">✕</button>
       </div>
-      <div class="space-y-4 text-sm">
-        <div>
-          <label class="block text-xs font-bold text-gray-700 mb-1">Folio de Cotización</label>
-          <input type="text" [(ngModel)]="newPaymentData.folioCotizacion" placeholder="ej. COT-2026-4821" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-red-500" />
-        </div>
-        <div>
-          <label class="block text-xs font-bold text-gray-700 mb-1">Cliente</label>
-          <input type="text" [(ngModel)]="newPaymentData.clienteNombre" placeholder="ej. Mariana González" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-red-500" />
-        </div>
-        <div class="grid grid-cols-2 gap-4">
+
+      <!-- Selector de Evento si no viene uno preseleccionado -->
+      <div *ngIf="!selectedEventoPago && estadosCuenta.length > 0" class="space-y-1">
+        <label class="block text-xs font-bold text-gray-700">Seleccionar Evento / Contrato *</label>
+        <select
+          (change)="onSeleccionarEventoEnModal($any($event.target).value)"
+          class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-xs font-medium focus:ring-2 focus:ring-red-500"
+        >
+          <option value="" disabled selected>Selecciona un evento...</option>
+          <option *ngFor="let ev of estadosCuenta" [value]="ev.contratoId">
+            {{ ev.folioContrato }} - {{ ev.evento }} ({{ ev.clienteNombre }}) · Saldo: ${{ ev.saldoPendiente | number:'1.2-2' }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Resumen del Evento Seleccionado -->
+      <div *ngIf="selectedEventoPago" class="p-4 rounded-2xl bg-gray-50 border border-gray-200 space-y-3">
+        <div class="flex justify-between items-start">
           <div>
-            <label class="block text-xs font-bold text-gray-700 mb-1">Monto (MXN)</label>
-            <input type="number" [(ngModel)]="newPaymentData.monto" placeholder="23000" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-red-500" />
+            <span class="text-xs font-mono font-bold text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-md">
+              {{ selectedEventoPago.folioContrato }}
+            </span>
+            <h4 class="font-bold text-sm text-gray-900 mt-1">{{ selectedEventoPago.evento }}</h4>
+            <p class="text-xs text-gray-500">Cliente: <strong>{{ selectedEventoPago.clienteNombre }}</strong></p>
+          </div>
+          <span
+            class="text-xs font-bold px-2.5 py-1 rounded-lg border"
+            [ngClass]="getEstatusCuentaClasses(selectedEventoPago.estatus, selectedEventoPago.vencido)"
+          >
+            {{ getEstatusCuentaLabel(selectedEventoPago.estatus, selectedEventoPago.vencido) }}
+          </span>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2 text-center pt-2 border-t border-gray-200 text-xs">
+          <div>
+            <span class="text-[10px] text-gray-400 font-bold uppercase block">Total</span>
+            <span class="font-black text-gray-900">${{ selectedEventoPago.totalContrato | number:'1.2-2' }}</span>
           </div>
           <div>
-            <label class="block text-xs font-bold text-gray-700 mb-1">Método de Pago</label>
-            <select [(ngModel)]="newPaymentData.metodo" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-red-500">
-              <option value="Transferencia">Transferencia</option>
-              <option value="Tarjeta">Tarjeta</option>
+            <span class="text-[10px] text-gray-400 font-bold uppercase block">Pagado</span>
+            <span class="font-black text-emerald-600">${{ selectedEventoPago.totalPagado | number:'1.2-2' }}</span>
+          </div>
+          <div>
+            <span class="text-[10px] text-gray-400 font-bold uppercase block">Saldo Pendiente</span>
+            <span class="font-black text-red-600">${{ selectedEventoPago.saldoPendiente | number:'1.2-2' }}</span>
+          </div>
+        </div>
+
+        <!-- Botones Rápidos de Monto -->
+        <div *ngIf="selectedEventoPago.anticipoRestante > 0.009" class="grid grid-cols-2 gap-2 pt-1">
+          <button
+            type="button"
+            (click)="seleccionarModoMontoEmpleado('anticipo')"
+            [ngClass]="empleadoModoMonto === 'anticipo' ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-100'"
+            class="p-2.5 rounded-xl border text-left text-xs font-bold transition cursor-pointer"
+          >
+            <span class="text-[10px] uppercase block opacity-80">Anticipo Mínimo 50%</span>
+            <span>${{ selectedEventoPago.anticipoRestante | number:'1.2-2' }} MXN</span>
+          </button>
+          <button
+            type="button"
+            (click)="seleccionarModoMontoEmpleado('total')"
+            [ngClass]="empleadoModoMonto === 'total' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-100'"
+            class="p-2.5 rounded-xl border text-left text-xs font-bold transition cursor-pointer"
+          >
+            <span class="text-[10px] uppercase block opacity-80">Liquidar 100%</span>
+            <span>${{ selectedEventoPago.saldoPendiente | number:'1.2-2' }} MXN</span>
+          </button>
+        </div>
+
+        <div *ngIf="selectedEventoPago.anticipoRestante <= 0.009 && selectedEventoPago.saldoPendiente > 0.009" class="pt-1">
+          <button
+            type="button"
+            (click)="seleccionarModoMontoEmpleado('total')"
+            [ngClass]="empleadoModoMonto === 'total' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-100'"
+            class="w-full p-2.5 rounded-xl border text-center text-xs font-bold transition cursor-pointer"
+          >
+            <span>Liquidar Saldo Completo: ${{ selectedEventoPago.saldoPendiente | number:'1.2-2' }} MXN</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Datos de Cobro -->
+      <div class="space-y-4 text-xs">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">Monto a Cobrar (MXN) *</label>
+            <input
+              type="number"
+              [(ngModel)]="newPaymentData.monto"
+              [max]="selectedEventoPago ? selectedEventoPago.saldoPendiente : null"
+              [min]="selectedEventoPago && selectedEventoPago.anticipoRestante > 0.009 ? selectedEventoPago.anticipoRestante : 1"
+              placeholder="0.00"
+              class="w-full bg-gray-50 border rounded-xl p-2.5 text-sm font-bold text-gray-900 focus:ring-2 transition"
+              [ngClass]="esMontoEmpleadoExcedido ? 'border-rose-400 focus:ring-rose-500 bg-rose-50/20 text-rose-950' : 'border-gray-200 focus:ring-red-500'"
+            />
+            <!-- Alerta visual si excede el 100% -->
+            <div *ngIf="esMontoEmpleadoExcedido" class="mt-1.5 p-2 rounded-lg bg-rose-50 border border-rose-200 text-rose-900 text-[11px] flex items-center justify-between gap-1">
+              <span>⚠️ No es posible cobrar más del 100% (Saldo máx: ${{ selectedEventoPago?.saldoPendiente | number:'1.2-2' }}).</span>
+              <button
+                type="button"
+                (click)="ajustarMontoEmpleadoAlMaximo()"
+                class="px-2 py-0.5 bg-rose-600 hover:bg-rose-700 text-white rounded font-bold text-[10px] cursor-pointer whitespace-nowrap"
+              >
+                Ajustar al 100%
+              </button>
+            </div>
+            <p *ngIf="selectedEventoPago && selectedEventoPago.anticipoRestante > 0.009 && !esMontoEmpleadoExcedido" class="text-[10px] text-amber-700 mt-1">
+              * Mínimo de anticipo: ${{ selectedEventoPago.anticipoRestante | number:'1.2-2' }} MXN
+            </p>
+            <p *ngIf="selectedEventoPago && !esMontoEmpleadoExcedido" class="text-[10px] text-gray-500 mt-0.5">
+              * Máximo a liquidar (100%): <strong>${{ selectedEventoPago.saldoPendiente | number:'1.2-2' }} MXN</strong>
+            </p>
+          </div>
+          <div>
+            <label class="block font-bold text-gray-700 mb-1">Método de Pago *</label>
+            <select
+              [(ngModel)]="newPaymentData.metodo"
+              class="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5 text-xs font-bold focus:ring-2 focus:ring-red-500"
+            >
               <option value="Efectivo">Efectivo</option>
+              <option value="Transferencia">Transferencia SPEI</option>
+              <option value="Tarjeta">Tarjeta (Crédito / Débito)</option>
             </select>
           </div>
         </div>
+
+        <div>
+          <label class="block font-bold text-gray-700 mb-1">Notas Internas (Opcional)</label>
+          <input
+            type="text"
+            [(ngModel)]="newPaymentData.notas"
+            placeholder="Observaciones de caja / recepción..."
+            class="w-full bg-gray-50 border border-gray-200 rounded-xl p-2.5 focus:ring-2 focus:ring-red-500"
+          />
+        </div>
+
       </div>
+
       <div class="flex justify-end gap-3 border-t border-gray-100 pt-4">
-        <button (click)="showNewPaymentModal = false" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-xl font-semibold text-xs">Cancelar</button>
-        <button (click)="saveNewPayment()" class="px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-xs shadow-md">Confirmar Pago</button>
+        <button
+          type="button"
+          (click)="showNewPaymentModal = false"
+          class="px-4 py-2.5 text-gray-600 hover:bg-gray-100 rounded-xl font-semibold text-xs cursor-pointer"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          (click)="saveNewPayment()"
+          [disabled]="esMontoEmpleadoExcedido || esMontoEmpleadoMenorAnticipo"
+          class="px-6 py-2.5 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-bold text-xs shadow-md transition cursor-pointer"
+        >
+          Confirmar y Registrar Pago
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: RECIBO / COMPROBANTE OFICIAL (EMPLEADO) -->
+  <div *ngIf="showReciboModal && selectedPagoRecibo" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
+    <div class="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-gray-100 p-6 md:p-8">
+      <div class="flex justify-between items-start mb-5">
+        <div>
+          <span class="text-xs font-black uppercase text-red-600 tracking-wider">Comprobante Oficial de Caja</span>
+          <h3 class="text-2xl font-bold text-gray-900 mt-1">Recibo de Pago</h3>
+        </div>
+        <button
+          (click)="cerrarReciboEmpleado()"
+          class="text-gray-400 hover:text-gray-700 p-2 rounded-xl hover:bg-gray-100 transition cursor-pointer"
+        >
+          <span class="font-bold text-xl leading-none">&times;</span>
+        </button>
+      </div>
+
+      <div class="border-2 border-dashed border-gray-200 rounded-3xl p-6 bg-gray-50/50 mb-6">
+        <div class="text-center pb-4 border-b border-gray-200 mb-4">
+          <h4 class="text-lg font-black text-gray-900 tracking-wide uppercase">Eventia</h4>
+          <p class="text-xs text-gray-500">Organizadora de Eventos Profesionales</p>
+          <p class="text-xs font-mono font-bold text-red-600 mt-2">
+            Folio: {{ selectedPagoRecibo.ticketFolio || ('TCK-' + selectedPagoRecibo.id) }}
+          </p>
+        </div>
+
+        <div class="space-y-3 text-xs">
+          <div class="flex justify-between">
+            <span class="text-gray-500">Contrato:</span>
+            <span class="font-bold text-gray-900">{{ selectedPagoRecibo.folioContrato }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-500">Evento:</span>
+            <span class="font-bold text-gray-900">{{ selectedPagoRecibo.evento }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-500">Cliente:</span>
+            <span class="font-bold text-gray-900">{{ selectedPagoRecibo.clienteNombre }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-500">Fecha de pago:</span>
+            <span class="font-semibold text-gray-800">{{ formatearFechaPago(selectedPagoRecibo.fechaPago) }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-500">Tipo:</span>
+            <span class="font-semibold text-gray-800">{{ selectedPagoRecibo.tipoTransaccion | titlecase }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-500">Método:</span>
+            <span class="font-semibold text-gray-800">{{ selectedPagoRecibo.metodoPago }}</span>
+          </div>
+          <div class="flex justify-between" *ngIf="selectedPagoRecibo.referencia">
+            <span class="text-gray-500">Referencia:</span>
+            <span class="font-mono text-gray-800">{{ selectedPagoRecibo.referencia }}</span>
+          </div>
+          <div class="flex justify-between" *ngIf="selectedPagoRecibo.notas">
+            <span class="text-gray-500">Notas:</span>
+            <span class="text-gray-700 italic">{{ selectedPagoRecibo.notas }}</span>
+          </div>
+
+          <div class="flex justify-between pt-3 border-t border-gray-200">
+            <span class="text-gray-900 font-bold text-sm">Monto Cobrado:</span>
+            <span class="text-xl font-black text-emerald-600">${{ selectedPagoRecibo.monto | number:'1.2-2' }} MXN</span>
+          </div>
+        </div>
+
+        <div class="text-center pt-4 mt-4 border-t border-gray-200">
+          <span class="inline-block bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full border border-emerald-200">
+            ✓ Transacción Validada y Conciliada en Caja
+          </span>
+        </div>
+      </div>
+
+      <div class="flex gap-3 justify-end">
+        <button
+          type="button"
+          (click)="imprimirReciboEmpleado()"
+          class="bg-gray-900 hover:bg-black text-white px-5 py-2.5 rounded-2xl font-bold text-xs transition cursor-pointer"
+        >
+          Imprimir / Guardar
+        </button>
+        <button
+          type="button"
+          (click)="cerrarReciboEmpleado()"
+          class="bg-gray-100 hover:bg-gray-200 text-gray-800 px-5 py-2.5 rounded-2xl font-bold text-xs transition cursor-pointer"
+        >
+          Cerrar
+        </button>
       </div>
     </div>
   </div>

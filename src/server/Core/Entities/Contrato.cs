@@ -23,4 +23,5 @@ public class Contrato
     public Cotizacion? Cotizacion { get; set; }
     public ICollection<EventoContratado> EventosContratados { get; set; } = new List<EventoContratado>();
     public ICollection<Pago> Pagos { get; set; } = new List<Pago>();
+    public ICollection<PlanPago> PlanPagos { get; set; } = new List<PlanPago>();
 }

@@ -47,6 +47,7 @@ app.MapCotizacionEndpoints();
 app.MapClienteEndpoints();
 app.MapProveedorEndpoints();
 app.MapEventoEndpoints();
+app.MapPagoEndpoints();
 
 await app.EnsureDatabaseCastsAsync();
 

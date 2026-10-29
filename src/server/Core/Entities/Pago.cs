@@ -15,6 +15,9 @@ public class Pago
     public string Estatus { get; set; } = "procesado";
     public string? Notas { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     public Contrato Contrato { get; set; } = null!;
+    public PlanPago? PlanPago { get; set; }
+    public Ticket? Ticket { get; set; }
 }
