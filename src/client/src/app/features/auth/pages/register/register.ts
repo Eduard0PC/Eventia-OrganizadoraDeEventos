@@ -83,38 +83,28 @@ export class Register {
       },
       error: (err) => {
         console.error('Error al registrar usuario:', err);
-
-        if (err?.name === 'TimeoutError' || err instanceof TimeoutError) {
-          this.error = 'El servidor tardó demasiado en responder. Intenta de nuevo.';
-          return;
-        }
-
-        if (err?.status === 0) {
-          this.error = 'No se pudo conectar con el servidor. Verifica que el backend esté iniciado.';
-          return;
-        }
+        this.exito = '';
 
         if (err?.error?.error) {
           this.error = err.error.error;
-          return;
-        }
-
-        if (typeof err?.error === 'string') {
+        } else if (
+          err?.name === 'TimeoutError' ||
+          err instanceof TimeoutError ||
+          err?.status === 0 ||
+          (err?.status && err.status >= 500)
+        ) {
+          this.error = 'imposible accesar en este momento, intentalo mas tarde';
+        } else if (typeof err?.error === 'string') {
           this.error = err.error;
-          return;
-        }
-
-        if (err?.error?.title) {
+        } else if (err?.error?.title) {
           this.error = err.error.title;
-          return;
-        }
-
-        if (err?.message) {
+        } else if (err?.message) {
           this.error = err.message;
-          return;
+        } else {
+          this.error = 'imposible accesar en este momento, intentalo mas tarde';
         }
 
-        this.error = 'Ocurrió un error al registrar la cuenta. Por favor reintenta.';
+        this.cdr.detectChanges();
       },
     });
   }

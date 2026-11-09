@@ -1,0 +1,45 @@
+/* Contención de desplazamiento de fondo según estándares web modernos */
+dialog.contrato-dialog {
+  padding: 0;
+  border: none;
+  background: transparent;
+  max-width: 58rem;
+  width: calc(100% - 1.5rem);
+  max-height: 92vh;
+  margin: auto;
+  border-radius: 1.5rem;
+}
+
+dialog.contrato-dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+dialog.contrato-dialog:modal {
+  overscroll-behavior: contain;
+}
+
+dialog.contrato-dialog::backdrop {
+  overflow: hidden;
+  overscroll-behavior: contain;
+  background: rgba(15, 23, 42, 0.72);
+  backdrop-filter: blur(4px);
+}
+
+/* Tipografía formal para el documento legal */
+.contrato-legal-sheet {
+  font-family: 'Georgia', 'Times New Roman', Times, serif;
+  color: #111827;
+  line-height: 1.6;
+}
+
+.contrato-sans {
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.sello-oficial {
+  border: 2px double #991b1b;
+  color: #991b1b;
+  transform: rotate(-3deg);
+}
+

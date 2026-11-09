@@ -4,10 +4,10 @@
 
   <main class="max-w-7xl mx-auto px-6 py-10">
 
-    <div class="mb-10">
-      <h2 class="text-4xl md:text-5xl font-bold text-gray-900">Mis Pagos</h2>
-      <p class="text-gray-500 mt-2 text-base">
-        Consulta el estado de cuenta consolidado de tus eventos, revisa tus abonos realizados y liquida tus saldos pendientes.
+    <div class="mb-8">
+      <h2 class="text-3xl md:text-4xl font-bold text-gray-900">Mis Pagos</h2>
+      <p class="text-gray-500 mt-1 text-sm">
+        Consulta tus estados de cuenta, abonos y saldos pendientes.
       </p>
     </div>
 
@@ -71,7 +71,7 @@
         <div class="relative flex-1 max-w-md">
           <input
             type="text"
-            placeholder="Buscar por folio, evento, recibo o referencia..."
+            placeholder="Buscar por evento, recibo o referencia..."
             [(ngModel)]="busqueda"
             class="w-full bg-white shadow-xs rounded-2xl pl-11 pr-4 py-2.5 text-sm border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500"
           />
@@ -112,10 +112,7 @@
           <!-- Encabezado de la Tarjeta del Evento -->
           <div class="flex flex-col lg:flex-row lg:items-start justify-between gap-6 pb-6 border-b border-gray-100">
             <div class="flex-1">
-              <div class="flex flex-wrap items-center gap-2.5 mb-2.5">
-                <span class="text-xs font-black uppercase text-gray-700 bg-gray-100 px-3 py-1 rounded-xl font-mono">
-                  {{ ev.folioContrato }}
-                </span>
+              <div class="flex flex-wrap items-center gap-2 mb-2">
                 <span *ngIf="ev.categoria" class="text-xs font-bold bg-red-50 text-red-700 border border-red-100 px-3 py-1 rounded-xl">
                   {{ ev.categoria }}
                 </span>
@@ -129,8 +126,8 @@
               </div>
 
               <h3 class="text-2xl md:text-3xl font-extrabold text-gray-900">{{ ev.evento }}</h3>
-              <p class="text-gray-500 text-sm mt-1 flex items-center gap-2">
-                <span>Fecha del evento: <strong class="text-gray-800">{{ formatearFecha(ev.fechaEvento) }}</strong></span>
+              <p class="text-gray-500 text-sm mt-1">
+                Fecha del evento: <strong class="text-gray-800">{{ formatearFecha(ev.fechaEvento) }}</strong>
               </p>
             </div>
 
@@ -182,35 +179,26 @@
           </div>
 
           <!-- Barra de Progreso Financiero -->
-          <div class="py-5">
-            <div class="flex justify-between items-center text-xs font-bold mb-2">
+          <div class="py-4">
+            <div class="flex justify-between items-center text-xs font-bold mb-1.5">
               <span class="text-gray-500">Progreso de Pago</span>
               <span class="font-extrabold" [ngClass]="ev.porcentajePagado >= 100 ? 'text-emerald-600' : 'text-gray-800'">
                 {{ ev.porcentajePagado | number:'1.0-1' }}% cubierto
               </span>
             </div>
-            <div class="w-full bg-gray-100 rounded-full h-3.5 overflow-hidden flex shadow-inner relative">
+            <div class="w-full bg-gray-100 rounded-full h-3 overflow-hidden flex shadow-inner relative">
               <div
                 class="h-full transition-all duration-500 rounded-full"
                 [ngClass]="ev.porcentajePagado >= 100 ? 'bg-emerald-500' : 'bg-red-600'"
                 [style.width.%]="ev.porcentajePagado"
               ></div>
             </div>
-            <div class="flex justify-between items-center text-[11px] text-gray-400 mt-1.5 font-medium">
-              <span>0% Inicio</span>
-              <span class="font-semibold" [ngClass]="ev.totalPagado >= ev.anticipoMinimo ? 'text-blue-600' : 'text-gray-400'">
-                50% Anticipo Mínimo (${{ ev.anticipoMinimo | number:'1.2-2' }})
-              </span>
-              <span class="font-semibold" [ngClass]="ev.porcentajePagado >= 100 ? 'text-emerald-600' : 'text-gray-400'">
-                100% Liquidado
-              </span>
-            </div>
           </div>
 
-          <!-- Desglose Consolidado del Evento: Lo pagado y lo que queda pendiente -->
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-4">
+          <!-- Desglose Consolidado del Evento -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-3">
 
-            <!-- Columna Izquierda: Historial de Abonos Realizados en este Evento -->
+            <!-- Columna Izquierda: Historial de Abonos Realizados -->
             <div class="bg-gray-50/70 rounded-2xl p-5 border border-gray-200/80">
               <div class="flex items-center justify-between mb-4">
                 <h4 class="text-xs font-black text-gray-700 uppercase tracking-wider flex items-center gap-2">
@@ -231,18 +219,14 @@
                   <div class="space-y-1">
                     <div class="flex items-center gap-2">
                       <span class="text-xs font-bold text-gray-900 bg-gray-100 px-2.5 py-0.5 rounded-md">
-                        Pago {{ p.numeroPago }} · {{ p.tipoTransaccion | titlecase }}
+                        Pago {{ p.numeroPago }} · {{ getMetodoLabel(p.metodoPago) }}
                       </span>
                       <span class="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
                         Procesado
                       </span>
                     </div>
                     <p class="text-xs text-gray-500">
-                      Fecha: <strong class="text-gray-700">{{ formatearFecha(p.fechaPago) }}</strong> ·
-                      Método: <strong class="text-gray-700">{{ getMetodoLabel(p.metodoPago) }}</strong>
-                    </p>
-                    <p *ngIf="p.referencia" class="text-[11px] font-mono text-gray-500">
-                      Ref: {{ p.referencia }}
+                      {{ formatearFecha(p.fechaPago) }}<span *ngIf="p.referencia"> · Ref: {{ p.referencia }}</span>
                     </p>
                   </div>
 
@@ -269,7 +253,7 @@
               </div>
             </div>
 
-            <!-- Columna Derecha: Saldo Pendiente y Próxima Cuota -->
+            <!-- Columna Derecha: Estado del Saldo -->
             <div class="bg-gray-50/70 rounded-2xl p-5 border border-gray-200/80 flex flex-col justify-between">
               <div>
                 <div class="flex items-center justify-between mb-4">
@@ -285,49 +269,46 @@
                   </span>
                 </div>
 
-                <!-- Caso A: Anticipo Pendiente (0% pagado o < 50%) -->
-                <div *ngIf="ev.estatus === 'pendiente_anticipo'" class="p-4 rounded-xl bg-amber-50/90 border border-amber-200 text-amber-900 space-y-2 mb-3">
-                  <div class="flex justify-between items-start">
-                    <span class="text-xs font-black uppercase text-amber-800">Anticipo Requerido (50% mínimo)</span>
-                    <span class="text-base font-black text-amber-950">${{ ev.anticipoRestante | number:'1.2-2' }} MXN</span>
+                <!-- Caso A: Anticipo Pendiente -->
+                <div *ngIf="ev.estatus === 'pendiente_anticipo'" class="p-4 rounded-xl bg-amber-50/90 border border-amber-200 text-amber-900 space-y-2.5">
+                  <div class="flex justify-between items-center text-xs">
+                    <span class="font-bold text-amber-800 uppercase">Anticipo mínimo (50%)</span>
+                    <span class="font-black text-sm text-amber-950">${{ ev.anticipoRestante | number:'1.2-2' }} MXN</span>
                   </div>
-                  <p class="text-xs text-amber-800 leading-relaxed">
-                    Para confirmar y formalizar tu evento es necesario abonar al menos el <strong>50% de anticipo</strong> (${{ ev.anticipoMinimo | number:'1.2-2' }} MXN).
-                    Si lo prefieres, también puedes realizar la <strong>liquidación total del 100%</strong> (${{ ev.totalContrato | number:'1.2-2' }} MXN) en un solo paso.
-                  </p>
-                  <p *ngIf="ev.fechaLimiteAnticipo" class="text-xs text-amber-900 font-semibold pt-1">
-                    Fecha límite para anticipo: <span class="underline">{{ formatearFecha(ev.fechaLimiteAnticipo) }}</span>
-                  </p>
+                  <div *ngIf="ev.fechaLimiteAnticipo" class="flex justify-between items-center text-xs border-t border-amber-200/60 pt-2 text-amber-800">
+                    <span>Fecha límite de anticipo</span>
+                    <span class="font-semibold">{{ formatearFecha(ev.fechaLimiteAnticipo) }}</span>
+                  </div>
                 </div>
 
                 <!-- Caso B: Anticipo Cubierto, resta Liquidación Final -->
-                <div *ngIf="ev.estatus === 'anticipo_pagado'" class="p-4 rounded-xl bg-blue-50/90 border border-blue-200 text-blue-900 space-y-2 mb-3" [ngClass]="{'bg-rose-50 border-rose-200 text-rose-900': ev.vencido}">
-                  <div class="flex justify-between items-start">
-                    <span class="text-xs font-black uppercase" [ngClass]="ev.vencido ? 'text-rose-800' : 'text-blue-800'">
-                      {{ ev.vencido ? 'Liquidación Vencida' : 'Liquidación Final Pendiente' }}
+                <div *ngIf="ev.estatus === 'anticipo_pagado'" class="p-4 rounded-xl border space-y-2.5"
+                  [ngClass]="ev.vencido ? 'bg-rose-50 border-rose-200 text-rose-900' : 'bg-blue-50/90 border-blue-200 text-blue-900'"
+                >
+                  <div class="flex justify-between items-center text-xs">
+                    <span class="font-bold uppercase" [ngClass]="ev.vencido ? 'text-rose-800' : 'text-blue-800'">
+                      {{ ev.vencido ? 'Liquidación Vencida' : 'Liquidación Pendiente' }}
                     </span>
-                    <span class="text-base font-black" [ngClass]="ev.vencido ? 'text-rose-950' : 'text-blue-950'">
+                    <span class="font-black text-sm" [ngClass]="ev.vencido ? 'text-rose-950' : 'text-blue-950'">
                       ${{ ev.saldoPendiente | number:'1.2-2' }} MXN
                     </span>
                   </div>
-                  <p class="text-xs leading-relaxed" [ngClass]="ev.vencido ? 'text-rose-800' : 'text-blue-800'">
-                    El anticipo del 50% ya se encuentra cubierto. Te resta liquidar el saldo final restante antes del evento.
-                  </p>
-                  <p *ngIf="ev.fechaLimiteLiquidacion" class="text-xs font-semibold pt-1" [ngClass]="ev.vencido ? 'text-rose-900 font-bold' : 'text-blue-900'">
-                    Fecha límite de liquidación: <span class="underline">{{ formatearFecha(ev.fechaLimiteLiquidacion) }}</span>
-                    <span *ngIf="ev.vencido" class="ml-2 text-rose-600 font-black">(!Fecha rebasada)</span>
-                  </p>
+                  <div *ngIf="ev.fechaLimiteLiquidacion" class="flex justify-between items-center text-xs border-t pt-2"
+                    [ngClass]="ev.vencido ? 'border-rose-200/60 text-rose-800' : 'border-blue-200/60 text-blue-800'"
+                  >
+                    <span>Fecha límite</span>
+                    <span class="font-semibold">
+                      {{ formatearFecha(ev.fechaLimiteLiquidacion) }}
+                      <span *ngIf="ev.vencido" class="font-bold text-rose-600 ml-1">(Vencido)</span>
+                    </span>
+                  </div>
                 </div>
 
                 <!-- Caso C: Liquidado al 100% -->
-                <div *ngIf="ev.estatus === 'liquidado'" class="p-5 rounded-xl bg-emerald-50/90 border border-emerald-200 text-emerald-900 space-y-2 mb-3 text-center">
-                  <div class="w-10 h-10 mx-auto rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-lg mb-1">
-                    ✓
-                  </div>
-                  <h5 class="text-sm font-black text-emerald-950">¡Evento 100% Liquidado!</h5>
-                  <p class="text-xs text-emerald-800">
-                    Has completado la totalidad de los pagos de este evento. Tu contrato se encuentra completamente saldado y listo para celebrarse.
-                  </p>
+                <div *ngIf="ev.estatus === 'liquidado'" class="p-5 rounded-xl bg-emerald-50/90 border border-emerald-200 text-emerald-900 text-center space-y-1">
+                  <span class="inline-block w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 font-bold text-base leading-8">✓</span>
+                  <h5 class="text-sm font-bold text-emerald-950">Evento liquidado al 100%</h5>
+                  <p class="text-xs text-emerald-700">Sin saldos pendientes.</p>
                 </div>
               </div>
 
@@ -349,7 +330,7 @@
         <div>
           <span class="text-xs font-black uppercase text-red-600 tracking-wider">Abonar a Evento</span>
           <h3 class="text-2xl font-bold text-gray-900 mt-1">{{ eventoSeleccionado.evento }}</h3>
-          <p class="text-xs text-gray-500 mt-0.5">Contrato {{ eventoSeleccionado.folioContrato }} · Fecha: {{ formatearFecha(eventoSeleccionado.fechaEvento) }}</p>
+          <p class="text-xs text-gray-500 mt-0.5">Fecha del evento: {{ formatearFecha(eventoSeleccionado.fechaEvento) }}</p>
         </div>
         <button
           (click)="cerrarModalPago()"
@@ -377,56 +358,48 @@
 
       <!-- Selección de Monto a Pagar -->
       <div class="mb-6">
-        <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-2">Selecciona Cuánto Deseas Pagar</label>
+        <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 mb-2">Monto sugerido</label>
 
         <!-- Opciones Rápidas si Aún Falta Anticipo -->
         <div *ngIf="eventoSeleccionado.anticipoRestante > 0.009" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
           <button
             type="button"
             (click)="seleccionarModoMonto('anticipo')"
-            class="p-4 rounded-2xl text-left border cursor-pointer transition"
+            class="p-3.5 rounded-2xl text-left border cursor-pointer transition"
             [ngClass]="modoMonto === 'anticipo' ? 'bg-red-50 border-red-500 ring-2 ring-red-500/30' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'"
           >
             <div class="flex items-center justify-between mb-1">
-              <span class="text-xs font-black uppercase text-red-600">50% Anticipo Mínimo</span>
-              <span class="text-[11px] font-bold text-gray-500">Obligatorio</span>
+              <span class="text-xs font-black uppercase text-red-600">50% Anticipo</span>
+              <span class="text-[10px] font-bold text-gray-500 bg-white px-2 py-0.5 rounded border border-gray-200">Mínimo</span>
             </div>
             <p class="text-lg font-black text-gray-900">${{ eventoSeleccionado.anticipoRestante | number:'1.2-2' }} <span class="text-xs font-semibold text-gray-400">MXN</span></p>
-            <p class="text-[11px] text-gray-500 mt-1">Asegura la fecha y formaliza el contrato.</p>
           </button>
 
           <button
             type="button"
             (click)="seleccionarModoMonto('total')"
-            class="p-4 rounded-2xl text-left border cursor-pointer transition"
+            class="p-3.5 rounded-2xl text-left border cursor-pointer transition"
             [ngClass]="modoMonto === 'total' ? 'bg-red-50 border-red-500 ring-2 ring-red-500/30' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'"
           >
             <div class="flex items-center justify-between mb-1">
               <span class="text-xs font-black uppercase text-emerald-600">100% Liquidar Total</span>
-              <span class="text-[11px] font-bold text-emerald-600">Recomendado</span>
+              <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">Total</span>
             </div>
             <p class="text-lg font-black text-gray-900">${{ eventoSeleccionado.saldoPendiente | number:'1.2-2' }} <span class="text-xs font-semibold text-gray-400">MXN</span></p>
-            <p class="text-[11px] text-gray-500 mt-1">Paga el total del evento en una sola exhibición.</p>
           </button>
         </div>
 
         <!-- Opciones Rápidas si el Anticipo ya fue Pagado (solo resta liquidación) -->
         <div *ngIf="eventoSeleccionado.anticipoRestante <= 0.009" class="mb-3">
-          <div class="p-4 rounded-2xl bg-blue-50/70 border border-blue-200 mb-3 flex items-center justify-between">
-            <div>
-              <span class="text-xs font-black uppercase text-blue-800">Anticipo 50% ya cubierto</span>
-              <p class="text-xs text-blue-700">Resta liquidar el saldo pendiente antes de la fecha del evento.</p>
-            </div>
-            <div class="text-right">
-              <span class="text-xs font-bold text-gray-400 block uppercase">Saldo</span>
-              <span class="text-xl font-black text-gray-900">${{ eventoSeleccionado.saldoPendiente | number:'1.2-2' }} MXN</span>
-            </div>
+          <div class="p-3.5 rounded-2xl bg-blue-50/70 border border-blue-200 flex items-center justify-between">
+            <span class="text-xs font-bold text-blue-900">Saldo pendiente de liquidación</span>
+            <span class="text-base font-black text-blue-950">${{ eventoSeleccionado.saldoPendiente | number:'1.2-2' }} MXN</span>
           </div>
         </div>
 
         <!-- Campo de Entrada de Monto -->
         <div class="mt-3">
-          <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Monto a abonar (MXN) *</label>
+          <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Monto a abonar (MXN)</label>
           <div class="relative">
             <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">$</span>
             <input
@@ -441,31 +414,23 @@
           </div>
 
           <!-- Alerta visual si excede el 100% -->
-          <div *ngIf="esMontoExcedido" class="mt-2 p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2 animate-fade-in">
+          <div *ngIf="esMontoExcedido" class="mt-2 p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div class="flex items-center gap-1.5">
-              <span class="text-sm">⚠️</span>
-              <span>No es posible pagar más del 100%. Saldo máximo pendiente: <strong>${{ eventoSeleccionado.saldoPendiente | number:'1.2-2' }} MXN</strong></span>
+              <span>El monto excede el saldo pendiente (${{ eventoSeleccionado.saldoPendiente | number:'1.2-2' }} MXN).</span>
             </div>
             <button
               type="button"
               (click)="ajustarMontoAlMaximo()"
               class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-xs cursor-pointer shadow-xs whitespace-nowrap self-start sm:self-auto"
             >
-              Ajustar al 100%
+              Ajustar al total
             </button>
           </div>
 
           <!-- Alerta si es menor al anticipo obligatorio -->
           <div *ngIf="esMontoMenorAnticipo && !esMontoExcedido" class="mt-2 p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center gap-1.5">
-            <span>ℹ️ El primer pago debe cubrir al menos el 50% de anticipo (${{ eventoSeleccionado.anticipoRestante | number:'1.2-2' }} MXN).</span>
+            <span>El primer pago debe cubrir al menos el 50% de anticipo (${{ eventoSeleccionado.anticipoRestante | number:'1.2-2' }} MXN).</span>
           </div>
-
-          <p *ngIf="!esMontoExcedido && !esMontoMenorAnticipo" class="text-[11px] text-gray-500 mt-1">
-            <span *ngIf="eventoSeleccionado.anticipoRestante > 0.009">
-              * Mínimo requerido: <strong>${{ eventoSeleccionado.anticipoRestante | number:'1.2-2' }} MXN</strong> (50% de anticipo).
-            </span>
-            Máximo permitido (100%): <strong>${{ eventoSeleccionado.saldoPendiente | number:'1.2-2' }} MXN</strong>.
-          </p>
         </div>
       </div>
 
@@ -627,10 +592,6 @@
 
         <div class="space-y-3 text-sm">
           <div class="flex justify-between">
-            <span class="text-gray-500 text-xs">Contrato:</span>
-            <span class="font-bold text-gray-900 text-xs">{{ pagoSeleccionadoRecibo.folioContrato }}</span>
-          </div>
-          <div class="flex justify-between">
             <span class="text-gray-500 text-xs">Evento:</span>
             <span class="font-bold text-gray-900 text-xs">{{ pagoSeleccionadoRecibo.evento }}</span>
           </div>
@@ -658,7 +619,7 @@
 
         <div class="text-center pt-4 mt-4 border-t border-gray-200">
           <span class="inline-block bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full border border-emerald-200">
-            Transacción Validada y Conciliada
+            Pago Validado
           </span>
         </div>
       </div>

@@ -113,7 +113,7 @@ public class AuthService : IAuthService
         {
             var errorMsg = ex.InnerException?.Message ?? ex.Message;
             Console.WriteLine($"[ERROR RegisterAsync]: {errorMsg}");
-            return (null, $"Error al guardar el usuario en la base de datos: {errorMsg}");
+            return (null, "imposible accesar en este momento, intentalo mas tarde");
         }
     }
 

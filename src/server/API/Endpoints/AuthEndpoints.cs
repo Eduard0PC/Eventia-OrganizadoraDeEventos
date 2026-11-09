@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -13,25 +14,51 @@ public static class AuthEndpoints
     {
         endpoints.MapPost("/api/auth/login", async (LoginRequest request, IAuthService authService, CancellationToken cancellationToken) =>
         {
-            var response = await authService.LoginAsync(request, cancellationToken);
-            if (response is null)
+            try
             {
-                return Results.Unauthorized();
-            }
+                var response = await authService.LoginAsync(request, cancellationToken);
+                if (response is null)
+                {
+                    return Results.Json(
+                        new { error = "Correo o contraseña incorrectos." },
+                        statusCode: StatusCodes.Status401Unauthorized);
+                }
 
-            return Results.Ok(response);
+                return Results.Ok(response);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ERROR Login]: {ex.Message}");
+                return Results.Json(
+                    new { error = "imposible accesar en este momento, intentalo mas tarde" },
+                    statusCode: StatusCodes.Status500InternalServerError);
+            }
         })
         .WithName("Login");
 
         endpoints.MapPost("/api/auth/register", async (RegisterRequest request, IAuthService authService, CancellationToken cancellationToken) =>
         {
-            var (result, error) = await authService.RegisterAsync(request, cancellationToken);
-            if (error != null)
+            try
             {
-                return Results.BadRequest(new { error });
-            }
+                var (result, error) = await authService.RegisterAsync(request, cancellationToken);
+                if (error != null)
+                {
+                    var statusCode = error == "El correo electrónico ya se encuentra registrado."
+                        ? StatusCodes.Status400BadRequest
+                        : StatusCodes.Status500InternalServerError;
 
-            return Results.Created($"/api/usuarios/{result!.Id}", result);
+                    return Results.Json(new { error }, statusCode: statusCode);
+                }
+
+                return Results.Created($"/api/usuarios/{result!.Id}", result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ERROR Register]: {ex.Message}");
+                return Results.Json(
+                    new { error = "imposible accesar en este momento, intentalo mas tarde" },
+                    statusCode: StatusCodes.Status500InternalServerError);
+            }
         })
         .WithName("Register");
 

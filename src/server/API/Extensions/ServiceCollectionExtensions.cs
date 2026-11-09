@@ -23,7 +23,7 @@ public static class ServiceCollectionExtensions
         string? connectionString;
         if (!string.IsNullOrEmpty(dbHost) && !string.IsNullOrEmpty(dbUser))
         {
-            connectionString = $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPass};SSL Mode=Require;Trust Server Certificate=true;Timeout=10;Command Timeout=10";
+            connectionString = $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPass};SSL Mode=Require;Trust Server Certificate=true;Timeout=5;Command Timeout=10";
         }
         else
         {

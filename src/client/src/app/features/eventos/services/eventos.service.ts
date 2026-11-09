@@ -3,12 +3,13 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { environment } from '@env/environment';
-import { EventoContratadoItem } from '@core/models/evento.models';
+import { EventoContratadoItem, ContratoDocumento } from '@core/models/evento.models';
 
 @Injectable({ providedIn: 'root' })
 export class EventosService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = `${environment.apiUrl}/api/eventos-contratados`;
+  private readonly contratosUrl = `${environment.apiUrl}/api/contratos`;
 
   getEventos(clienteId?: number): Observable<EventoContratadoItem[]> {
     const url = clienteId ? `${this.apiUrl}?clienteId=${clienteId}` : this.apiUrl;
@@ -22,6 +23,14 @@ export class EventosService {
 
   getEventoById(id: number): Observable<EventoContratadoItem> {
     return this.http.get<EventoContratadoItem>(`${this.apiUrl}/${id}`);
+  }
+
+  getContratoByEventoId(eventoId: number): Observable<ContratoDocumento> {
+    return this.http.get<ContratoDocumento>(`${this.apiUrl}/${eventoId}/contrato`);
+  }
+
+  getContratoByContratoId(contratoId: number): Observable<ContratoDocumento> {
+    return this.http.get<ContratoDocumento>(`${this.contratosUrl}/${contratoId}`);
   }
 
   actualizarEstatus(id: number, estatus: string, notas?: string): Observable<EventoContratadoItem> {

@@ -88,3 +88,52 @@ public record ActualizarEstatusEventoRequest(
     string? Notas
 );
 
+public record ContratoPlanPagoDto(
+    int Id,
+    short NumeroPago,
+    string Concepto,
+    decimal Monto,
+    string FechaVencimiento,
+    string Estatus
+);
+
+public record ContratoDocumentoDto(
+    int ContratoId,
+    string FolioContrato,
+    int? CotizacionId,
+    string? FolioCotizacion,
+    string FechaFirma,
+    string FechaInicio,
+    string FechaFin,
+    string EstatusContrato,
+    decimal SubtotalCotizado,
+    decimal Descuento,
+    decimal TotalContrato,
+    decimal TotalPagado,
+    decimal SaldoPendiente,
+    string? CondicionesEspeciales,
+    string? ArchivoUrl,
+    int ClienteId,
+    string ClienteNombreCompleto,
+    string ClienteEmail,
+    string? ClienteTelefono,
+    int? EventoContratadoId,
+    string NombreEvento,
+    string? CategoriaEvento,
+    string? DescripcionEvento,
+    short DuracionHorasBase,
+    int CapacidadBase,
+    decimal PrecioBaseEvento,
+    string FechaEvento,
+    string HoraInicio,
+    string HoraFin,
+    string Lugar,
+    int Aforo,
+    string EstatusEvento,
+    string? NotasEvento,
+    List<CotizacionItemDto> Items,
+    List<ServicioDefectoDto> ServiciosIncluidos,
+    List<ContratoPlanPagoDto> PlanPagos
+);
+
+

@@ -38,6 +38,22 @@ public static class EventoEndpoints
         })
         .WithName("ActualizarEstatusEvento");
 
+        endpoints.MapGet("/api/eventos-contratados/{id:int}/contrato", async (int id, IEventoService eventoService, CancellationToken cancellationToken) =>
+        {
+            var result = await eventoService.GetContratoDocumentoByEventoIdAsync(id, cancellationToken);
+            if (result is null) return Results.NotFound(new { error = "Contrato asociado al evento no encontrado." });
+            return Results.Ok(result);
+        })
+        .WithName("GetContratoDocumentoByEventoId");
+
+        endpoints.MapGet("/api/contratos/{contratoId:int}", async (int contratoId, IEventoService eventoService, CancellationToken cancellationToken) =>
+        {
+            var result = await eventoService.GetContratoDocumentoByContratoIdAsync(contratoId, cancellationToken);
+            if (result is null) return Results.NotFound(new { error = "Contrato no encontrado." });
+            return Results.Ok(result);
+        })
+        .WithName("GetContratoDocumentoById");
+
         return endpoints;
     }
 }

@@ -3,12 +3,14 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NavbarClient } from '@shared/components/navbar-client/navbar-client';
 import { EventosService } from '@features/eventos/services/eventos.service';
+import { ContratoModalComponent } from '@features/eventos/components/contrato-modal/contrato-modal.component';
 import { environment } from '@env/environment';
 
 export type EstatusEvento = 'programado' | 'en_curso' | 'completado' | 'cancelado' | 'reprogramado';
 
 export interface EventoContratado {
   id: number;
+  contratoId: number;
   nombre: string;
   descripcion: string;
   fechaEvento: string;
@@ -24,7 +26,7 @@ export interface EventoContratado {
 @Component({
   selector: 'app-mis-eventos',
   standalone: true,
-  imports: [CommonModule, FormsModule, NavbarClient],
+  imports: [CommonModule, FormsModule, NavbarClient, ContratoModalComponent],
   templateUrl: './mis-eventos.html'
 })
 export class MisEventos implements OnInit {
@@ -35,6 +37,10 @@ export class MisEventos implements OnInit {
   filtroEstatus: EstatusEvento | 'todos' = 'todos';
   eventoSeleccionado: EventoContratado | null = null;
   cargando = true;
+
+  mostrarContratoModal = false;
+  eventoIdContratoActivo: number | null = null;
+  contratoIdActivo: number | null = null;
 
   eventos: EventoContratado[] = [];
 
@@ -69,8 +75,9 @@ export class MisEventos implements OnInit {
             }
             return {
               id: ev.id,
+              contratoId: ev.contratoId,
               nombre: ev.nombreEvento || 'Evento Contratado',
-              descripcion: ev.notas || `Evento ${ev.nombreEvento} con contrato ${ev.folioContrato}.`,
+              descripcion: ev.notas || `Evento ${ev.nombreEvento} organizado por Eventia.`,
               fechaEvento: ev.fechaEvento || '',
               horaInicio: ev.horaInicio || '17:00',
               horaFin: ev.horaFin || '02:00',
@@ -122,6 +129,21 @@ export class MisEventos implements OnInit {
 
   cerrarDetalle(): void {
     this.eventoSeleccionado = null;
+  }
+
+  abrirContrato(evento: EventoContratado, event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
+    this.eventoIdContratoActivo = evento.id;
+    this.contratoIdActivo = evento.contratoId;
+    this.mostrarContratoModal = true;
+  }
+
+  cerrarContratoModal(): void {
+    this.mostrarContratoModal = false;
+    this.eventoIdContratoActivo = null;
+    this.contratoIdActivo = null;
   }
 
   getEstatusLabel(estatus: EstatusEvento): string {

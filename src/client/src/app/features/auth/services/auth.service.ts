@@ -19,7 +19,13 @@ export class AuthService {
   login(credentials: LoginRequest): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(`${this.apiUrl}/login`, credentials).pipe(
       timeout(10000),
-      tap((session) => localStorage.setItem('session', JSON.stringify(session))),
+      tap((session) => {
+        try {
+          localStorage.setItem('session', JSON.stringify(session));
+        } catch (e) {
+          console.error('Error saving session to localStorage', e);
+        }
+      }),
     );
   }
 

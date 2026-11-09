@@ -1,0 +1,421 @@
+<dialog
+  #dialogEl
+  class="contrato-dialog shadow-2xl overflow-hidden"
+  aria-labelledby="contrato-dialog-title"
+  [attr.closedby]="'any'"
+  (close)="onNativeDialogClose()"
+>
+  <div class="bg-slate-900 text-white px-6 py-4 flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 shrink-0 contrato-sans">
+    <div class="flex items-center gap-3.5">
+      <div class="w-10 h-10 rounded-xl bg-red-600/20 border border-red-500/40 flex items-center justify-center text-red-400 shrink-0">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+      </div>
+      <div>
+        <div class="flex items-center gap-2.5">
+          <h2 id="contrato-dialog-title" class="text-base md:text-lg font-bold tracking-tight text-white">
+            Contrato Oficial de Prestación de Servicios
+          </h2>
+          <span
+            *ngIf="contrato"
+            class="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-md bg-slate-800 text-red-400 border border-slate-700"
+          >
+            {{ contrato.folioContrato }}
+          </span>
+        </div>
+        <p class="text-xs text-slate-400 mt-0.5">
+          Documento legal generado a partir del registro oficial en base de datos
+        </p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2.5">
+      <a
+        *ngIf="contrato?.archivoUrl"
+        [href]="contrato!.archivoUrl!"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="inline-flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-100 text-xs font-semibold px-3.5 py-2.5 rounded-xl border border-slate-700 transition cursor-pointer"
+      >
+        <svg class="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+        </svg>
+        <span>Archivo Adjunto</span>
+      </a>
+
+      <button
+        type="button"
+        autofocus
+        [disabled]="cargando || !contrato"
+        (click)="imprimirContrato()"
+        class="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-xs md:text-sm font-bold px-4 py-2.5 rounded-xl shadow-lg shadow-red-600/25 transition cursor-pointer"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+        </svg>
+        <span>Descargar PDF / Imprimir</span>
+      </button>
+
+      <button
+        type="button"
+        (click)="cerrarModal()"
+        aria-label="Cerrar ventana de contrato"
+        class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition cursor-pointer"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Cuerpo desplazable del modal (Simulador de hoja membretada) -->
+  <div class="bg-slate-200/90 p-4 md:p-8 overflow-y-auto max-h-[calc(92vh-4.75rem)]">
+    <!-- Estado de Carga -->
+    <div *ngIf="cargando" class="bg-white rounded-2xl p-12 text-center shadow-md max-w-2xl mx-auto my-8 contrato-sans">
+      <div class="w-10 h-10 border-4 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+      <p class="text-gray-800 font-bold text-base">Generando documento legal del contrato...</p>
+      <p class="text-gray-500 text-xs mt-1">Consultando cláusulas, partidas autorizadas y plan de pagos en Supabase</p>
+    </div>
+
+    <!-- Estado de Error -->
+    <div *ngIf="!cargando && error" class="bg-white rounded-2xl p-10 text-center shadow-md max-w-xl mx-auto my-8 contrato-sans space-y-4">
+      <div class="w-12 h-12 rounded-full bg-red-50 text-red-600 flex items-center justify-center mx-auto font-bold text-xl">!</div>
+      <h3 class="text-lg font-bold text-gray-900">No se pudo cargar el contrato</h3>
+      <p class="text-sm text-gray-600">{{ error }}</p>
+      <div class="pt-2">
+        <button
+          type="button"
+          (click)="cargarContrato()"
+          class="bg-gray-900 hover:bg-black text-white text-xs font-bold px-5 py-2.5 rounded-xl transition cursor-pointer"
+        >
+          Reintentar consulta
+        </button>
+      </div>
+    </div>
+
+    <!-- HOJA LEGAL DEL CONTRATO -->
+    <article
+      *ngIf="!cargando && contrato"
+      #contratoSheet
+      class="contrato-legal-sheet bg-white text-gray-900 shadow-2xl border border-gray-300 mx-auto max-w-4xl p-6 sm:p-10 md:p-12 relative"
+    >
+      <!-- Borde decorativo formal superior -->
+      <div class="border-t-4 border-red-800 pt-6 pb-5 border-b-2 border-gray-900 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 bg-gray-900 text-white flex items-center justify-center font-bold text-lg tracking-wider contrato-sans">
+              EV
+            </div>
+            <div>
+              <h1 class="text-xl md:text-2xl font-black tracking-wide uppercase text-gray-900 contrato-sans">
+                EVENTIA ORGANIZADORA DE EVENTOS S.A. DE C.V.
+              </h1>
+              <p class="text-[11px] text-gray-600 contrato-sans">
+                R.F.C. EOE210514AB9 · Dirección Jurídica de Operaciones y Producción de Eventos
+              </p>
+            </div>
+          </div>
+          <p class="text-[11px] text-gray-500 mt-2 contrato-sans">
+            Av. Paseo de la Reforma 412, Piso 14, Col. Juárez, C.P. 06600, Ciudad de México · Tel. (55) 4160-9800
+          </p>
+        </div>
+
+        <div class="border border-gray-800 bg-gray-50 px-4 py-3 text-left md:text-right shrink-0 contrato-sans w-full md:w-auto">
+          <p class="text-[10px] font-bold uppercase tracking-widest text-gray-500">Instrumento Público Privado</p>
+          <p class="text-sm font-black font-mono text-red-800 mt-0.5">FOLIO: {{ contrato.folioContrato }}</p>
+          <p class="text-[11px] text-gray-700 mt-0.5" *ngIf="contrato.folioCotizacion">
+            Cotización Origen: <strong class="font-mono">{{ contrato.folioCotizacion }}</strong>
+          </p>
+          <p class="text-[11px] text-gray-600 mt-0.5">
+            Estatus Legal: <strong class="uppercase">{{ getEstatusContratoLabel(contrato.estatusContrato) }}</strong>
+          </p>
+        </div>
+      </div>
+
+      <!-- TÍTULO DEL INSTRUMENTO Y PROEMIO -->
+      <div class="mt-6 space-y-4 text-justify text-[13px] md:text-[14px]">
+        <h3 class="text-center font-bold text-sm md:text-base uppercase tracking-wider text-gray-900 underline decoration-gray-400 underline-offset-4">
+          CONTRATO DE PRESTACIÓN DE SERVICIOS DE ORGANIZACIÓN Y PRODUCCIÓN DE EVENTOS
+        </h3>
+
+        <p>
+          CONTRATO MERCANTIL DE PRESTACIÓN DE SERVICIOS INTEGRALES PARA LA PLANIFICACIÓN, COORDINACIÓN Y PRODUCCIÓN DE EVENTOS QUE CELEBRAN, POR UNA PARTE, LA SOCIEDAD MERCANTIL DENOMINADA <strong>EVENTIA ORGANIZADORA DE EVENTOS, S.A. DE C.V.</strong>, REPRESENTADA EN ESTE ACTO POR SU DIRECCIÓN DE OPERACIONES, A QUIEN EN LO SUCESIVO SE LE DENOMINARÁ <strong>«EL PRESTADOR»</strong>; Y POR LA OTRA PARTE, <strong>{{ contrato.clienteNombreCompleto | uppercase }}</strong>, A QUIEN EN LO SUCESIVO SE LE DENOMINARÁ <strong>«EL CONTRATANTE»</strong>, QUIENES SE SUJETAN AL TENOR DE LAS SIGUIENTES DECLARACIONES, FICHA TÉCNICA Y CLÁUSULAS:
+        </p>
+      </div>
+
+      <!-- I. DECLARACIONES Y FICHA TÉCNICA -->
+      <section class="mt-6">
+        <h4 class="text-xs font-black uppercase tracking-widest bg-gray-900 text-white px-3 py-1.5 contrato-sans">
+          I. IDENTIFICACIÓN DE LAS PARTES Y FICHA TÉCNICA DEL EVENTO CONTRATADO
+        </h4>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 border border-gray-300 border-t-0 text-xs contrato-sans">
+          <!-- Columna 1: Datos de El Contratante -->
+          <div class="p-4 border-b md:border-b-0 md:border-r border-gray-300 space-y-2">
+            <p class="font-bold text-red-800 uppercase tracking-wider text-[11px] border-b border-gray-200 pb-1">
+              A) Datos de «EL CONTRATANTE» (Cliente)
+            </p>
+            <div class="grid grid-cols-3 gap-1 py-0.5">
+              <span class="text-gray-500 font-medium">Titular:</span>
+              <span class="col-span-2 font-bold text-gray-900">{{ contrato.clienteNombreCompleto }}</span>
+            </div>
+            <div class="grid grid-cols-3 gap-1 py-0.5">
+              <span class="text-gray-500 font-medium">ID Registro:</span>
+              <span class="col-span-2 font-mono text-gray-800">CLI-{{ contrato.clienteId.toString().padStart(4, '0') }}</span>
+            </div>
+            <div class="grid grid-cols-3 gap-1 py-0.5">
+              <span class="text-gray-500 font-medium">Correo Oficial:</span>
+              <span class="col-span-2 text-gray-800 break-all">{{ contrato.clienteEmail }}</span>
+            </div>
+            <div class="grid grid-cols-3 gap-1 py-0.5">
+              <span class="text-gray-500 font-medium">Teléfono:</span>
+              <span class="col-span-2 text-gray-800">{{ contrato.clienteTelefono || 'Registrado en expediente' }}</span>
+            </div>
+            <div class="grid grid-cols-3 gap-1 py-0.5">
+              <span class="text-gray-500 font-medium">Fecha de Firma:</span>
+              <span class="col-span-2 font-semibold text-gray-900">{{ formatearFechaLarga(contrato.fechaFirma) }}</span>
+            </div>
+          </div>
+
+          <!-- Columna 2: Especificaciones del Evento -->
+          <div class="p-4 space-y-2">
+            <p class="font-bold text-red-800 uppercase tracking-wider text-[11px] border-b border-gray-200 pb-1">
+              B) Ficha Técnica del Evento
+            </p>
+            <div class="grid grid-cols-3 gap-1 py-0.5">
+              <span class="text-gray-500 font-medium">Evento / Paquete:</span>
+              <span class="col-span-2 font-bold text-gray-900">
+                {{ contrato.nombreEvento }}
+                <span *ngIf="contrato.categoriaEvento" class="text-[10px] font-semibold bg-gray-100 px-1.5 py-0.5 rounded border border-gray-300 ml-1">
+                  {{ contrato.categoriaEvento }}
+                </span>
+              </span>
+            </div>
+            <div class="grid grid-cols-3 gap-1 py-0.5">
+              <span class="text-gray-500 font-medium">Fecha del Evento:</span>
+              <span class="col-span-2 font-bold text-gray-900">{{ formatearFechaLarga(contrato.fechaEvento) }}</span>
+            </div>
+            <div class="grid grid-cols-3 gap-1 py-0.5">
+              <span class="text-gray-500 font-medium">Horario Pactado:</span>
+              <span class="col-span-2 text-gray-800">{{ contrato.horaInicio }} hrs a {{ contrato.horaFin }} hrs (Base {{ contrato.duracionHorasBase }} hrs)</span>
+            </div>
+            <div class="grid grid-cols-3 gap-1 py-0.5">
+              <span class="text-gray-500 font-medium">Sede / Recinto:</span>
+              <span class="col-span-2 text-gray-800">{{ contrato.lugar }}</span>
+            </div>
+            <div class="grid grid-cols-3 gap-1 py-0.5">
+              <span class="text-gray-500 font-medium">Aforo Autorizado:</span>
+              <span class="col-span-2 font-bold text-gray-900">{{ contrato.aforo }} invitados confirmados</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- II. CLÁUSULAS CONTRACTUALES Y ANEXO ECONÓMICO -->
+      <section class="mt-6 space-y-4 text-justify text-[13px] md:text-[13.5px]">
+        <h4 class="text-xs font-black uppercase tracking-widest bg-gray-900 text-white px-3 py-1.5 contrato-sans">
+          II. CLÁUSULAS Y ESTIPULACIONES LEGALES
+        </h4>
+
+        <p>
+          <strong>PRIMERA. OBJETO DEL CONTRATO:</strong> «EL PRESTADOR» se obliga a proporcionar a favor de «EL CONTRATANTE» los servicios profesionales de planeación, logística, producción y coordinación integral para la celebración del evento denominado <strong>«{{ contrato.nombreEvento }}»</strong>, a verificarse el día <strong>{{ formatearFechaLarga(contrato.fechaEvento) }}</strong> en el recinto ubicado en <strong>{{ contrato.lugar }}</strong>, para un aforo total estimado de <strong>{{ contrato.aforo }} personas</strong>.
+        </p>
+
+        <p>
+          <strong>SEGUNDA. CONTRAPRESTACIÓN Y DESGLOSE DE PARTIDAS CONTRATADAS:</strong> Ambas partes convienen que el monto total pactado por los servicios objeto del presente contrato asciende a la cantidad de <strong>${{ contrato.totalContrato | number:'1.2-2' }} MXN ({{ montoEnLetras(contrato.totalContrato) }})</strong>, conforme al desglose de partidas autorizadas que se detalla a continuación:
+        </p>
+
+        <!-- Tabla de Partidas Contratadas -->
+        <div class="overflow-x-auto my-3 contrato-sans">
+          <table class="w-full border-collapse border border-gray-300 text-xs">
+            <thead>
+              <tr class="bg-gray-100 text-gray-800 uppercase text-[10px] font-bold border-b border-gray-300">
+                <th class="py-2 px-3 text-left border-r border-gray-300">Partida / Descripción del Concepto</th>
+                <th class="py-2 px-3 text-center border-r border-gray-300 w-20">Tipo</th>
+                <th class="py-2 px-3 text-center border-r border-gray-300 w-16">Cant.</th>
+                <th class="py-2 px-3 text-right border-r border-gray-300 w-28">P. Unitario</th>
+                <th class="py-2 px-3 text-right w-28">Importe (MXN)</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+              <tr *ngFor="let item of contrato.items">
+                <td class="py-2 px-3 border-r border-gray-300 font-medium text-gray-900">
+                  {{ item.descripcion }}
+                </td>
+                <td class="py-2 px-3 border-r border-gray-300 text-center capitalize text-gray-600">
+                  {{ item.esServicioExtra ? 'Extra' : item.tipo }}
+                </td>
+                <td class="py-2 px-3 border-r border-gray-300 text-center text-gray-800">
+                  {{ item.cantidad }}
+                </td>
+                <td class="py-2 px-3 border-r border-gray-300 text-right text-gray-800">
+                  ${{ item.precioUnitario | number:'1.2-2' }}
+                </td>
+                <td class="py-2 px-3 text-right font-semibold text-gray-900">
+                  ${{ item.monto | number:'1.2-2' }}
+                </td>
+              </tr>
+            </tbody>
+            <tfoot class="bg-gray-50 border-t-2 border-gray-400 text-xs">
+              <tr *ngIf="contrato.descuento > 0">
+                <td colspan="4" class="py-1.5 px-3 text-right font-semibold text-gray-600 border-r border-gray-300">
+                  Subtotal Cotizado:
+                </td>
+                <td class="py-1.5 px-3 text-right font-semibold text-gray-800">
+                  ${{ contrato.subtotalCotizado | number:'1.2-2' }} MXN
+                </td>
+              </tr>
+              <tr *ngIf="contrato.descuento > 0">
+                <td colspan="4" class="py-1.5 px-3 text-right font-semibold text-emerald-700 border-r border-gray-300">
+                  Descuento Autorizado:
+                </td>
+                <td class="py-1.5 px-3 text-right font-semibold text-emerald-700">
+                  -${{ contrato.descuento | number:'1.2-2' }} MXN
+                </td>
+              </tr>
+              <tr class="bg-gray-900 text-white font-bold">
+                <td colspan="4" class="py-2.5 px-3 text-right uppercase tracking-wider text-[11px] border-r border-gray-700">
+                  Total General del Contrato:
+                </td>
+                <td class="py-2.5 px-3 text-right text-sm">
+                  ${{ contrato.totalContrato | number:'1.2-2' }} MXN
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <!-- Servicios Base Incluidos en el Paquete -->
+        <div *ngIf="contrato.serviciosIncluidos && contrato.serviciosIncluidos.length > 0" class="border border-gray-300 bg-gray-50/70 p-3.5 contrato-sans text-xs">
+          <p class="font-bold text-gray-900 uppercase tracking-wider text-[11px] mb-2">
+            Anexo Técnico A — Servicios Base Incluidos en la Categoría «{{ contrato.categoriaEvento }}»:
+          </p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+            <div *ngFor="let srv of contrato.serviciosIncluidos" class="flex items-start gap-2 text-gray-700 text-[11.5px]">
+              <span class="text-red-700 font-bold">✓</span>
+              <span>
+                <strong>{{ srv.nombre }}</strong>
+                <span *ngIf="srv.descripcion" class="text-gray-500"> — {{ srv.descripcion }}</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <p>
+          <strong>TERCERA. PLAN DE PAGOS Y ESTADO DE CUENTA:</strong> «EL CONTRATANTE» se compromete a cubrir el importe total establecido en la Cláusula Segunda mediante el calendario de pagos programado en el sistema financiero de «EL PRESTADOR». Para garantizar el bloqueo definitivo de fecha y tarifas, se requiere un anticipo del 50% (cincuenta por ciento) y la liquidación total previo a la celebración del evento:
+        </p>
+
+        <!-- Tabla de Plan de Pagos -->
+        <div class="overflow-x-auto my-3 contrato-sans">
+          <table class="w-full border-collapse border border-gray-300 text-xs">
+            <thead>
+              <tr class="bg-gray-100 text-gray-800 uppercase text-[10px] font-bold border-b border-gray-300">
+                <th class="py-2 px-3 text-center border-r border-gray-300 w-16">No.</th>
+                <th class="py-2 px-3 text-left border-r border-gray-300">Concepto de la Cuota</th>
+                <th class="py-2 px-3 text-center border-r border-gray-300 w-36">Fecha Límite</th>
+                <th class="py-2 px-3 text-right border-r border-gray-300 w-32">Monto Pactado</th>
+                <th class="py-2 px-3 text-center w-28">Estatus</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+              <tr *ngFor="let cuota of contrato.planPagos">
+                <td class="py-2 px-3 border-r border-gray-300 text-center font-mono font-bold text-gray-700">
+                  #{{ cuota.numeroPago }}
+                </td>
+                <td class="py-2 px-3 border-r border-gray-300 font-medium text-gray-900">
+                  {{ cuota.concepto }}
+                </td>
+                <td class="py-2 px-3 border-r border-gray-300 text-center text-gray-700">
+                  {{ formatearFechaCorta(cuota.fechaVencimiento) }}
+                </td>
+                <td class="py-2 px-3 border-r border-gray-300 text-right font-semibold text-gray-900">
+                  ${{ cuota.monto | number:'1.2-2' }} MXN
+                </td>
+                <td class="py-2 px-3 text-center">
+                  <span
+                    class="inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase border"
+                    [ngClass]="cuota.estatus === 'pagado' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' : 'bg-amber-50 text-amber-800 border-amber-300'"
+                  >
+                    {{ cuota.estatus }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="grid grid-cols-2 sm:grid-cols-3 border border-t-0 border-gray-300 bg-gray-50 text-xs">
+            <div class="p-2.5 border-r border-gray-300">
+              <span class="block text-[10px] uppercase text-gray-500 font-bold">Total Contratado</span>
+              <span class="font-bold text-gray-900">${{ contrato.totalContrato | number:'1.2-2' }} MXN</span>
+            </div>
+            <div class="p-2.5 border-r border-gray-300">
+              <span class="block text-[10px] uppercase text-gray-500 font-bold">Total Abonado</span>
+              <span class="font-bold text-emerald-700">${{ contrato.totalPagado | number:'1.2-2' }} MXN</span>
+            </div>
+            <div class="p-2.5 col-span-2 sm:col-span-1">
+              <span class="block text-[10px] uppercase text-gray-500 font-bold">Saldo Pendiente</span>
+              <span class="font-bold" [ngClass]="contrato.saldoPendiente > 0 ? 'text-red-700' : 'text-emerald-700'">
+                ${{ contrato.saldoPendiente | number:'1.2-2' }} MXN
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <p>
+          <strong>CUARTA. PLANIFICACIÓN OPERATIVA Y ASIGNACIÓN DE RECURSOS:</strong> Una vez suscrito el presente contrato, «EL PRESTADOR» gestionará a través de su módulo de Planificación Operativa la asignación de coordinadores, personal de logística, staff de montaje y proveedores certificados para cubrir la totalidad de las partidas descritas en la Cláusula Segunda, sin que la programación interna de personal afecte la validez jurídica ni las garantías adquiridas por «EL CONTRATANTE» desde la fecha de firma.
+        </p>
+
+        <p>
+          <strong>QUINTA. MODIFICACIONES, REPROGRAMACIÓN Y CANCELACIONES:</strong> Cualquier solicitud de incremento de invitados, horas adicionales o ajuste de servicios deberá notificarse con al menos 15 (quince) días naturales de anticipación a la fecha del evento, quedando sujeta a disponibilidad e integración mediante adendum. En caso de cancelación definitiva imputable a «EL CONTRATANTE», el anticipo de reservación cubrirá los gastos administrativos, de bloqueo de agenda y gestiones operativas devengadas.
+        </p>
+
+        <p>
+          <strong>SEXTA. OBSERVACIONES Y CONDICIONES ESPECIALES:</strong>
+          {{ contrato.condicionesEspeciales || contrato.notasEvento || 'El evento se regirá conforme a los estándares de calidad, seguridad e higiene establecidos por Eventia Organizadora de Eventos S.A. de C.V., sin observaciones extraordinarias adicionales.' }}
+        </p>
+      </section>
+
+      <!-- III. BLOQUE DE FIRMAS Y SELLO DIGITAL -->
+      <section class="mt-8 pt-6 border-t-2 border-gray-300">
+        <p class="text-xs text-justify text-gray-700 mb-8">
+          Leído que fue el presente contrato y enteradas las partes de su contenido, valor y alcance legal, lo firman de conformidad al margen y al calce, quedando registrado electrónicamente bajo el folio <strong>{{ contrato.folioContrato }}</strong> con fecha <strong>{{ formatearFechaLarga(contrato.fechaFirma) }}</strong>.
+        </p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-8 mt-10 text-center contrato-sans">
+          <!-- Firma El Prestador -->
+          <div class="flex flex-col items-center justify-end">
+            <div class="mb-2 px-4 py-1.5 sello-oficial text-[10px] font-black uppercase tracking-widest rounded">
+              Sello Autorizado · EVENTIA S.A. DE C.V.
+            </div>
+            <p class="font-serif italic text-lg text-gray-800 mb-1">Dir. Jurídica y Operaciones</p>
+            <div class="w-64 border-t border-gray-800 pt-2">
+              <p class="text-xs font-bold uppercase text-gray-900">«EL PRESTADOR»</p>
+              <p class="text-[11px] text-gray-600">Eventia Organizadora de Eventos S.A. de C.V.</p>
+            </div>
+          </div>
+
+          <!-- Firma El Contratante -->
+          <div class="flex flex-col items-center justify-end">
+            <div class="mb-2 px-3 py-1 bg-emerald-50 border border-emerald-300 text-emerald-800 text-[10px] font-bold uppercase tracking-wider rounded">
+              Aceptación Digital Verificada
+            </div>
+            <p class="font-serif italic text-lg text-gray-800 mb-1">{{ contrato.clienteNombreCompleto }}</p>
+            <div class="w-64 border-t border-gray-800 pt-2">
+              <p class="text-xs font-bold uppercase text-gray-900">«EL CONTRATANTE»</p>
+              <p class="text-[11px] text-gray-600">{{ contrato.clienteNombreCompleto }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pie de página de autenticidad -->
+        <div class="mt-8 pt-4 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-[10px] text-gray-400 font-mono contrato-sans">
+          <span>SELLO DIGITAL: EV-{{ contrato.contratoId }}-{{ contrato.folioContrato }}-{{ contrato.fechaFirma }}</span>
+          <span>VIGENCIA DEL CONTRATO: {{ contrato.fechaFirma }} AL {{ contrato.fechaFin }}</span>
+        </div>
+      </section>
+    </article>
+  </div>
+</dialog>
+

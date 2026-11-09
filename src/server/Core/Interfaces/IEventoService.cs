@@ -10,4 +10,6 @@ public interface IEventoService
     Task<List<EventoContratadoResponse>> GetEventosContratadosAsync(int? clienteId, CancellationToken cancellationToken = default);
     Task<EventoContratadoResponse?> GetEventoContratadoByIdAsync(int id, CancellationToken cancellationToken = default);
     Task<(EventoContratadoResponse? Result, string? Error)> ActualizarEstatusEventoAsync(int id, string estatus, string? notas, CancellationToken cancellationToken = default);
+    Task<ContratoDocumentoDto?> GetContratoDocumentoByContratoIdAsync(int contratoId, CancellationToken cancellationToken = default);
+    Task<ContratoDocumentoDto?> GetContratoDocumentoByEventoIdAsync(int eventoContratadoId, CancellationToken cancellationToken = default);
 }
