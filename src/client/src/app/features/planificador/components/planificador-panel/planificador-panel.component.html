@@ -1,0 +1,460 @@
+<div class="space-y-6 animate-fade-in">
+  <!-- ENCABEZADO Y FILTROS -->
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div>
+      <h3 class="text-xl font-bold text-gray-900">Planificador Operativo de Eventos</h3>
+      <p class="text-xs text-gray-500">
+        Selecciona la tarjeta de un evento contratado para gestionar sus proveedores, locación y checklist operativo
+      </p>
+    </div>
+
+    <div class="flex flex-wrap gap-2">
+      <button
+        *ngFor="let st of ['Todos', 'En preparación', 'Confirmado', 'En ejecución', 'Finalizado']"
+        type="button"
+        (click)="filterStatus = st"
+        [class]="filterStatus === st ? 'bg-red-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'"
+        class="px-3.5 py-1.5 rounded-xl text-xs font-semibold transition border border-gray-200 cursor-pointer"
+      >
+        {{ st }}
+      </button>
+    </div>
+  </div>
+
+  <!-- RESUMEN GLOBAL FINANCIERO Y OPERATIVO -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" *ngIf="planificaciones.length > 0">
+    <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs">
+      <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Proveedores y Locaciones</span>
+      <div class="flex items-baseline gap-2 mt-1">
+        <span class="text-2xl font-extrabold text-gray-900">
+          {{ totalRequerimientosConfirmados }} / {{ totalRequerimientosGlobales }}
+        </span>
+        <span class="text-xs text-emerald-600 font-bold">confirmados</span>
+      </div>
+    </div>
+
+    <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs">
+      <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Ingresos en Contratos</span>
+      <p class="text-2xl font-extrabold text-gray-900 mt-1">
+        ${{ totalIngresosContratos | number:'1.0-0' }}
+      </p>
+    </div>
+
+    <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs">
+      <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Costo Proveedores Asignados</span>
+      <p class="text-2xl font-extrabold text-red-600 mt-1">
+        ${{ totalCostosProveedores | number:'1.0-0' }}
+      </p>
+    </div>
+
+    <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs">
+      <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Margen de Ganancia Estimado</span>
+      <div class="flex items-baseline gap-2 mt-1">
+        <span class="text-2xl font-extrabold text-emerald-600">
+          ${{ totalMargenGanancia | number:'1.0-0' }}
+        </span>
+        <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+          {{ porcentajeMargenGlobal }}%
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ESTADO VACÍO -->
+  <div
+    *ngIf="!cargando && filteredPlanificaciones.length === 0"
+    class="bg-white rounded-3xl p-10 text-center border border-gray-100 shadow-xs space-y-2"
+  >
+    <p class="text-base font-bold text-gray-800">No hay eventos contratados en este filtro</p>
+    <p class="text-xs text-gray-500">
+      Cuando apruebes una cotización en la pestaña Cotizaciones, el contrato y su evento aparecerán automáticamente aquí.
+    </p>
+  </div>
+
+  <!-- TARJETAS COMPACTAS DE EVENTOS CONTRATADOS -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+    <div
+      *ngFor="let plan of filteredPlanificaciones"
+      (click)="abrirDetalleEvento(plan)"
+      class="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 hover:border-red-300 hover:shadow-md transition cursor-pointer flex flex-col justify-between gap-4 group"
+    >
+      <div class="space-y-3">
+        <!-- Fila superior: Folio y Estatus automático -->
+        <div class="flex items-center justify-between gap-2">
+          <span class="text-xs font-mono font-bold text-red-600 bg-red-50 px-2.5 py-0.5 rounded-lg border border-red-100">
+            {{ plan.folioContrato }}
+          </span>
+          <span [class]="getStatusBadgeClass(plan)" class="px-2.5 py-0.5 rounded-full text-xs font-bold border">
+            {{ obtenerEtiquetaEstatus(plan) }}
+          </span>
+        </div>
+
+        <!-- Nombre y categoría del evento -->
+        <div>
+          <span class="text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+            {{ plan.categoriaEvento }}
+          </span>
+          <h4 class="text-lg font-bold text-gray-900 group-hover:text-red-600 transition line-clamp-1">
+            {{ plan.nombreEvento }}
+          </h4>
+        </div>
+
+        <!-- Información básica sin redundancia -->
+        <div class="space-y-1.5 text-xs text-gray-600 pt-2 border-t border-gray-100">
+          <div class="flex justify-between gap-2">
+            <span class="text-gray-400 font-medium">Cliente</span>
+            <span class="font-semibold text-gray-800 text-right truncate">{{ plan.clienteNombre }}</span>
+          </div>
+          <div class="flex justify-between gap-2">
+            <span class="text-gray-400 font-medium">Fecha</span>
+            <span class="font-semibold text-gray-800">{{ plan.fechaEvento }}</span>
+          </div>
+          <div class="flex justify-between gap-2">
+            <span class="text-gray-400 font-medium">Locación</span>
+            <span class="font-semibold text-gray-800 text-right truncate">{{ plan.lugar }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Barra de avance y acción -->
+      <div class="space-y-2 pt-3 border-t border-gray-100">
+        <div class="flex justify-between items-center text-[11px] font-semibold text-gray-600">
+          <span>Proveedores: {{ plan.requerimientosCubiertos }}/{{ plan.totalRequerimientos }}</span>
+          <span class="text-red-600 font-bold">{{ plan.progreso }}%</span>
+        </div>
+        <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+          <div
+            class="bg-red-600 h-2 rounded-full transition-all duration-500"
+            [style.width.%]="plan.progreso"
+          ></div>
+        </div>
+        <div class="pt-1 flex items-center justify-end text-xs font-bold text-red-600 group-hover:translate-x-0.5 transition">
+          Gestionar planificación
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DE DETALLE Y GESTIÓN OPERATIVA DEL EVENTO (FUERA DEL CONTENEDOR ANIMADO) -->
+<div
+  *ngIf="selectedEventoDetalle as plan"
+  class="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4 backdrop-blur-xs"
+  (click)="cerrarDetalleEvento()"
+>
+  <div
+    class="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl border border-gray-100"
+    (click)="$event.stopPropagation()"
+  >
+    <!-- Header Modal (Homologado con Cotizaciones y Clientes) -->
+    <div class="bg-gray-900 text-white p-6 flex justify-between items-start">
+      <div>
+        <div class="flex flex-wrap items-center gap-2.5">
+          <span class="text-xs font-black font-mono tracking-wide bg-red-600/30 text-red-400 px-3 py-1 rounded-lg border border-red-500/30 shadow-xs">
+            {{ plan.folioContrato }}
+          </span>
+          <span [class]="getStatusBadgeClass(plan)" class="px-2.5 py-0.5 rounded-full text-xs font-bold border">
+            {{ obtenerEtiquetaEstatus(plan) }}
+          </span>
+          <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-white/10 text-gray-200">
+            {{ plan.categoriaEvento }}
+          </span>
+        </div>
+
+        <h3 class="text-2xl font-black text-white mt-2">
+          {{ plan.nombreEvento }}
+        </h3>
+
+        <p class="text-xs text-gray-400 mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span>
+            Cliente: <strong class="text-gray-200 font-semibold">{{ plan.clienteNombre }}</strong>
+            <ng-container *ngIf="plan.clienteTelefono"> ({{ plan.clienteTelefono }})</ng-container>
+          </span>
+          <span>•</span>
+          <span>
+            Fecha: <strong class="text-gray-200 font-semibold">{{ plan.fechaEvento }} ({{ plan.horaInicio }} - {{ plan.horaFin }})</strong>
+          </span>
+          <span>•</span>
+          <span>
+            Locación: <strong class="text-gray-200 font-semibold">{{ plan.lugar }}</strong>
+          </span>
+        </p>
+      </div>
+
+      <button
+        type="button"
+        (click)="cerrarDetalleEvento()"
+        aria-label="Cerrar modal"
+        class="text-gray-400 hover:text-white p-1.5 rounded-xl hover:bg-white/10 transition cursor-pointer shrink-0"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Metric Stat Cards Subheader (Homologado con Desglose de Cotización y Ficha de Cliente) -->
+    <div class="bg-gray-800 border-b border-gray-700 p-4 grid grid-cols-2 sm:grid-cols-4 gap-3 text-white text-xs">
+      <div class="bg-gray-900/80 p-2.5 rounded-xl border border-gray-700 flex flex-col">
+        <span class="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Invitados</span>
+        <span class="text-sm font-bold text-gray-200 mt-0.5">{{ plan.aforo }} personas</span>
+      </div>
+      <div class="bg-gray-900/80 p-2.5 rounded-xl border border-gray-700 flex flex-col">
+        <span class="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Total Contrato</span>
+        <span class="text-sm font-bold text-gray-200 mt-0.5">${{ plan.totalContrato | number:'1.2-2' }}</span>
+      </div>
+      <div class="bg-gray-900/80 p-2.5 rounded-xl border border-gray-700 flex flex-col">
+        <span class="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Costo Proveedores</span>
+        <span class="text-sm font-bold text-red-400 mt-0.5">${{ plan.costoTotalProveedores | number:'1.2-2' }}</span>
+      </div>
+      <div class="bg-gray-900/80 p-2.5 rounded-xl border border-gray-700 flex flex-col">
+        <span class="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Margen Neto ({{ plan.porcentajeMargen }}%)</span>
+        <span
+          class="text-sm font-extrabold mt-0.5"
+          [class]="plan.margenGanancia >= 0 ? 'text-emerald-400' : 'text-red-400'"
+        >
+          ${{ plan.margenGanancia | number:'1.2-2' }} MXN
+        </span>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs Inside Modal (Homologado con Ficha de Cliente) -->
+    <div class="flex border-b border-gray-200 bg-gray-50 px-6 pt-2">
+      <button
+        type="button"
+        (click)="detalleActiveTab = 'proveedores'"
+        [class]="detalleActiveTab === 'proveedores' ? 'border-red-600 text-red-600 font-bold border-b-2' : 'text-gray-500 hover:text-gray-900 font-medium'"
+        class="px-4 py-3 text-sm transition cursor-pointer"
+      >
+        Locación y Proveedores ({{ plan.requerimientosCubiertos }}/{{ plan.totalRequerimientos }})
+      </button>
+      <button
+        type="button"
+        (click)="detalleActiveTab = 'checklist'"
+        [class]="detalleActiveTab === 'checklist' ? 'border-red-600 text-red-600 font-bold border-b-2' : 'text-gray-500 hover:text-gray-900 font-medium'"
+        class="px-4 py-3 text-sm transition cursor-pointer"
+      >
+        Checklist Operativo y Notas ({{ plan.checklist.length }})
+      </button>
+    </div>
+
+    <!-- Modal Body Content -->
+    <div class="p-6 overflow-y-auto flex-1 space-y-4 max-h-[500px]">
+      <!-- TAB 1: ASIGNACIÓN DE LOCACIÓN Y PROVEEDORES -->
+      <div *ngIf="detalleActiveTab === 'proveedores'" class="space-y-3">
+        <div class="flex items-center justify-between">
+          <h4 class="text-xs font-extrabold text-gray-500 uppercase tracking-wider">
+            Requerimientos del Evento
+          </h4>
+          <span class="text-xs font-bold text-gray-400">
+            Confirmados: {{ plan.requerimientosCubiertos }} de {{ plan.totalRequerimientos }}
+          </span>
+        </div>
+
+        <div class="space-y-2.5">
+          <div
+            *ngFor="let req of plan.requerimientos"
+            [class]="req.asignacion
+              ? 'border-emerald-200 bg-emerald-50/30'
+              : (req.esLocacion ? 'border-purple-200 bg-purple-50/30' : 'border-gray-200 bg-white')"
+            class="p-4 rounded-2xl border shadow-2xs transition flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+          >
+            <div class="space-y-1">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="text-xs font-bold text-gray-900">{{ req.nombreRequerimiento }}</span>
+                <span
+                  class="px-2 py-0.5 text-[10px] font-bold rounded-full uppercase"
+                  [class]="req.esLocacion
+                    ? 'bg-purple-100 text-purple-700 border border-purple-200'
+                    : 'bg-gray-100 text-gray-700'"
+                >
+                  {{ req.categoriaProveedor }}
+                </span>
+                <span
+                  *ngIf="req.tipoOrigen === 'extra'"
+                  class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-blue-50 text-blue-700 border border-blue-200 uppercase"
+                >
+                  Servicio Extra (${{ req.precioCobradoCliente | number:'1.0-0' }})
+                </span>
+              </div>
+
+              <!-- Proveedor asignado -->
+              <div *ngIf="req.asignacion as asig" class="text-xs text-gray-700 space-y-0.5">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="font-bold text-emerald-800">Proveedor asignado: {{ asig.proveedorNombre }}</span>
+                  <span
+                    *ngIf="asig.capacidadMaxima"
+                    class="text-[10px] font-semibold bg-white px-2 py-0.5 rounded border border-gray-200 text-gray-600"
+                  >
+                    Capacidad: {{ asig.capacidadMaxima }} personas
+                  </span>
+                  <span *ngIf="asig.proveedorTelefono" class="text-gray-500">
+                    Tel: {{ asig.proveedorTelefono }}
+                  </span>
+                </div>
+                <p *ngIf="asig.notas" class="text-[11px] text-gray-500 italic">Nota: "{{ asig.notas }}"</p>
+              </div>
+
+              <p *ngIf="!req.asignacion && req.descripcion" class="text-[11px] text-gray-500">
+                {{ req.descripcion }}
+              </p>
+            </div>
+
+            <!-- Acciones del requerimiento -->
+            <div class="flex items-center gap-2 self-end sm:self-center shrink-0">
+              <ng-container *ngIf="req.asignacion as asig; else btnAsignar">
+                <div class="text-right mr-1">
+                  <span class="text-[10px] text-gray-400 block uppercase font-bold">Costo acordado</span>
+                  <span class="text-xs font-extrabold text-gray-900">
+                    ${{ asig.costoAcordado | number:'1.2-2' }} MXN
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  (click)="abrirModalAsignar(plan, req)"
+                  class="px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-800 transition cursor-pointer"
+                >
+                  Cambiar
+                </button>
+                <button
+                  type="button"
+                  (click)="removerProveedor(plan, req)"
+                  title="Liberar proveedor y desbloquear fecha"
+                  class="px-3 py-1.5 rounded-xl text-xs font-bold bg-red-100 hover:bg-red-200 border border-red-200 text-red-700 transition cursor-pointer"
+                >
+                  Liberar
+                </button>
+              </ng-container>
+
+              <ng-template #btnAsignar>
+                <button
+                  type="button"
+                  (click)="abrirModalAsignar(plan, req)"
+                  [class]="req.esLocacion
+                    ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                    : 'bg-red-600 hover:bg-red-700 text-white'"
+                  class="px-4 py-2 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+                >
+                  Asignar {{ req.esLocacion ? 'Locación' : 'Proveedor' }}
+                </button>
+              </ng-template>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: CHECKLIST LIBRE Y NOTAS DEL CLIENTE -->
+      <div *ngIf="detalleActiveTab === 'checklist'" class="space-y-4">
+        <!-- Notas de la cotización/contrato si existen -->
+        <div
+          *ngIf="plan.notasCliente"
+          class="p-4 rounded-2xl bg-amber-50/80 border border-amber-200 text-xs text-gray-700"
+        >
+          <span class="font-bold text-amber-900 block mb-1">Notas y Peticiones del Cliente (Contrato):</span>
+          <p class="whitespace-pre-line">{{ plan.notasCliente }}</p>
+        </div>
+
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <h4 class="text-xs font-extrabold text-gray-500 uppercase tracking-wider">
+              Tareas Operativas del Evento
+            </h4>
+            <span class="text-xs font-bold text-gray-400">
+              Total tareas: {{ plan.checklist.length }}
+            </span>
+          </div>
+
+          <!-- Input para agregar tarea libre -->
+          <div class="flex gap-2">
+            <input
+              type="text"
+              [(ngModel)]="nuevaTareaPorEvento[plan.eventoContratadoId]"
+              (keyup.enter)="agregarTareaChecklist(plan)"
+              placeholder="Registrar nueva tarea logística u operativa..."
+              class="flex-1 bg-gray-50 px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-red-500"
+            />
+            <button
+              type="button"
+              (click)="agregarTareaChecklist(plan)"
+              [disabled]="guardandoTareaPorEvento[plan.eventoContratadoId]"
+              class="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition shrink-0 cursor-pointer shadow-xs disabled:opacity-50"
+            >
+              Agregar Tarea
+            </button>
+          </div>
+
+          <!-- Lista de tareas libres -->
+          <div *ngIf="plan.checklist.length > 0; else sinTareasLibres" class="border border-gray-200 rounded-2xl overflow-hidden divide-y divide-gray-100 shadow-2xs">
+            <div
+              *ngFor="let item of plan.checklist"
+              class="flex items-center justify-between gap-3 p-3.5 bg-white hover:bg-gray-50/80 transition text-xs"
+            >
+              <label class="flex items-center gap-3 cursor-pointer flex-1">
+                <input
+                  type="checkbox"
+                  [checked]="item.completada"
+                  (change)="toggleTareaChecklist(plan, item)"
+                  class="w-4 h-4 text-red-600 rounded-md focus:ring-red-500 border-gray-300"
+                />
+                <span
+                  [class.line-through]="item.completada"
+                  [class.text-gray-400]="item.completada"
+                  class="font-semibold text-gray-800"
+                >
+                  {{ item.titulo }}
+                </span>
+              </label>
+
+              <button
+                type="button"
+                (click)="eliminarTareaChecklist(plan, item)"
+                title="Eliminar tarea"
+                class="text-gray-400 hover:text-red-600 p-1 rounded-lg hover:bg-red-50 transition cursor-pointer"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <ng-template #sinTareasLibres>
+            <div class="py-10 text-center bg-gray-50 rounded-2xl border border-gray-200 text-xs text-gray-400">
+              No hay tareas operativas registradas para este evento.
+            </div>
+          </ng-template>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer Modal (Homologado con Cotizaciones y Clientes) -->
+    <div class="p-4 bg-gray-50 border-t border-gray-100 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3 flex-1 min-w-[200px] max-w-sm">
+        <span class="text-xs font-bold text-gray-600 shrink-0">Avance: {{ plan.progreso }}%</span>
+        <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+          <div
+            class="bg-red-600 h-2 rounded-full transition-all duration-500"
+            [style.width.%]="plan.progreso"
+          ></div>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        (click)="cerrarDetalleEvento()"
+        class="px-6 py-2.5 bg-gray-900 hover:bg-black text-white rounded-xl font-bold text-xs shadow-md transition cursor-pointer"
+      >
+        Cerrar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DE ASIGNACIÓN Y BLOQUEO DE PROVEEDOR / LOCACIÓN -->
+<app-asignar-proveedor-modal
+  [show]="showAsignarModal"
+  [evento]="selectedEventoModal"
+  [requerimiento]="selectedRequerimientoModal"
+  (onClose)="cerrarModalAsignar()"
+  (onAssigned)="onProveedorAsignado($event)"
+></app-asignar-proveedor-modal>

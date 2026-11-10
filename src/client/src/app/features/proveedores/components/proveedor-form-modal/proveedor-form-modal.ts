@@ -31,9 +31,16 @@ export class ProveedorFormModalComponent implements OnInit {
   rfc = '';
   rating = 5;
   precioPromedio = '$$$';
+  capacidadMaxima: number | null = null;
   activo = true;
 
   guardando = false;
+
+  get esCategoriaLocacion(): boolean {
+    const cat = this.categorias.find(c => Number(c.id) === Number(this.categoriaId));
+    const nombre = (cat?.nombre || '').toLowerCase();
+    return nombre.includes('locaci') || nombre.includes('salón') || nombre.includes('salon');
+  }
 
   ngOnInit(): void {
     if (this.categorias.length > 0 && !this.categoriaId) {
@@ -51,6 +58,7 @@ export class ProveedorFormModalComponent implements OnInit {
       this.rfc = this.proveedorEditando.rfc || '';
       this.rating = this.proveedorEditando.rating || 5;
       this.precioPromedio = this.proveedorEditando.precioPromedio || '$$$';
+      this.capacidadMaxima = this.proveedorEditando.capacidadMaxima ?? null;
       this.activo = this.proveedorEditando.activo ?? true;
     }
   }
@@ -62,6 +70,9 @@ export class ProveedorFormModalComponent implements OnInit {
     }
 
     this.guardando = true;
+    const capMax = this.capacidadMaxima && Number(this.capacidadMaxima) > 0
+      ? Number(this.capacidadMaxima)
+      : undefined;
 
     if (this.proveedorEditando) {
       const payload: ActualizarProveedorRequest = {
@@ -75,6 +86,7 @@ export class ProveedorFormModalComponent implements OnInit {
         rfc: this.rfc.trim() || undefined,
         rating: Number(this.rating),
         precioPromedio: this.precioPromedio,
+        capacidadMaxima: capMax,
         activo: this.activo
       };
 
@@ -102,6 +114,7 @@ export class ProveedorFormModalComponent implements OnInit {
         rfc: this.rfc.trim() || undefined,
         rating: Number(this.rating),
         precioPromedio: this.precioPromedio,
+        capacidadMaxima: capMax,
         activo: true
       };
 

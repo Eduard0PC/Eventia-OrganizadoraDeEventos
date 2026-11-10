@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Server.Core.Entities;
 
@@ -19,4 +20,6 @@ public class EventoContratado
 
     public Contrato Contrato { get; set; } = null!;
     public CatalogoEvento CatalogoEvento { get; set; } = null!;
+    public ICollection<EventoProveedor> ProveedoresAsignados { get; set; } = new List<EventoProveedor>();
+    public ICollection<EventoTarea> Tareas { get; set; } = new List<EventoTarea>();
 }

@@ -26,6 +26,9 @@ import { LoadingSpinnerComponent } from '@shared/components/loading-spinner/load
 import { EventosService } from '@features/eventos/services/eventos.service';
 import { PagosService } from '@features/pagos/services/pagos.service';
 import { EstadoCuentaEvento, PagoItem as BackendPagoItem } from '@core/models/pago.models';
+import { PlanificadorPanelComponent } from '@features/planificador/components/planificador-panel/planificador-panel.component';
+import { PlanificadorService } from '@features/planificador/services/planificador.service';
+import { PlanificacionEvento } from '@features/planificador/models/planificador.models';
 
 export type EmployeeTab =
   | 'inicio'
@@ -115,6 +118,7 @@ export interface ProveedorItem {
     ProveedorServiciosModalComponent,
     ProveedorFormModalComponent,
     LoadingSpinnerComponent,
+    PlanificadorPanelComponent,
   ],
   templateUrl: './empleado.html',
   styleUrl: './empleado.css',
@@ -127,6 +131,7 @@ export class Empleado implements OnInit {
   private readonly proveedorService = inject(ProveedorService);
   private readonly eventosService = inject(EventosService);
   private readonly pagosService = inject(PagosService);
+  private readonly planificadorService = inject(PlanificadorService);
   private readonly toastService = inject(ToastService);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly router = inject(Router);
@@ -1016,54 +1021,62 @@ export class Empleado implements OnInit {
   }
 
   loadPlanificador(): void {
-    this.eventosService.getEventos().subscribe({
+    this.planificadorService.getPlanificaciones().subscribe({
       next: (data) => {
-        if (data && data.length > 0) {
-          this.planificador = data.map((ev) => {
-            const st = (ev.estatus || '').toLowerCase();
-            let progreso = 30;
-            let estatusEtiqueta: 'En preparación' | 'Confirmado' | 'En ejecución' | 'Finalizado' = 'En preparación';
-
-            if (st === 'programado') {
-              progreso = 35;
-              estatusEtiqueta = 'En preparación';
-            } else if (st === 'en_curso') {
-              progreso = 75;
-              estatusEtiqueta = 'En ejecución';
-            } else if (st === 'completado') {
-              progreso = 100;
-              estatusEtiqueta = 'Finalizado';
-            } else if (st === 'reprogramado') {
-              progreso = 20;
-              estatusEtiqueta = 'Confirmado';
-            }
-
-            return {
-              id: ev.id,
-              contratoId: ev.contratoId,
-              folioContrato: ev.folioContrato,
-              nombreEvento: ev.nombreEvento || 'Evento Contratado',
-              clienteNombre: ev.nombreCliente || 'Cliente',
-              fecha: ev.fechaEvento || '',
-              lugar: ev.lugar || 'Salón por confirmar',
-              invitados: ev.aforo || 50,
-              progreso: progreso,
-              estatus: estatusEtiqueta,
-              encargado: this.empleadoNombre,
-              checklist: [
-                { tarea: 'Confirmación de Menú y Servicios', completado: true },
-                { tarea: 'Asignación de Proveedores', completado: true },
-                { tarea: 'Coordinación Logística y Montaje', completado: progreso >= 50 },
-                { tarea: 'Supervisión en Fecha de Evento', completado: progreso >= 75 },
-                { tarea: 'Cierre y Liquidación', completado: progreso === 100 }
-              ]
-            };
-          });
-          this.cdr.detectChanges();
+        if (data) {
+          this.onPlanificacionesUpdated(data);
         }
       },
       error: (err) => console.error('Error al cargar eventos en el planificador:', err)
     });
+  }
+
+  onPlanificacionesUpdated(data: PlanificacionEvento[]): void {
+    const hoyStr = new Date().toISOString().slice(0, 10);
+    this.planificador = (data || []).map((ev) => {
+      const totalReq = ev.totalRequerimientos || 0;
+      const reqCubiertos = ev.requerimientosCubiertos || 0;
+      const totalTareas = (ev.checklist || []).length;
+      const tareasCompletadas = (ev.checklist || []).filter((t) => t.completada).length;
+
+      const todosReqCubiertos = totalReq > 0 && reqCubiertos >= totalReq;
+      const todasTareasCompletadas = totalTareas > 0 && tareasCompletadas >= totalTareas;
+      const hayTareasCompletadas = tareasCompletadas > 0;
+      const fechaEvStr = (ev.fechaEvento || '').slice(0, 10);
+
+      let estatusEtiqueta: 'En preparación' | 'Confirmado' | 'En ejecución' | 'Finalizado' = 'En preparación';
+
+      if (todosReqCubiertos && (todasTareasCompletadas || (fechaEvStr && fechaEvStr < hoyStr))) {
+        estatusEtiqueta = 'Finalizado';
+      } else if (
+        (fechaEvStr && fechaEvStr === hoyStr) ||
+        (todosReqCubiertos && hayTareasCompletadas) ||
+        (reqCubiertos > 0 && hayTareasCompletadas)
+      ) {
+        estatusEtiqueta = 'En ejecución';
+      } else if (todosReqCubiertos) {
+        estatusEtiqueta = 'Confirmado';
+      }
+
+      return {
+        id: ev.eventoContratadoId,
+        contratoId: ev.contratoId,
+        folioContrato: ev.folioContrato,
+        nombreEvento: ev.nombreEvento || 'Evento Contratado',
+        clienteNombre: ev.clienteNombre || 'Cliente',
+        fecha: ev.fechaEvento || '',
+        lugar: ev.lugar || 'Salón por confirmar',
+        invitados: ev.aforo || 50,
+        progreso: ev.progreso ?? 0,
+        estatus: estatusEtiqueta,
+        encargado: this.empleadoNombre,
+        checklist: (ev.checklist || []).map((t) => ({
+          tarea: t.titulo,
+          completado: t.completada,
+        })),
+      };
+    });
+    this.cdr.detectChanges();
   }
 
   approveCotizacion(cot: Cotizacion): void {

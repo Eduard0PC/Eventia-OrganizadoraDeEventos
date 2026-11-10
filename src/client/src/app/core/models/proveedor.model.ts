@@ -28,6 +28,7 @@ export interface Proveedor {
   rfc?: string;
   rating: number;
   precioPromedio: string;
+  capacidadMaxima?: number | null;
   activo: boolean;
   createdAt?: string;
   servicios: ProveedorServicio[];
@@ -44,6 +45,7 @@ export interface CrearProveedorRequest {
   rfc?: string;
   rating?: number;
   precioPromedio?: string;
+  capacidadMaxima?: number | null;
   activo?: boolean;
 }
 
@@ -58,6 +60,7 @@ export interface ActualizarProveedorRequest {
   rfc?: string;
   rating?: number;
   precioPromedio?: string;
+  capacidadMaxima?: number | null;
   activo?: boolean;
 }
 

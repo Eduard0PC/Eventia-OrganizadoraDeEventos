@@ -295,7 +295,7 @@
                     <span [class]="getStatusBadgeClass(ev.estatus)" class="px-2.5 py-0.5 rounded-full text-xs font-bold border">
                       {{ ev.estatus }}
                     </span>
-                    <span class="text-xs text-gray-400 font-medium">📅 {{ ev.fecha }}</span>
+                    <span class="text-xs text-gray-400 font-medium">{{ ev.fecha }}</span>
                   </div>
                   <h4 class="text-lg font-bold text-gray-900">{{ ev.nombreEvento }}</h4>
                   <p class="text-xs text-gray-500">Cliente: <strong class="text-gray-700">{{ ev.clienteNombre }}</strong> • Lugar: {{ ev.lugar }}</p>
@@ -490,80 +490,11 @@
       </div>
 
       <!-- ================= TAB 4: PLANIFICADOR ================= -->
-      <div *ngIf="activeTab === 'planificador'" class="space-y-6 animate-fade-in">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h3 class="text-xl font-bold text-gray-900">Planificador y Seguimiento de Eventos</h3>
-            <p class="text-xs text-gray-500">Gestión de etapas, tareas clave y estado operativo</p>
-          </div>
-          <div class="flex gap-2">
-            <button
-              *ngFor="let st of ['Todos', 'En preparación', 'Confirmado', 'En ejecución', 'Finalizado']"
-              (click)="planificadorFilterStatus = st"
-              [class]="planificadorFilterStatus === st ? 'bg-red-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'"
-              class="px-3 py-1.5 rounded-xl text-xs font-semibold transition border border-gray-200"
-            >
-              {{ st }}
-            </button>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div
-            *ngFor="let plan of filteredPlanificador"
-            class="bg-white rounded-3xl p-6 shadow-md border border-gray-100 space-y-5 hover:shadow-xl transition"
-          >
-            <div class="flex justify-between items-start">
-              <div>
-                <span [class]="getStatusBadgeClass(plan.estatus)" class="px-2.5 py-0.5 rounded-full text-xs font-bold border">
-                  {{ plan.estatus }}
-                </span>
-                <h4 class="text-2xl font-bold text-gray-900 mt-2">{{ plan.nombreEvento }}</h4>
-                <p class="text-xs text-gray-500 mt-0.5">Cliente: <strong class="text-gray-800">{{ plan.clienteNombre }}</strong></p>
-              </div>
-              <div class="text-right">
-                <span class="text-xs font-bold text-red-600 bg-red-50 px-3 py-1 rounded-xl">📅 {{ plan.fecha }}</span>
-                <p class="text-xs text-gray-400 mt-1">👥 {{ plan.invitados }} invitados</p>
-              </div>
-            </div>
-
-            <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100 space-y-2">
-              <div class="flex justify-between text-xs font-bold text-gray-700">
-                <span>Avance de preparación</span>
-                <span class="text-red-600">{{ plan.progreso }}%</span>
-              </div>
-              <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
-                <div class="bg-linear-to-r from-red-600 to-red-500 h-2.5 rounded-full transition-all duration-500" [style.width.%]="plan.progreso"></div>
-              </div>
-            </div>
-
-            <!-- CHECKLIST DE TAREAS -->
-            <div class="space-y-2">
-              <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">Checklist de Coordinación</p>
-              <div class="space-y-1.5">
-                <label
-                  *ngFor="let item of plan.checklist; let idx = index"
-                  class="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50 transition cursor-pointer text-xs font-medium text-gray-800"
-                >
-                  <input
-                    type="checkbox"
-                    [checked]="item.completado"
-                    (change)="toggleChecklist(plan, idx)"
-                    class="w-4 h-4 text-red-600 rounded-md focus:ring-red-500 border-gray-300"
-                  />
-                  <span [class.line-through]="item.completado" [class.text-gray-400]="item.completado">
-                    {{ item.tarea }}
-                  </span>
-                </label>
-              </div>
-            </div>
-
-            <div class="pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
-              <span>📍 {{ plan.lugar }}</span>
-              <span>Encargado: <strong class="text-gray-800">{{ plan.encargado }}</strong></span>
-            </div>
-          </div>
-        </div>
+      <div *ngIf="activeTab === 'planificador'">
+        <app-planificador-panel
+          [searchQuery]="searchQuery"
+          (onPlanificacionesChange)="onPlanificacionesUpdated($event)"
+        ></app-planificador-panel>
       </div>
 
       <!-- ================= TAB 5: COTIZACIONES ================= -->

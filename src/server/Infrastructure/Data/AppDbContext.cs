@@ -22,7 +22,10 @@ public class AppDbContext : DbContext
     public DbSet<CategoriaProveedor> CategoriasProveedores => Set<CategoriaProveedor>();
     public DbSet<Proveedor> Proveedores => Set<Proveedor>();
     public DbSet<ProveedorServicio> ProveedorServicios => Set<ProveedorServicio>();
+    public DbSet<ProveedorDisponibilidad> ProveedorDisponibilidades => Set<ProveedorDisponibilidad>();
     public DbSet<CatalogoEventoServicio> CatalogoEventoServicios => Set<CatalogoEventoServicio>();
+    public DbSet<EventoProveedor> EventoProveedores => Set<EventoProveedor>();
+    public DbSet<EventoTarea> EventoTareas => Set<EventoTarea>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -327,6 +330,7 @@ public class AppDbContext : DbContext
             e.Property(p => p.Rfc).HasColumnName("rfc");
             e.Property(p => p.Rating).HasColumnName("rating");
             e.Property(p => p.PrecioPromedio).HasColumnName("precio_promedio");
+            e.Property(p => p.CapacidadMaxima).HasColumnName("capacidad_maxima");
             e.Property(p => p.Activo).HasColumnName("activo");
             e.Property(p => p.CreatedAt).HasColumnName("created_at");
             e.Property(p => p.UpdatedAt).HasColumnName("updated_at");
@@ -353,6 +357,75 @@ public class AppDbContext : DbContext
             e.HasOne(ps => ps.Proveedor)
                 .WithMany(p => p.Servicios)
                 .HasForeignKey(ps => ps.ProveedorId);
+        });
+
+        modelBuilder.Entity<ProveedorDisponibilidad>(e =>
+        {
+            e.ToTable("proveedor_disponibilidad");
+            e.HasKey(pd => pd.Id);
+            e.Property(pd => pd.Id).HasColumnName("id");
+            e.Property(pd => pd.ProveedorId).HasColumnName("proveedor_id");
+            e.Property(pd => pd.Fecha).HasColumnName("fecha").HasColumnType("date");
+            e.Property(pd => pd.Disponible).HasColumnName("disponible");
+            e.Property(pd => pd.Nota).HasColumnName("nota");
+            e.Property(pd => pd.CreatedAt).HasColumnName("created_at");
+            e.Property(pd => pd.UpdatedAt).HasColumnName("updated_at");
+
+            e.HasOne(pd => pd.Proveedor)
+                .WithMany()
+                .HasForeignKey(pd => pd.ProveedorId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<EventoProveedor>(e =>
+        {
+            e.ToTable("evento_proveedores");
+            e.HasKey(ep => ep.Id);
+            e.Property(ep => ep.Id).HasColumnName("id");
+            e.Property(ep => ep.EventoContratadoId).HasColumnName("evento_contratado_id");
+            e.Property(ep => ep.ProveedorId).HasColumnName("proveedor_id");
+            e.Property(ep => ep.CatalogoServicioId).HasColumnName("catalogo_servicio_id");
+            e.Property(ep => ep.ClaveRequerimiento).HasColumnName("clave_requerimiento");
+            e.Property(ep => ep.NombreRequerimiento).HasColumnName("nombre_requerimiento");
+            e.Property(ep => ep.CategoriaProveedor).HasColumnName("categoria_proveedor");
+            e.Property(ep => ep.EsLocacion).HasColumnName("es_locacion");
+            e.Property(ep => ep.CostoAcordado).HasColumnName("costo_acordado");
+            e.Property(ep => ep.Notas).HasColumnName("notas");
+            e.Property(ep => ep.Confirmado).HasColumnName("confirmado");
+            e.Property(ep => ep.CreatedAt).HasColumnName("created_at");
+            e.Property(ep => ep.UpdatedAt).HasColumnName("updated_at");
+
+            e.HasOne(ep => ep.EventoContratado)
+                .WithMany(ev => ev.ProveedoresAsignados)
+                .HasForeignKey(ep => ep.EventoContratadoId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasOne(ep => ep.Proveedor)
+                .WithMany()
+                .HasForeignKey(ep => ep.ProveedorId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            e.HasOne(ep => ep.CatalogoServicio)
+                .WithMany()
+                .HasForeignKey(ep => ep.CatalogoServicioId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<EventoTarea>(e =>
+        {
+            e.ToTable("evento_tareas");
+            e.HasKey(et => et.Id);
+            e.Property(et => et.Id).HasColumnName("id");
+            e.Property(et => et.EventoContratadoId).HasColumnName("evento_contratado_id");
+            e.Property(et => et.Titulo).HasColumnName("titulo");
+            e.Property(et => et.Completada).HasColumnName("completada");
+            e.Property(et => et.CreatedAt).HasColumnName("created_at");
+            e.Property(et => et.UpdatedAt).HasColumnName("updated_at");
+
+            e.HasOne(et => et.EventoContratado)
+                .WithMany(ev => ev.Tareas)
+                .HasForeignKey(et => et.EventoContratadoId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

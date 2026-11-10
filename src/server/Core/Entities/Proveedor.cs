@@ -16,6 +16,7 @@ public class Proveedor
     public string? Rfc { get; set; }
     public int Rating { get; set; } = 5;
     public string PrecioPromedio { get; set; } = "$$$";
+    public int? CapacidadMaxima { get; set; }
     public bool Activo { get; set; } = true;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

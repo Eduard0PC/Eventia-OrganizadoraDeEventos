@@ -35,7 +35,8 @@ public record ProveedorResponseDto(
     string PrecioPromedio,
     bool Activo,
     DateTime CreatedAt,
-    List<ProveedorServicioDto> Servicios
+    List<ProveedorServicioDto> Servicios,
+    int? CapacidadMaxima = null
 );
 
 public record CrearProveedorRequest(
@@ -49,7 +50,8 @@ public record CrearProveedorRequest(
     string? Rfc,
     int? Rating = 5,
     string? PrecioPromedio = "$$$",
-    bool? Activo = true
+    bool? Activo = true,
+    int? CapacidadMaxima = null
 );
 
 public record ActualizarProveedorRequest(
@@ -63,7 +65,8 @@ public record ActualizarProveedorRequest(
     string? Rfc,
     int? Rating,
     string? PrecioPromedio,
-    bool? Activo
+    bool? Activo,
+    int? CapacidadMaxima = null
 );
 
 public record CrearProveedorServicioRequest(

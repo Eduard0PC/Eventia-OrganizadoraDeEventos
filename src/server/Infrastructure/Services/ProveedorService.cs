@@ -79,6 +79,7 @@ public class ProveedorService : IProveedorService
             Rfc = request.Rfc?.Trim(),
             Rating = request.Rating ?? 5,
             PrecioPromedio = request.PrecioPromedio ?? "$$$",
+            CapacidadMaxima = request.CapacidadMaxima,
             Activo = request.Activo ?? true,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -118,6 +119,7 @@ public class ProveedorService : IProveedorService
         if (request.Rfc != null) proveedor.Rfc = request.Rfc.Trim();
         if (request.Rating.HasValue) proveedor.Rating = request.Rating.Value;
         if (!string.IsNullOrWhiteSpace(request.PrecioPromedio)) proveedor.PrecioPromedio = request.PrecioPromedio;
+        if (request.CapacidadMaxima.HasValue) proveedor.CapacidadMaxima = request.CapacidadMaxima.Value > 0 ? request.CapacidadMaxima.Value : null;
         if (request.Activo.HasValue) proveedor.Activo = request.Activo.Value;
         proveedor.UpdatedAt = DateTime.UtcNow;
 
@@ -239,7 +241,8 @@ public class ProveedorService : IProveedorService
             p.PrecioPromedio,
             p.Activo,
             p.CreatedAt,
-            servicios
+            servicios,
+            p.CapacidadMaxima
         );
     }
 }

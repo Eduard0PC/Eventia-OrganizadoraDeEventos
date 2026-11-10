@@ -10,6 +10,10 @@ public static class EnvironmentExtensions
         var envPath = Path.Combine(Directory.GetCurrentDirectory(), ".env");
         if (!File.Exists(envPath))
         {
+            envPath = Path.Combine(Directory.GetCurrentDirectory(), "src", "server", ".env");
+        }
+        if (!File.Exists(envPath))
+        {
             envPath = Path.Combine(AppContext.BaseDirectory, ".env");
         }
 

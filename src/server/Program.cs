@@ -48,6 +48,7 @@ app.MapClienteEndpoints();
 app.MapProveedorEndpoints();
 app.MapEventoEndpoints();
 app.MapPagoEndpoints();
+app.MapPlanificadorEndpoints();
 
 await app.EnsureDatabaseCastsAsync();
 

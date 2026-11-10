@@ -8,6 +8,9 @@
       </span>
 
       <div class="flex items-center gap-2">
+        <span *ngIf="proveedor.capacidadMaxima" class="px-2.5 py-0.5 text-xs font-bold rounded-md bg-purple-50 text-purple-700 border border-purple-200/60" title="Capacidad máxima del lugar">
+          👥 {{ proveedor.capacidadMaxima }} pax
+        </span>
         <span class="px-2.5 py-0.5 text-xs font-bold rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/60">
           {{ proveedor.precioPromedio || '$$$' }}
         </span>
